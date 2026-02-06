@@ -2,3 +2,9 @@
 # Python virtual environments
 venv/
 backend/venv/
+
+.python-version
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
