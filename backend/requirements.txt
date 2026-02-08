@@ -14,5 +14,6 @@ python-multipart==0.0.22
 
 # Validation & config
 pydantic==2.12.5
+pydantic-settings>=2.0.0
 pydantic_core==2.41.5
 python-dotenv==1.2.1
