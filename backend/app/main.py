@@ -11,7 +11,7 @@ from app.routers import notes
 async def lifespan(app: FastAPI):
     """
     Runs on app startup and shutdown.
-    
+
     Startup:  Test the Aurora connection — fail fast if DB is unreachable.
     Shutdown: Clean up the connection pool.
     """
@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
         print("   Check: VPC/Security Groups, credentials, endpoint URL")
         raise
 
-    yield   # ← App runs here, handles all requests
+    yield  # ← App runs here, handles all requests
 
     # ── SHUTDOWN ──
     engine.dispose()
@@ -58,3 +58,13 @@ def health_db():
         return {"database": "healthy"}
     except Exception as e:
         return {"database": "unhealthy", "error": str(e)}
+
+
+@app.get("/users")
+def users_db():
+    try:
+        with engine.connect() as conn:
+            print("dadahaha")
+    except Exception as e:
+        return e
+

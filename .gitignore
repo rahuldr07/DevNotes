@@ -1,14 +1,35 @@
+# Environment variables
+.env
+backend/.env
 
-# Python virtual environments
-venv/
-backend/venv/
-
-.python-version
-
-# Ignore Python cache files
+# Python
 __pycache__/
 *.py[cod]
+*.pyc
 
-.env
-.env.*
-config.py
+# Next.js
+.next/
+admin/.next/
+
+# Dependencies
+node_modules/
+admin/node_modules/
+
+# Build outputs
+out/
+dist/
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Session files
+.copilot/
