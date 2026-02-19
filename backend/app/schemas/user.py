@@ -6,7 +6,7 @@ class UserCreate(BaseModel):
     """
     What the client sends when CREATING a user.
     Only name, email, and password — the server handles id, role, timestamps, etc.
-    
+
     Example request body:
     {
         "name": "John Doe",
@@ -17,6 +17,21 @@ class UserCreate(BaseModel):
     name: str
     email: str
     password: str
+
+
+class UserLogin(BaseModel):
+    """
+    What the client sends when LOGGING IN.
+
+    Example request body:
+    {
+        "email": "john.doe@example.com",
+        "password": "securepassword123"
+    }
+    """
+    email: str
+    password: str
+
 
 class UserResponse(BaseModel):
     """

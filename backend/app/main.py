@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.config import get_settings
-from app.routers import notes
+from app.routers import notes, auth
 
 
 @asynccontextmanager
@@ -38,6 +38,7 @@ app = FastAPI(title="DevNotes API", lifespan=lifespan)
 
 # ── Register routers ──
 app.include_router(notes.router)
+app.include_router(auth.router)
 
 
 # ── Health checks ──
@@ -58,13 +59,4 @@ def health_db():
         return {"database": "healthy"}
     except Exception as e:
         return {"database": "unhealthy", "error": str(e)}
-
-
-@app.get("/users")
-def users_db():
-    try:
-        with engine.connect() as conn:
-            print("dadahaha")
-    except Exception as e:
-        return e
 
