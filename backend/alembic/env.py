@@ -8,6 +8,11 @@ from alembic import context
 from app.config import get_settings
 from app.database import Base
 
+# Import ALL models so Alembic can detect them for autogenerate.
+# Any new model must be imported here, or it won't be picked up.
+from app.models.note import Note
+from app.models.user import User
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -17,15 +22,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
+# Set the database URL from settings (reads .env)
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
-from app.models.note import Note
 
-target_metadata = None
+# Point Alembic at Base.metadata so autogenerate can compare
+# your models against the actual database schema.
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

@@ -3,6 +3,7 @@
 ## Project Overview
 
 DevNotes is a full-stack note-taking application with:
+
 - **Backend**: FastAPI application (`/backend`) connected to AWS Aurora PostgreSQL
 - **Admin/Frontend**: Next.js 16 application (`/admin`) with React 19 and Tailwind CSS v4
 
@@ -52,18 +53,20 @@ No test suite is currently configured.
 
 ### Backend Structure
 
-The backend follows a layered architecture:
+The backend follows a layered architecture. All application code lives inside the `app/` package:
 
 - **`app/main.py`**: FastAPI app setup with lifespan management for DB connection pooling
-- **`app/routers/`**: Route handlers organized by resource (e.g., `notes.py`)
-- **`models/`**: SQLAlchemy ORM models (database tables)
-- **`schemas/`**: Pydantic models for request/response validation
-- **`database.py`**: SQLAlchemy engine and session configuration with Aurora-specific pool settings
-- **`config.py`**: Centralized settings using Pydantic Settings (loads from `.env`)
-- **`dependencies.py`**: Dependency injection functions (e.g., `get_db()` for DB sessions)
+- **`app/config.py`**: Centralized settings using Pydantic Settings (loads from `.env`)
+- **`app/database.py`**: SQLAlchemy engine and session configuration with Aurora-specific pool settings
+- **`app/dependencies.py`**: Dependency injection functions (`get_db()`, `get_current_user()`)
+- **`app/routers/`**: Route handlers organized by resource (`notes.py`, `auth.py`)
+- **`app/models/`**: SQLAlchemy ORM models (database tables)
+- **`app/schemas/`**: Pydantic models for request/response validation
+- **`app/services/`**: Business logic (`auth.py` for JWT, `security.py` for password hashing)
 - **`alembic/`**: Database migration files
 
-**Database Connection Pattern**: 
+**Database Connection Pattern**:
+
 - The engine maintains a connection pool (10 base + 20 overflow = 30 max connections)
 - Pool recycles connections after 30 minutes to handle Aurora's idle connection timeouts
 - Use the `get_db()` dependency in routes to get auto-managed sessions
@@ -84,10 +87,11 @@ Standard Next.js 16 App Router structure:
 1. **Config Management**: All environment variables are defined in `config.py` as a Pydantic `Settings` class. Never hardcode credentials or connection strings.
 
 2. **Database Sessions**: Always use the `get_db()` dependency for database access in routes:
+
    ```python
-   from dependencies import get_db
+   from app.dependencies import get_db
    from sqlalchemy.orm import Session
-   
+
    @router.get("/endpoint")
    def route(db: Session = Depends(get_db)):
        # db session is automatically managed
@@ -101,7 +105,7 @@ Standard Next.js 16 App Router structure:
 
 1. **Formatting**: Uses Biome with 2-space indentation. Biome handles both linting and formatting.
 
-2. **Biome Rules**: 
+2. **Biome Rules**:
    - Next.js and React recommended rules are enabled
    - `noUnknownAtRules` is disabled (for Tailwind CSS compatibility)
    - Auto-organize imports on save
@@ -119,9 +123,11 @@ DB_NAME=devnotes
 DB_USER=postgres
 DB_PASSWORD=your-password
 DB_SSL_MODE=require
+SECRET_KEY=your-secret-key-here
 ```
 
 Optional pool tuning variables (have defaults):
+
 - `DB_POOL_SIZE` (default: 10)
 - `DB_MAX_OVERFLOW` (default: 20)
 - `DB_POOL_TIMEOUT` (default: 30)
