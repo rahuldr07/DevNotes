@@ -8,10 +8,10 @@ from alembic import context
 from app.config import get_settings
 from app.database import Base
 
-# Import ALL models so Alembic can detect them for autogenerate.
+# Import ALL models here so Alembic can detect them for autogenerate.
 # Any new model must be imported here, or it won't be picked up.
-from app.models.note import Note
 from app.models.user import User
+from app.models.note import Note
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

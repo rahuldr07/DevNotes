@@ -4,7 +4,10 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.config import get_settings
-from app.routers import notes, auth
+
+# ── Import routers ──
+from app.routers import auth
+from app.routers import notes  # ← uncomment after building notes router
 
 
 @asynccontextmanager
@@ -37,8 +40,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="DevNotes API", lifespan=lifespan)
 
 # ── Register routers ──
-app.include_router(notes.router)
 app.include_router(auth.router)
+app.include_router(notes.router)  # ← uncomment after building notes router
 
 
 # ── Health checks ──
