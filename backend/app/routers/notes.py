@@ -23,3 +23,7 @@ def delete_note(id: int,user= Depends(get_current_user),db :Session = Depends(ge
 @router.get("/notes",response_model=list[NoteResponse],status_code=200)
 def get_my_notes(user= Depends(get_current_user),db :Session = Depends(get_db)):
     return note_service.get_my_notes(db, user_id=user.id)
+
+@router.get("/{id}",response_model=NoteResponse,status_code=200)
+def get_note(id: int, user= Depends(get_current_user),db : Session = Depends(get_db)):
+    return note_service.get_note(db, note_id=id,user_id=user.id)

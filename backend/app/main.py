@@ -7,7 +7,8 @@ from app.config import get_settings
 
 # ── Import routers ──
 from app.routers import auth
-from app.routers import notes  # ← uncomment after building notes router
+from app.routers import notes
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -38,6 +39,14 @@ async def lifespan(app: FastAPI):
 
 # ── Create the app ──
 app = FastAPI(title="DevNotes API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── Register routers ──
 app.include_router(auth.router)
