@@ -94,3 +94,28 @@ def get_my_notes(db: Session, user_id: int) -> list[Note]:
     """
     notes = note_repo.get_my_notes(db, user_id=user_id)
     return notes
+
+
+def get_note(db: Session, user_id: int, note_id: int) -> Note | None:
+    """
+    Retrieves a specific note for the specified user.
+
+    Business rules:
+    1. The note must be associated with the user who created it (user_id).
+    2. If the note does not exist or does not belong to the user, an HTTPException is raised.
+
+    Args:
+        db: Active SQLAlchemy database session.
+        note_id: The ID of the note to retrieve.
+
+    Returns:
+        The Note model instance if found and belongs to the user, otherwise raises HTTPException.
+    """
+    note = note_repo.get_by_note_id(db, note_id=note_id)
+    if note:
+        if note.user_id == user_id:
+            return note
+        else:
+            raise HTTPException(status_code=403, detail="Note does not belong to the user")
+    else:
+        raise HTTPException(status_code=404, detail="Note not found")
