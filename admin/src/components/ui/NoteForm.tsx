@@ -1,9 +1,28 @@
+/**
+ * NoteForm — Reusable form component for creating and editing notes.
+ *
+ * Used by:
+ *   - /dashboard/create_note → mode="create" (empty form)
+ *   - /dashboard/edit_note   → mode="edit" (pre-filled with note data)
+ *
+ * This avoids duplicating the form UI and logic in two separate pages.
+ * The `mode` prop controls:
+ *   - Which API endpoint to call (POST /create vs PATCH /update)
+ *   - What text to show on headings and buttons
+ *   - Whether to pre-fill the fields
+ */
 'use client';
 
 import { useState,useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
+/**
+ * Props for the NoteForm component.
+ * - mode: 'create' or 'edit' — determines behavior
+ * - noteId: Required for edit mode (which note to update)
+ * - initialTitle/Content: Pre-fill values for edit mode (defaults to '')
+ */
 interface NoteFormProps {
     mode : 'create' | 'edit';
     noteId?: number;
@@ -11,6 +30,7 @@ interface NoteFormProps {
     initialContent?: string;
 }
 
+/** Shape of the API response when creating/updating a note */
 interface NoteResponse {
     id: number;
     title: string;
@@ -21,10 +41,11 @@ interface NoteResponse {
 
 export default function NoteForm({
     mode,
-    initialTitle = '',
+    initialTitle = '',    // Defaults to empty string for create mode
     initialContent = '',
     noteId,
 }: NoteFormProps) {
+    // Form state — initialized with either empty strings (create) or existing data (edit)
     const [title,setTitle] = useState(initialTitle);
     const [content,setContent] = useState(initialContent);
     const [loading,setLoading] = useState(false);
@@ -32,9 +53,18 @@ export default function NoteForm({
 
     const router = useRouter();
 
+    /**
+     * Handles form submission for both create and edit modes.
+     *
+     * Create mode: POST /api/notes/create { title, content }
+     * Edit mode:   PATCH /api/notes/{id}/update { title, content }
+     *
+     * On success, redirects back to the dashboard.
+     */
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Validate — .trim() removes whitespace to catch "   " as empty
         if (!title.trim() || !content.trim()) {
             setError('Title and content cannot be empty');
             return;
@@ -45,17 +75,20 @@ export default function NoteForm({
             setError('');
 
             if (mode === 'create') {
+                // Create a new note
                 const response = await api.post<NoteResponse>('/notes/create', {
                     title,
                     content,
                 });
             } else if (mode === 'edit' && noteId) {
+                // Update an existing note (PATCH = partial update)
                 const response = await api.patch<NoteResponse>(`/notes/${noteId}/update`, {
                     title,
                     content,
                 });
             }
 
+            // Navigate back to dashboard after successful create/edit
             router.push('/dashboard');
             } catch (err: any) {
                 setError(err.message || (mode === 'create' ? 'Failed to create note': 'Failed to update the note'));

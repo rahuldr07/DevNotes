@@ -1,3 +1,18 @@
+/**
+ * Signup Page — Creates a new user account.
+ *
+ * Route: /auth/signup
+ *
+ * Flow:
+ * 1. User fills in name, email, password, confirm password
+ * 2. Client-side validation (all fields, password match, min length)
+ * 3. Form submits → POST /api/auth/register (proxied to FastAPI)
+ * 4. FastAPI creates the user in PostgreSQL → returns user data
+ * 5. User is redirected to /auth/login to log in with new account
+ *
+ * Note: The backend does NOT return a token on signup, so we
+ * redirect to login instead of auto-logging in.
+ */
 'use client';
 
 import { useState,useCallback } from 'react';
@@ -5,6 +20,10 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { saveToken } from '@/lib/auth';
 
+/**
+ * Shape of the response from POST /auth/register.
+ * Matches the UserResponse schema in FastAPI (backend/app/schemas/user.py).
+ */
 interface SignupResponse {
     id: number;
     name: string;
@@ -15,6 +34,7 @@ interface SignupResponse {
 }
 
 export default function SignUpPage() {
+    // Form state for all input fields
     const [email,setEmail] = useState('');
     const [name,setName] = useState('');
     const [password,setPassword] = useState('');
@@ -24,19 +44,32 @@ export default function SignUpPage() {
 
     const router = useRouter();
 
+    /**
+     * Form submission handler with client-side validation.
+     *
+     * Validates:
+     * - All fields are filled
+     * - Password matches confirmation
+     * - Password meets minimum length (8 chars)
+     *
+     * Then sends registration request to the backend.
+     */
     const handleSignUp = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Validate all fields are filled
         if ( !name || !email || !password || !confirmPassword) {
             setError('Please fill in all fields');
             return;
         }
 
+        // Validate password confirmation matches
         if (password !== confirmPassword) {
             setError("Passwords do not match");
             return;
         }
         
+        // Validate minimum password length
         if (password.length < 8) {
             setError("Password must be at least 8 characters long");
             return;
@@ -46,14 +79,18 @@ export default function SignUpPage() {
             setLoading(true);
             setError('');
 
+            // Send registration request through the proxy:
+            // Browser → /api/auth/register → FastAPI → creates user
             const response = await api.post<SignupResponse>('/auth/register', {
                 name,
                 email,
                 password,
             });
 
+            // Redirect to login page (backend doesn't return a token on signup)
             router.push("/auth/login");
         }catch (err:any) {
+            // Display error from FastAPI (e.g., "Email already registered")
             setError(err.message || 'Signup failed');
         } finally {
             setLoading(false);

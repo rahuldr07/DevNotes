@@ -1,3 +1,21 @@
+/**
+ * Login Page — Authenticates users with email and password.
+ *
+ * Route: /auth/login
+ *
+ * Flow:
+ * 1. User enters email + password
+ * 2. Form submits → POST /api/auth/login (proxied to FastAPI)
+ * 3. FastAPI validates credentials → returns JWT token
+ * 4. Token is saved in a browser cookie (auth_token)
+ * 5. User is redirected to /dashboard
+ *
+ * If the user is already logged in, middleware.ts redirects
+ * them to /dashboard before this page even loads.
+ *
+ * 'use client' — Required because this page uses React hooks
+ * (useState, useCallback, useRouter) and handles user interactions.
+ */
 'use client';
 
 import { useState,useCallback } from 'react';
@@ -5,43 +23,67 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { saveToken } from '@/lib/auth';
 
+/**
+ * Shape of the response from POST /auth/login.
+ * FastAPI returns: { "access_token": "jwt...", "token_type": "bearer" }
+ */
 interface LoginResponse {
     access_token: string;
     token_type: string;
 }
 
 export default function LoginPage() {
-    //state for form inputs
+    // Form state — each input has its own state variable
+    // React re-renders the component when any of these change,
+    // keeping the UI in sync with what the user types
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');       // Error message to display
+    const [loading, setLoading] = useState(false); // Disables button while submitting
 
+    // Next.js router for programmatic navigation (router.push)
     const router = useRouter();
 
+    /**
+     * Form submission handler.
+     *
+     * useCallback memoizes this function — it's only recreated when
+     * email, password, or router change. Without useCallback, a new
+     * function would be created on every render (minor optimization).
+     *
+     * @param e — The form submit event. e.preventDefault() stops the
+     *            browser from doing a full page reload (default form behavior).
+     */
     const handleLogin = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Basic client-side validation before sending to the backend
         if (!email || !password) {
             setError('Please enter both email and password');
             return;
         }
 
         try {
-            setLoading(true);
-            setError('');
+            setLoading(true);  // Show loading state on the button
+            setError('');      // Clear any previous error
 
+            // Send login request through the proxy:
+            // Browser → /api/auth/login → FastAPI → returns JWT
             const response = await api.post<LoginResponse>('/auth/login', {
                 email,
                 password,
             });
 
+            // Store the JWT token in a browser cookie for future requests
             saveToken(response.access_token);
 
+            // Navigate to the dashboard
             router.push('/dashboard');
         }catch (err:any) {
+            // Display error from FastAPI (e.g., "Invalid credentials")
             setError(err.message || 'Login failed');
         }finally {
+            // Always reset loading state, whether success or failure
             setLoading(false);
         }
     },[email,password,router]);
@@ -99,7 +141,7 @@ export default function LoginPage() {
                 {/* Signup Link */}
                 <p className="mt-4 text-center text-gray-600">
                     Dont Have an account?
-                    <a href='/auth/register' className="text-blue-600 hover:underline">
+                    <a href='/auth/signup' className="text-blue-600 hover:underline">
                         Sign Up
                     </a>
                 </p>

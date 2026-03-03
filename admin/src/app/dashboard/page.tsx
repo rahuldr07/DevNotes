@@ -1,11 +1,30 @@
+/**
+ * Dashboard Page — Main notes listing with CRUD operations.
+ *
+ * Route: /dashboard (protected — requires authentication)
+ *
+ * Features:
+ * - Fetches and displays all user's notes in a responsive grid
+ * - Create new note (navigates to /dashboard/create_note)
+ * - Edit note (navigates to /dashboard/edit_note?id=X)
+ * - Delete note (with confirmation prompt)
+ * - Logout (clears cookie, redirects to login)
+ *
+ * Protected by middleware.ts — unauthenticated users are
+ * redirected to /auth/login before this page loads.
+ */
 'use client';
 
 import { useState,useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { removeToken } from '@/lib/auth';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react'; // Icon components from lucide
 
+/**
+ * TypeScript interface matching the NoteResponse schema from FastAPI.
+ * Defines the shape of a note object returned by the API.
+ */
 interface Note {
     id: number;
     title: string;
@@ -15,16 +34,23 @@ interface Note {
 }
 
 export default function DashBoardPage() {
-    const [notes, setNotes] = useState<Note[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [notes, setNotes] = useState<Note[]>([]);  // Array of user's notes
+    const [loading, setLoading] = useState(true);     // Loading state (true on initial load)
     const [error, setError] = useState('');
 
     const router = useRouter();
 
+    // Fetch notes when the component first mounts
+    // Empty dependency array [] means this runs once on page load
     useEffect(() => {
         fetchNotes();
     },[]);
 
+    /**
+     * Fetches all notes for the current user.
+     * GET /api/notes/notes → FastAPI returns array of notes
+     * The JWT token is automatically attached by api.ts
+     */
     const fetchNotes = async () => {
         try {
             setLoading(true);
@@ -38,18 +64,32 @@ export default function DashBoardPage() {
         }
     };
 
+    /**
+     * Deletes a note after user confirmation.
+     * DELETE /api/notes/{id}/delete → FastAPI returns 204 No Content
+     *
+     * Uses optimistic UI: removes the note from local state immediately
+     * with .filter() instead of re-fetching all notes from the server.
+     */
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure you want to delete this note?')) {
             return;
         }
         try {
             await api.delete(`/notes/${id}/delete`);
+            // Remove the deleted note from state without re-fetching
             setNotes(notes.filter((note) => note.id !== id));
         } catch (err:any) {
             setError(err.message || 'Failed to delete the note');
         }
     };
 
+    /**
+     * Logs the user out by:
+     * 1. Removing the JWT cookie (browser-side)
+     * 2. Redirecting to login page
+     * Middleware will block any attempts to access /dashboard after this.
+     */
     const handleLogout = () => {
         removeToken();
         router.push('/auth/login');

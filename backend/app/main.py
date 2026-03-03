@@ -1,3 +1,22 @@
+"""
+DevNotes API — FastAPI application entry point.
+
+This is the main file that:
+1. Creates the FastAPI app instance
+2. Configures CORS middleware (allows frontend at localhost:3000)
+3. Registers all route handlers (auth, notes)
+4. Tests the Aurora PostgreSQL connection on startup
+5. Provides health check endpoints for monitoring
+
+Run with: cd backend && uvicorn app.main:app --reload
+
+Architecture:
+    Browser → Next.js (/api proxy) → THIS APP → Aurora PostgreSQL
+    
+    Request flow within this app:
+    main.py (CORS + routing) → routers/ (endpoints) → services/ (business logic)
+    → repositories/ (database queries) → models/ (ORM) → PostgreSQL
+"""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
@@ -40,12 +59,18 @@ async def lifespan(app: FastAPI):
 # ── Create the app ──
 app = FastAPI(title="DevNotes API", lifespan=lifespan)
 
+# ── CORS Middleware ──
+# Allows the Next.js frontend (localhost:3000) to call this API.
+# With the BFF proxy pattern, CORS is technically no longer needed
+# (browser talks to Next.js, not directly to FastAPI).
+# Kept here as a fallback for direct API access during development
+# and for Swagger UI testing at /docs.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:3000"],  # Only allow this origin
+    allow_credentials=True,  # Allow cookies/auth headers
+    allow_methods=["*"],     # Allow all HTTP methods
+    allow_headers=["*"],     # Allow all headers (including Authorization)
 )
 
 # ── Register routers ──

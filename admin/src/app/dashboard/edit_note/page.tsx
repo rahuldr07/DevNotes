@@ -1,3 +1,17 @@
+/**
+ * Edit Note Page — Loads an existing note and renders NoteForm in "edit" mode.
+ *
+ * Route: /dashboard/edit_note?id=5
+ *
+ * Flow:
+ * 1. Reads the note ID from the URL query params (?id=5)
+ * 2. Fetches the note data from GET /api/notes/5
+ * 3. Shows loading/error/not-found states while fetching
+ * 4. Passes the note data to NoteForm in "edit" mode
+ *
+ * Uses useSearchParams (not useParams) because the ID is passed
+ * as a query parameter (?id=5), not a dynamic route segment ([id]).
+ */
 'use client';
 
 import NoteForm from '@/components/ui/NoteForm';
@@ -14,16 +28,23 @@ interface Note {
 }
 
 export default function EditNotePage() {
+    // useSearchParams reads URL query params: /edit_note?id=5 → id = '5'
+    // (Different from useParams which reads dynamic route segments: /notes/[id])
     const searchParams = useSearchParams();
     const noteId = searchParams.get('id');
     const [note, setNote] = useState<Note | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // Fetch note data when the component mounts or noteId changes
     useEffect(() => {
         fetchNote();
     }, [noteId]);
 
+    /**
+     * Fetches a single note by ID.
+     * GET /api/notes/{id} → FastAPI returns the note object
+     */
     const fetchNote = async () => {
         try {
             setLoading(true);
