@@ -59,16 +59,16 @@ export default function EditNotePage() {
 
     if (loading) {
         return (
-            <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
-                <p className='text-gray-600 text-lg'>Loading note...</p>
+            <div className='flex items-center justify-center py-12'>
+                <p className='text-gray-600 dark:text-gray-400 text-lg'>Loading note...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
-                <div className='bg-red-100 text-red-700 p-6 rounded-lg'>
+            <div className='flex items-center justify-center py-12'>
+                <div className='bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-6 rounded-lg'>
                     {error}
                 </div>
             </div>
@@ -77,8 +77,8 @@ export default function EditNotePage() {
 
     if (!note) {
         return (
-            <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
-                <p className='text-gray-600 text-lg'>Note not found</p>
+            <div className='flex items-center justify-center py-12'>
+                <p className='text-gray-600 dark:text-gray-400 text-lg'>Note not found</p>
             </div>
         );
     }

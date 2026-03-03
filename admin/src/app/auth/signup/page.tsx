@@ -98,12 +98,12 @@ export default function SignUpPage() {
     },[email,password,confirmPassword,router]);
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
+                <h1 className="text-2xl font-bold mb-6 dark:text-white">Sign Up</h1>
 
                 {error && (
-                    <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                    <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded mb-4">
                         {error}
                     </div>
                 )}
@@ -111,59 +111,59 @@ export default function SignUpPage() {
                 <form onSubmit={handleSignUp}>
                     {/* Name Input */}
                     <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">
+                        <label className="block text-gray-700 dark:text-gray-300 mb-2">
                             Name
                         </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName( e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                             placeholder='John Doe'
                             />
                     </div>
                     
                     {/* Email Input */}
                     <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">
+                        <label className="block text-gray-700 dark:text-gray-300 mb-2">
                             Email
                         </label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail( e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                             placeholder='user@example.com'
                         />
                     </div>
 
                     {/*Password Input */}
                     <div className="mb-6">
-                        <label className='block text-gray-700 font-bold mb-2'>
+                        <label className='block text-gray-700 dark:text-gray-300 font-bold mb-2'>
                             Password
                         </label>
                         <input
                             type='password'
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className='w-full px-3 py-2 border border-gray-300 rounded-lg'
+                            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white'
                             placeholder='••••••••'
                         />
-                        <p className='text-sm text-gray-500 mt-1'>
+                        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
                             Minimum 8 characters
                         </p>
                     </div>
 
                     {/*Confirm Password Input */}
                     <div className="mb-6">
-                        <label className='block text-gray-700 font-bold mb-2'>
+                        <label className='block text-gray-700 dark:text-gray-300 font-bold mb-2'>
                             Confirm Password
                         </label>
                         <input
                             type='password'
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className='w-full px-3 py-2 border border-gray-300 rounded-lg'
+                            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white'
                             placeholder='••••••••'
                         />
                     </div>
@@ -179,7 +179,7 @@ export default function SignUpPage() {
                 </form>
 
                 {/* Signup Link */}
-                <p className="mt-4 text-center text-gray-600">
+                <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
                     Already have an account?{' '}
                     <a href='/auth/login' className="text-blue-600 hover:underline">
                         Login

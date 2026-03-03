@@ -33,7 +33,7 @@ export default function Home() {
   // Brief loading state shown while the redirect is in progress
   return (
     <div className='flex items-center justify-center min-h-screen'>
-      <p className='text-gray-600'>Redirecting...</p>
+      <p className='text-gray-600 dark:text-gray-400'>Redirecting...</p>
     </div>
   );
 }
