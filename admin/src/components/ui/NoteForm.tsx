@@ -16,6 +16,7 @@
 import { useState,useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 /**
  * Props for the NoteForm component.
@@ -99,72 +100,69 @@ export default function NoteForm({
     },[title,content,router,mode,noteId]);
 
     return (
-        <div className='min-h-screen bg-gray-100 py-8'>
-            <div className='max-w-2xl mx-auto bg-white rounded-lg shadow p-8'>
-                <h1 className='text-3xl font-bold mb-6'>
-                    {mode === 'create' ? 'Create Note' : 'Edit Note'}
-                </h1>
+        <div className='max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow p-8'>
+            <h1 className='text-3xl font-bold mb-6 dark:text-white'>
+                {mode === 'create' ? 'Create Note' : 'Edit Note'}
+            </h1>
 
-                {error && (
-                    <div className='bg-red-100 text-red-700 p-4 rounded mb-6'>
-                        {error}
-                    </div>
-                )}
+            {error && (
+                <div className='bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-4 rounded mb-6'>
+                    {error}
+                </div>
+            )}
 
-                <form onSubmit={handleSubmit}>
-                    {/* Title Input */}
-                    <div className='mb-6'>
-                        <label className='block text-gray-700 font-bold mb-2'>
-                            Title
-                        </label>
-                        <input 
-                            type='text'
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
-                            placeholder='Enter the Title'
-                        />
-                    </div>
+            <form onSubmit={handleSubmit}>
+                {/* Title Input */}
+                <div className='mb-6'>
+                    <label className='block text-gray-700 font-bold mb-2 dark:text-gray-300'>
+                        Title
+                    </label>
+                    <input 
+                        type='text'
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+                        placeholder='Enter the Title'
+                    />
+                </div>
 
-                    {/* Content Text area */}
-                    <div className='mb-6'>
-                        <label className='block text-gray-700 font-bold mb-2'>
-                            Content
-                        </label>
-                        <textarea
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 h-48 resize-none'
-                            placeholder='Enter the Content'
-                        />
-                    </div>
+                {/* Content Text area */}
+                <div className='mb-6'>
+                    <label className='block text-gray-700 font-bold mb-2 dark:text-gray-300'>
+                        Content
+                    </label>
+                    <textarea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white h-48 resize-none'
+                        placeholder='Enter the Content'
+                    />
+                </div>
 
-                    {/* Buttons */}
-                    <div className='flex gap-4'>
-                        <button 
-                            type="submit"
-                            disabled={loading}
-                            className='flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400'
+                {/* Buttons */}
+                <div className='flex gap-4'>
+                    <button 
+                        type="submit"
+                        disabled={loading}
+                        className='flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400'
+                    >
+                        {loading 
+                            ? mode === 'create'
+                                ? 'Creating...'
+                                : 'Updating...'
+                            : mode === 'create'
+                                ? 'Create Note'
+                                : 'Update Note'
+                        }
+                    </button>
+                    <Link 
+                        href='/dashboard'
+                        className='flex-1 bg-gray-600 text-white py-2 rounded-lg font-bold hover:bg-gray-700 text-center'
                         >
-                            {loading 
-                                ? mode === 'create'
-                                    ? 'Creating...'
-                                    : 'Updating...'
-                                : mode === 'create'
-                                    ? 'Create Note'
-                                    : 'Update Note'
-                            }
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => router.push('/dashboard')}
-                            className='flex-1 bg-gray-600 text-white py-2 rounded-lg font-bold hover:bg-gray-700'
-                            >
-                                Cancel
-                            </button>
-                    </div>
-                </form>
-            </div>
+                            Cancel
+                        </Link>
+                </div>
+            </form>
         </div>
     );
 }
