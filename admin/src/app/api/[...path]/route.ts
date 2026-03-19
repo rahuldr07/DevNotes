@@ -20,7 +20,7 @@
  *
  * This file runs SERVER-SIDE only (Next.js Route Handler).
  */
-import { NextRequest,NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { backendFetch } from "@/lib/backend";
 
 /**
@@ -31,59 +31,58 @@ import { backendFetch } from "@/lib/backend";
  *                  In Next.js 15+, params is a Promise that must be awaited
  */
 async function handler(
-    request: NextRequest,
-    { params }: { params: Promise<{ path: string[] }>}
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
-    try {
-        // 1. Reconstruct the backend endpoint from path segments
-        //    ['auth', 'login'] → '/auth/login'
-        //    ['notes', '5']    → '/notes/5'
-        const { path } = await params;
-        const endpoint = '/' + path.join('/');
+  try {
+    // 1. Reconstruct the backend endpoint from path segments
+    //    ['auth', 'login'] → '/auth/login'
+    //    ['notes', '5']    → '/notes/5'
+    const { path } = await params;
+    const endpoint = "/" + path.join("/");
 
-        // 2. Forward the Authorization header (JWT token) if the browser sent one
-        //    This allows authenticated requests to pass through to FastAPI
-        const token = request.headers.get("Authorization");
-        const headers: Record<string,string> = {
-            ...(token ? {Authorization: token} : {}),
-        };
+    // 2. Forward the Authorization header (JWT token) if the browser sent one
+    //    This allows authenticated requests to pass through to FastAPI
+    const token = request.headers.get("Authorization");
+    const headers: Record<string, string> = {
+      ...(token ? { Authorization: token } : {}),
+    };
 
-        // 3. Mirror the original HTTP method (GET, POST, PATCH, DELETE, etc.)
-        const fetchOptions: RequestInit = {
-            method: request.method,
-            headers,
-        };
+    // 3. Mirror the original HTTP method (GET, POST, PATCH, DELETE, etc.)
+    const fetchOptions: RequestInit = {
+      method: request.method,
+      headers,
+    };
 
-        // 4. Only read the request body for methods that carry data
-        //    GET and DELETE don't have bodies; POST, PUT, PATCH do
-        //    Using .text() instead of .json() avoids an unnecessary
-        //    parse → stringify round-trip (body is already a JSON string)
-        if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
-            fetchOptions.body = await request.text();
-        }
-
-        // 5. Forward the request to FastAPI via the backend utility
-        const response = await backendFetch(endpoint, fetchOptions);
-
-        // 6. Handle 204 No Content (e.g., successful DELETE)
-        //    204 has no response body, so calling .json() would crash
-        if (response.status === 204) {
-            return new NextResponse(null, { status: 204 });
-        }
-
-        // 7. Forward FastAPI's response (data + status code) to the browser
-        //    This includes both success (200, 201) and error (400, 401, 404) responses
-        const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
-
-    } catch (error) {
-        // 8. Catches proxy-level failures (FastAPI is down, network error, etc.)
-        //    NOT FastAPI validation errors — those are handled by step 7 above
-        return NextResponse.json(
-            { detail: 'Internal server error' },
-            { status: 500 }
-        );
+    // 4. Only read the request body for methods that carry data
+    //    GET and DELETE don't have bodies; POST, PUT, PATCH do
+    //    Using .text() instead of .json() avoids an unnecessary
+    //    parse → stringify round-trip (body is already a JSON string)
+    if (["POST", "PUT", "PATCH"].includes(request.method)) {
+      fetchOptions.body = await request.text();
     }
+
+    // 5. Forward the request to FastAPI via the backend utility
+    const response = await backendFetch(endpoint, fetchOptions);
+
+    // 6. Handle 204 No Content (e.g., successful DELETE)
+    //    204 has no response body, so calling .json() would crash
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    // 7. Forward FastAPI's response (data + status code) to the browser
+    //    This includes both success (200, 201) and error (400, 401, 404) responses
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    // 8. Catches proxy-level failures (FastAPI is down, network error, etc.)
+    //    NOT FastAPI validation errors — those are handled by step 7 above
+    return NextResponse.json(
+      { detail: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }
 
 /**

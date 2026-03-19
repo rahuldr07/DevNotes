@@ -11,11 +11,11 @@
  * 'use client' is required because we use hooks (useEffect, useRouter)
  * and read cookies (isAuthenticated uses js-cookie, a browser-only library).
  */
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
@@ -24,16 +24,21 @@ export default function Home() {
   // Checks for auth token in cookies and redirects accordingly
   useEffect(() => {
     if (isAuthenticated()) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     } else {
-      router.push('/auth/login');
+      router.push("/auth/login");
     }
-  },[router]);
+  }, [router]);
 
   // Brief loading state shown while the redirect is in progress
   return (
-    <div className='flex items-center justify-center min-h-screen'>
-      <p className='text-gray-600 dark:text-gray-400'>Redirecting...</p>
+    <div
+      className="flex items-center justify-center min-h-screen"
+      style={{ backgroundColor: "var(--bg-color)" }}
+    >
+      <p className="text-sm" style={{ color: "var(--sub-color)" }}>
+        Redirecting...
+      </p>
     </div>
   );
 }

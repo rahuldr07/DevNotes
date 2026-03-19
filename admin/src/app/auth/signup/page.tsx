@@ -13,179 +13,289 @@
  * Note: The backend does NOT return a token on signup, so we
  * redirect to login instead of auto-logging in.
  */
-'use client';
+"use client";
 
-import { useState,useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { saveToken } from '@/lib/auth';
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthLayout } from "@/components/AuthLayout";
 
-/**
- * Shape of the response from POST /auth/register.
- * Matches the UserResponse schema in FastAPI (backend/app/schemas/user.py).
- */
 interface SignupResponse {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    created_at: string;
-    updated_at: string | null;
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+  updated_at: string | null;
 }
 
+const labelStyle = {
+  color: "var(--sub-color)",
+  fontSize: "0.75rem",
+  letterSpacing: "0.05em",
+  textTransform: "uppercase" as const,
+};
+
 export default function SignUpPage() {
-    // Form state for all input fields
-    const [email,setEmail] = useState('');
-    const [name,setName] = useState('');
-    const [password,setPassword] = useState('');
-    const [error,setError] = useState('');
-    const [loading,setLoading] = useState(false);
-    const [confirmPassword,setConfirmPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-    const router = useRouter();
+  const clearField = (field: string) =>
+    setFieldErrors((p) => {
+      const n = { ...p };
+      delete n[field];
+      return n;
+    });
 
-    /**
-     * Form submission handler with client-side validation.
-     *
-     * Validates:
-     * - All fields are filled
-     * - Password matches confirmation
-     * - Password meets minimum length (8 chars)
-     *
-     * Then sends registration request to the backend.
-     */
-    const handleSignUp = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!name.trim()) e.name = "Name is required";
+    if (!email.trim()) e.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(email))
+      e.email = "Enter a valid email address";
+    if (!password) e.password = "Password is required";
+    else if (password.length < 8) e.password = "Must be at least 8 characters";
+    if (!confirmPassword) e.confirmPassword = "Please confirm your password";
+    else if (password !== confirmPassword)
+      e.confirmPassword = "Passwords do not match";
+    return e;
+  };
 
-        // Validate all fields are filled
-        if ( !name || !email || !password || !confirmPassword) {
-            setError('Please fill in all fields');
-            return;
-        }
+  const handleSignUp = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const errors = validate();
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+      setFieldErrors({});
+      try {
+        setLoading(true);
+        setServerError("");
+        await api.post<SignupResponse>("/auth/register", {
+          name,
+          email,
+          password,
+        });
+        router.push("/auth/login");
+      } catch (err: any) {
+        setServerError(err.message || "Signup failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [name, email, password, confirmPassword, router],
+  );
 
-        // Validate password confirmation matches
-        if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
-        
-        // Validate minimum password length
-        if (password.length < 8) {
-            setError("Password must be at least 8 characters long");
-            return;
-        }
+  const inputStyle = (field: string) => ({
+    backgroundColor: "var(--input-bg)",
+    border: `1px solid ${fieldErrors[field] ? "var(--error-color)" : "var(--border-color)"}`,
+    color: "var(--text-color)",
+  });
 
-        try {
-            setLoading(true);
-            setError('');
+  return (
+    <AuthLayout breadcrumb="auth / signup">
+      <div
+        className="w-full max-w-md rounded-2xl p-8"
+        style={{
+          backgroundColor: "var(--sub-alt-color)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <h1
+          className="text-2xl font-bold mb-1"
+          style={{ color: "var(--text-color)" }}
+        >
+          Create account
+        </h1>
+        <p className="text-sm mb-7" style={{ color: "var(--sub-color)" }}>
+          Join DevNotes and start writing
+        </p>
 
-            // Send registration request through the proxy:
-            // Browser → /api/auth/register → FastAPI → creates user
-            const response = await api.post<SignupResponse>('/auth/register', {
-                name,
-                email,
-                password,
-            });
+        {serverError && (
+          <Alert
+            variant="destructive"
+            className="mb-5"
+            style={{
+              borderColor: "var(--error-color)",
+              backgroundColor: "transparent",
+            }}
+          >
+            <AlertCircle size={14} />
+            <AlertDescription style={{ color: "var(--error-color)" }}>
+              {serverError}
+            </AlertDescription>
+          </Alert>
+        )}
 
-            // Redirect to login page (backend doesn't return a token on signup)
-            router.push("/auth/login");
-        }catch (err:any) {
-            // Display error from FastAPI (e.g., "Email already registered")
-            setError(err.message || 'Signup failed');
-        } finally {
-            setLoading(false);
-        }
-    },[email,password,confirmPassword,router]);
-
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6 dark:text-white">Sign Up</h1>
-
-                {error && (
-                    <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded mb-4">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSignUp}>
-                    {/* Name Input */}
-                    <div className="mb-4">
-                        <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                            Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName( e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                            placeholder='John Doe'
-                            />
-                    </div>
-                    
-                    {/* Email Input */}
-                    <div className="mb-4">
-                        <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail( e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                            placeholder='user@example.com'
-                        />
-                    </div>
-
-                    {/*Password Input */}
-                    <div className="mb-6">
-                        <label className='block text-gray-700 dark:text-gray-300 font-bold mb-2'>
-                            Password
-                        </label>
-                        <input
-                            type='password'
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white'
-                            placeholder='••••••••'
-                        />
-                        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
-                            Minimum 8 characters
-                        </p>
-                    </div>
-
-                    {/*Confirm Password Input */}
-                    <div className="mb-6">
-                        <label className='block text-gray-700 dark:text-gray-300 font-bold mb-2'>
-                            Confirm Password
-                        </label>
-                        <input
-                            type='password'
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white'
-                            placeholder='••••••••'
-                        />
-                    </div>
-
-                    {/* Sign Up Button */}
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className='w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400'
-                    >
-                        {loading ? 'Signing up...' : 'Sign Up'}
-                    </button>
-                </form>
-
-                {/* Signup Link */}
-                <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
-                    Already have an account?{' '}
-                    <a href='/auth/login' className="text-blue-600 hover:underline">
-                        Login
-                    </a>
+        <form onSubmit={handleSignUp} className="space-y-4" noValidate>
+          {/* Row 1: Name + Email */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name" style={labelStyle}>
+                Name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  clearField("name");
+                }}
+                placeholder="John Doe"
+                autoComplete="name"
+                style={inputStyle("name")}
+                className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+              />
+              {fieldErrors.name && (
+                <p className="text-xs" style={{ color: "var(--error-color)" }}>
+                  {fieldErrors.name}
                 </p>
+              )}
             </div>
-        </div>
-    );
+            <div className="space-y-1.5">
+              <Label htmlFor="email" style={labelStyle}>
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearField("email");
+                }}
+                placeholder="you@example.com"
+                autoComplete="email"
+                style={inputStyle("email")}
+                className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+              />
+              {fieldErrors.email && (
+                <p className="text-xs" style={{ color: "var(--error-color)" }}>
+                  {fieldErrors.email}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Row 2: Password + Confirm */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="password" style={labelStyle}>
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearField("password");
+                  }}
+                  placeholder="min. 8 chars"
+                  autoComplete="new-password"
+                  style={inputStyle("password")}
+                  className="h-11 pr-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                  style={{ color: "var(--sub-color)" }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="text-xs" style={{ color: "var(--error-color)" }}>
+                  {fieldErrors.password}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword" style={labelStyle}>
+                Confirm
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    clearField("confirmPassword");
+                  }}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  style={inputStyle("confirmPassword")}
+                  className="h-11 pr-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                  style={{ color: "var(--sub-color)" }}
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {fieldErrors.confirmPassword && (
+                <p className="text-xs" style={{ color: "var(--error-color)" }}>
+                  {fieldErrors.confirmPassword}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full h-11 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 mt-2"
+            style={{
+              backgroundColor: "var(--main-color)",
+              color: "var(--bg-color)",
+              border: "none",
+            }}
+          >
+            {loading ? "Creating account..." : "Create account"}
+          </Button>
+        </form>
+
+        <p
+          className="mt-5 text-center text-sm"
+          style={{ color: "var(--sub-color)" }}
+        >
+          Already have an account?{" "}
+          <Link
+            href="/auth/login"
+            className="font-medium transition-opacity hover:opacity-70"
+            style={{ color: "var(--main-color)" }}
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
+  );
 }

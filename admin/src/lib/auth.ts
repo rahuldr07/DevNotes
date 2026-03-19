@@ -10,21 +10,21 @@
  *
  * Cookie name: "auth_token"
  */
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 
 /** Store the JWT token in a browser cookie after successful login */
 export function saveToken(token: string) {
-    Cookies.set("auth_token",token);
+  Cookies.set("auth_token", token);
 }
 
 /** Retrieve the JWT token from the cookie (undefined if not logged in) */
-export function getToken():string | undefined {
-    return Cookies.get("auth_token");
+export function getToken(): string | undefined {
+  return Cookies.get("auth_token");
 }
 
 /** Remove the JWT token — used during logout */
 export function removeToken() {
-    Cookies.remove("auth_token");
+  Cookies.remove("auth_token");
 }
 
 /**
@@ -37,5 +37,5 @@ export function removeToken() {
  * Token validation happens on the backend (FastAPI).
  */
 export function isAuthenticated(): boolean {
-    return !!getToken();
+  return !!getToken();
 }

@@ -32,7 +32,13 @@ router = APIRouter(prefix="/notes",tags=["notes"])
 # - Depends(get_current_user) extracts user from JWT — note is linked to this user
 @router.post("/create",response_model=NoteResponse,status_code=201)
 def my_notes(note: NoteCreate,user= Depends(get_current_user),db :Session = Depends(get_db)):
-    return note_service.create_note(db, user_id=user.id, title=note.title, content=note.content)
+    return note_service.create_note(
+        db,
+        user_id=user.id,
+        title=note.title,
+        content=note.content,
+        tags=note.tags,
+    )
 
 # ════════════════════════════════════════════
 #  PATCH /notes/{id}/update — Update a note
@@ -43,7 +49,14 @@ def my_notes(note: NoteCreate,user= Depends(get_current_user),db :Session = Depe
 # - Service layer verifies the note belongs to the authenticated user
 @router.patch("/{id}/update",response_model=NoteResponse,status_code=200)
 def update_note(id: int, note: NoteUpdate,user= Depends(get_current_user),db :Session = Depends(get_db)):
-    return note_service.update_note(db, note_id=id, title=note.title, content=note.content,user_id=user.id)
+    return note_service.update_note(
+        db,
+        note_id=id,
+        title=note.title,
+        content=note.content,
+        tags=note.tags,
+        user_id=user.id,
+    )
 
 # ════════════════════════════════════════════
 #  DELETE /notes/{id}/delete — Delete a note
@@ -72,3 +85,12 @@ def get_my_notes(user= Depends(get_current_user),db :Session = Depends(get_db)):
 @router.get("/{id}",response_model=NoteResponse,status_code=200)
 def get_note(id: int, user= Depends(get_current_user),db : Session = Depends(get_db)):
     return note_service.get_note(db, note_id=id,user_id=user.id)
+
+# ════════════════════════════════════════════
+#  PATCH /notes/{id}/pin — Toggle pin on a note
+# ════════════════════════════════════════════
+# - Flips is_pinned: true → false, false → true
+# - Pinned notes are sorted to the top on the frontend
+@router.patch("/{id}/pin", response_model=NoteResponse, status_code=200)
+def pin_note(id: int, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return note_service.toggle_pin(db, note_id=id, user_id=user.id)

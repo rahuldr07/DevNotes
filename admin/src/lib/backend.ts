@@ -50,16 +50,16 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
  *   });
  */
 export async function backendFetch(
-    endpoint: string,
-    options: RequestInit = {}
+  endpoint: string,
+  options: RequestInit = {},
 ): Promise<Response> {
-    return fetch(`${BACKEND_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            // Default to JSON — FastAPI expects this
-            "Content-Type": "application/json",
-            // Caller's headers (e.g., Authorization) override/merge with defaults
-            ...options.headers,
-        },
-    });
+  return fetch(`${BACKEND_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      // Default to JSON — FastAPI expects this
+      "Content-Type": "application/json",
+      // Caller's headers (e.g., Authorization) override/merge with defaults
+      ...options.headers,
+    },
+  });
 }

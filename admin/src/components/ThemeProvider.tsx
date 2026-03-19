@@ -1,130 +1,157 @@
-/**
- * ThemeProvider — Manages dark/light mode across the entire app.
- *
- * How it works:
- * 1. On first load, checks localStorage for a saved theme preference
- * 2. If none exists, falls back to the OS/browser preference (prefers-color-scheme)
- * 3. Adds or removes the 'dark' class on the <html> element
- * 4. globals.css has .dark { ... } CSS variables that activate when
- *    the 'dark' class is present → all dark: Tailwind classes take effect
- *
- * Uses React Context so any component can access the theme state
- * and toggle function without prop drilling (passing props through every level).
- *
- * Wrapped around the entire app in src/app/layout.tsx:
- *   <ThemeProvider>
- *     {children}
- *   </ThemeProvider>
- */
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
 
-/** The two possible theme values */
-type Theme = 'light' | 'dark';
+/* ─── Theme definitions ──────────────────────────────────────────────────── */
 
-/** Shape of the context — current theme + function to toggle it */
-interface ThemeContextType {
-    theme: Theme;
-    toggleTheme: () => void;
+export type ThemeId =
+  | "catppuccin-mocha"
+  | "catppuccin-latte"
+  | "serika-dark"
+  | "nord"
+  | "paper"
+  | "midnight";
+
+export interface ThemeMeta {
+  id: ThemeId;
+  name: string;
+  isDark: boolean;
+  /** 4 preview swatch colors: [bg, main, sub-alt, text] */
+  swatches: [string, string, string, string];
 }
 
-/**
- * React Context — a way to pass data through the component tree
- * without manually passing props at every level.
- *
- * createContext(undefined) means there's no default value —
- * components MUST be inside <ThemeProvider> to access it.
- */
-const themeContext = createContext<ThemeContextType | undefined>(undefined);
+export const THEMES: ThemeMeta[] = [
+  {
+    id: "catppuccin-mocha",
+    name: "Catppuccin Mocha",
+    isDark: true,
+    swatches: ["#1e1e2e", "#cba6f7", "#313244", "#cdd6f4"],
+  },
+  {
+    id: "catppuccin-latte",
+    name: "Catppuccin Latte",
+    isDark: false,
+    swatches: ["#eff1f5", "#8839ef", "#dce0e8", "#4c4f69"],
+  },
+  {
+    id: "serika-dark",
+    name: "Serika Dark",
+    isDark: true,
+    swatches: ["#323437", "#e2b714", "#2c2e31", "#d1d0c5"],
+  },
+  {
+    id: "nord",
+    name: "Nord",
+    isDark: true,
+    swatches: ["#2e3440", "#88c0d0", "#3b4252", "#eceff4"],
+  },
+  {
+    id: "paper",
+    name: "Paper",
+    isDark: false,
+    swatches: ["#f5f0e8", "#b5451b", "#e8e0d0", "#3d2b1f"],
+  },
+  {
+    id: "midnight",
+    name: "Midnight",
+    isDark: true,
+    swatches: ["#09090b", "#6366f1", "#111113", "#fafafa"],
+  },
+];
+
+/* ─── Context shape ──────────────────────────────────────────────────────── */
+
+interface ThemeContextType {
+  theme: ThemeId;
+  setTheme: (id: ThemeId) => void;
+  themes: ThemeMeta[];
+  currentThemeMeta: ThemeMeta;
+  /** Whether user has completed the first-launch theme onboarding */
+  isOnboarded: boolean;
+  setOnboarded: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const STORAGE_KEY = "devnotes-theme";
+const ONBOARDED_KEY = "devnotes-onboarded";
+const DEFAULT_THEME: ThemeId = "catppuccin-mocha";
+
+/* ─── Provider ───────────────────────────────────────────────────────────── */
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    // Initialize as 'light' — safe default for server-side rendering
-    // (localStorage isn't available on the server)
-    const [theme, setTheme] = useState<Theme>('light');
-    // Track whether the component has mounted in the browser
-    const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<ThemeId>(DEFAULT_THEME);
+  const [isOnboarded, setIsOnboarded] = useState(true); // true prevents flash
+  const [mounted, setMounted] = useState(false);
 
-    /**
-     * On first mount (client-side only):
-     * 1. Check localStorage for a saved preference
-     * 2. If none, check the OS/browser dark mode setting
-     * 3. Mark as mounted so we can safely render
-     *
-     * Why useEffect? localStorage and window.matchMedia are browser-only APIs.
-     * They don't exist on the server, so we wait until the component mounts.
-     */
-    useEffect(() => {
-        const stored = localStorage.getItem('theme') as Theme | null;
+  /* On mount: read saved theme + onboarding status from localStorage */
+  useEffect(() => {
+    const savedTheme = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
+    const savedOnboarded = localStorage.getItem(ONBOARDED_KEY) === "true";
 
-        if (stored) {
-            // User previously chose a theme — respect it
-            setTheme(stored);
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // No saved preference — check if OS is in dark mode
-            setTheme('dark');
-        }
-
-        // Signal that we're in the browser and have read the real preference
-        setMounted(true);
-    },[]);
-
-    /**
-     * Whenever the theme changes, sync it to:
-     * 1. The <html> element's class list (for Tailwind dark: classes)
-     * 2. localStorage (so it persists across page reloads)
-     *
-     * When <html> has class="dark", every Tailwind dark: class activates:
-     *   bg-white dark:bg-gray-800 → bg-gray-800 is applied
-     */
-    useEffect(() => {
-        if (!mounted) return; // Don't run on initial server render
-
-        const root = document.documentElement; // The <html> element
-
-        if (theme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-
-        // Persist to localStorage so theme survives page reloads
-        localStorage.setItem('theme', theme);
-    }, [theme, mounted]);
-
-    /** Toggles between light and dark using functional state update */
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
-    };
-
-    // Prevent flash of wrong theme (FOUC):
-    // Render nothing until we know the correct theme from localStorage/OS.
-    // This avoids showing light theme briefly before switching to dark.
-    if (!mounted) {
-        return null;
+    if (savedTheme && THEMES.some((t) => t.id === savedTheme)) {
+      setThemeState(savedTheme);
     }
 
-    // Provide theme state and toggle function to all child components
-    return (
-        <themeContext.Provider value={{ theme, toggleTheme}}>
-            {children}
-        </themeContext.Provider>
-    );
+    // If never onboarded, show the picker dialog
+    setIsOnboarded(savedOnboarded);
+    setMounted(true);
+  }, []);
+
+  /* Apply theme to <html> whenever it changes */
+  useEffect(() => {
+    if (!mounted) return;
+
+    const root = document.documentElement;
+    const meta = THEMES.find((t) => t.id === theme)!;
+
+    // Set data-theme attribute — triggers CSS variable theme blocks in globals.css
+    root.setAttribute("data-theme", theme);
+
+    // Also toggle .dark class so shadcn components get their dark mode styles
+    if (meta.isDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+
+    localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme, mounted]);
+
+  const setTheme = (id: ThemeId) => setThemeState(id);
+
+  const setOnboarded = () => {
+    localStorage.setItem(ONBOARDED_KEY, "true");
+    setIsOnboarded(true);
+  };
+
+  const currentThemeMeta = THEMES.find((t) => t.id === theme)!;
+
+  // Prevent flash of wrong theme — render nothing until localStorage is read
+  if (!mounted) return null;
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        themes: THEMES,
+        currentThemeMeta,
+        isOnboarded,
+        setOnboarded,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
-/**
- * Custom hook — shortcut for consuming the theme context.
- *
- * Usage in any component:
- *   const { theme, toggleTheme } = useTheme();
- *
- * Throws an error if used outside of <ThemeProvider> — this is
- * intentional to catch bugs early during development.
- */
+/* ─── Hook ───────────────────────────────────────────────────────────────── */
+
 export function useTheme() {
-    const context = useContext(themeContext);
-    if (!context) {
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
-    return context;
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
 }

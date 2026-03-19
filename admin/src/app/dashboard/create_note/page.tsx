@@ -9,10 +9,10 @@
  *   - POST to /api/notes/create on submit
  *   - Start with empty title and content fields
  */
-'use client';
+"use client";
 
 import NoteForm from "@/components/ui/NoteForm";
 
 export default function NewNotePage() {
-    return <NoteForm mode="create"/>;
+  return <NoteForm mode="create" />;
 }

@@ -5,8 +5,29 @@ from app.repositories import note_repo
 from app.models.note import Note
 
 
+def normalize_tags(tags: list[str] | None) -> list[str]:
+    """Trim, lowercase, deduplicate tags while preserving first occurrence order."""
+    if not tags:
+        return []
+    result: list[str] = []
+    seen: set[str] = set()
+    for tag in tags:
+        cleaned = "-".join(tag.strip().lower().split())
+        if not cleaned or cleaned in seen:
+            continue
+        seen.add(cleaned)
+        result.append(cleaned)
+    return result
 
-def create_note(db: Session, user_id: int, title: str, content: str)-> Note | None:
+
+
+def create_note(
+    db: Session,
+    user_id: int,
+    title: str,
+    content: str,
+    tags: list[str] | None = None,
+) -> Note | None:
     """
     Creates a new note for the specified user.
 
@@ -24,10 +45,24 @@ def create_note(db: Session, user_id: int, title: str, content: str)-> Note | No
     Returns:
         The newly created Note model instance.
     """
-    new_note = note_repo.create(db,user_id=user_id, title=title, content=content)
+    normalized_tags = normalize_tags(tags)
+    new_note = note_repo.create(
+        db,
+        user_id=user_id,
+        title=title,
+        content=content,
+        tags=normalized_tags,
+    )
     return new_note
 
-def update_note(db:Session,user_id: int, note_id: int, title: str, content: str) -> Note | None:
+def update_note(
+    db: Session,
+    user_id: int,
+    note_id: int,
+    title: str | None,
+    content: str | None,
+    tags: list[str] | None = None,
+) -> Note | None:
     """
     Updates an existing note for the specified user.
 
@@ -48,7 +83,14 @@ def update_note(db:Session,user_id: int, note_id: int, title: str, content: str)
     new_note = note_repo.get_by_note_id(db, note_id=note_id) 
     if new_note:
         if new_note.user_id == user_id:
-            return note_repo.update(db, note_id=note_id, title=title, content=content)
+            normalized_tags = normalize_tags(tags) if tags is not None else None
+            return note_repo.update(
+                db,
+                note_id=note_id,
+                title=title,
+                content=content,
+                tags=normalized_tags,
+            )
         else:
             raise HTTPException(status_code=403, detail="Note does not belong to the user")
     else:
@@ -119,3 +161,19 @@ def get_note(db: Session, user_id: int, note_id: int) -> Note | None:
             raise HTTPException(status_code=403, detail="Note does not belong to the user")
     else:
         raise HTTPException(status_code=404, detail="Note not found")
+
+
+def toggle_pin(db: Session, user_id: int, note_id: int) -> Note:
+    """
+    Toggles the is_pinned flag on a note.
+
+    Business rules:
+    1. The note must belong to the authenticated user.
+    2. Flips is_pinned: True → False, False → True.
+    """
+    note = note_repo.get_by_note_id(db, note_id=note_id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    if note.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Note does not belong to the user")
+    return note_repo.toggle_pin(db, note_id=note_id)

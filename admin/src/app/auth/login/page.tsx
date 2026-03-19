@@ -16,136 +16,216 @@
  * 'use client' — Required because this page uses React hooks
  * (useState, useCallback, useRouter) and handles user interactions.
  */
-'use client';
+"use client";
 
-import { useState,useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { saveToken } from '@/lib/auth';
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
+import { saveToken } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthLayout } from "@/components/AuthLayout";
 
-/**
- * Shape of the response from POST /auth/login.
- * FastAPI returns: { "access_token": "jwt...", "token_type": "bearer" }
- */
 interface LoginResponse {
-    access_token: string;
-    token_type: string;
+  access_token: string;
+  token_type: string;
 }
 
+const labelStyle = {
+  color: "var(--sub-color)",
+  fontSize: "0.75rem",
+  letterSpacing: "0.05em",
+  textTransform: "uppercase" as const,
+};
+
 export default function LoginPage() {
-    // Form state — each input has its own state variable
-    // React re-renders the component when any of these change,
-    // keeping the UI in sync with what the user types
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');       // Error message to display
-    const [loading, setLoading] = useState(false); // Disables button while submitting
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-    // Next.js router for programmatic navigation (router.push)
-    const router = useRouter();
+  const validate = () => {
+    const e: { email?: string; password?: string } = {};
+    if (!email.trim()) e.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(email))
+      e.email = "Enter a valid email address";
+    if (!password) e.password = "Password is required";
+    return e;
+  };
 
-    /**
-     * Form submission handler.
-     *
-     * useCallback memoizes this function — it's only recreated when
-     * email, password, or router change. Without useCallback, a new
-     * function would be created on every render (minor optimization).
-     *
-     * @param e — The form submit event. e.preventDefault() stops the
-     *            browser from doing a full page reload (default form behavior).
-     */
-    const handleLogin = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
+  const handleLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const errors = validate();
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+      setFieldErrors({});
+      try {
+        setLoading(true);
+        setServerError("");
+        const response = await api.post<LoginResponse>("/auth/login", {
+          email,
+          password,
+        });
+        saveToken(response.access_token);
+        router.push("/dashboard");
+      } catch (err: any) {
+        setServerError(err.message || "Invalid credentials. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [email, password, router],
+  );
 
-        // Basic client-side validation before sending to the backend
-        if (!email || !password) {
-            setError('Please enter both email and password');
-            return;
-        }
+  return (
+    <AuthLayout breadcrumb="auth / login">
+      {/* Glassy card */}
+      <div
+        className="w-full max-w-sm rounded-2xl p-8"
+        style={{
+          backgroundColor: "var(--sub-alt-color)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.12)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <h1
+          className="text-2xl font-bold mb-1"
+          style={{ color: "var(--text-color)" }}
+        >
+          Welcome back
+        </h1>
+        <p className="text-sm mb-7" style={{ color: "var(--sub-color)" }}>
+          Sign in to continue to your notes
+        </p>
 
-        try {
-            setLoading(true);  // Show loading state on the button
-            setError('');      // Clear any previous error
+        {serverError && (
+          <Alert
+            variant="destructive"
+            className="mb-5"
+            style={{
+              borderColor: "var(--error-color)",
+              backgroundColor: "transparent",
+            }}
+          >
+            <AlertCircle size={14} />
+            <AlertDescription style={{ color: "var(--error-color)" }}>
+              {serverError}
+            </AlertDescription>
+          </Alert>
+        )}
 
-            // Send login request through the proxy:
-            // Browser → /api/auth/login → FastAPI → returns JWT
-            const response = await api.post<LoginResponse>('/auth/login', {
-                email,
-                password,
-            });
+        <form onSubmit={handleLogin} className="space-y-5" noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" style={labelStyle}>
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email)
+                  setFieldErrors((p) => ({ ...p, email: undefined }));
+              }}
+              placeholder="you@example.com"
+              autoComplete="email"
+              style={{
+                backgroundColor: "var(--input-bg)",
+                border: `1px solid ${fieldErrors.email ? "var(--error-color)" : "var(--border-color)"}`,
+                color: "var(--text-color)",
+              }}
+              className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+            />
+            {fieldErrors.email && (
+              <p className="text-xs" style={{ color: "var(--error-color)" }}>
+                {fieldErrors.email}
+              </p>
+            )}
+          </div>
 
-            // Store the JWT token in a browser cookie for future requests
-            saveToken(response.access_token);
-
-            // Navigate to the dashboard
-            router.push('/dashboard');
-        }catch (err:any) {
-            // Display error from FastAPI (e.g., "Invalid credentials")
-            setError(err.message || 'Login failed');
-        }finally {
-            // Always reset loading state, whether success or failure
-            setLoading(false);
-        }
-    },[email,password,router]);
-
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6 dark:text-white">Login</h1>
-
-                {error && (
-                    <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded mb-4">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleLogin}>
-                    {/* Email Input */}
-                    <div className="mb-4">
-                        <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail( e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                            placeholder='user@example.com'
-                        />
-                    </div>
-
-                    {/*Password Input */}
-                    <div className="mb-6">
-                        <label className='block text-gray-700 dark:text-gray-300 font-bold mb-2'>
-                            Password
-                        </label>
-                        <input
-                            type='password'
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white'
-                            placeholder='••••••••'
-                        />
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className='w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400'
-                    >
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                </form>
-
-                {/* Signup Link */}
-                <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
-                    Dont Have an account?
-                    <a href='/auth/signup' className="text-blue-600 hover:underline">
-                        Sign Up
-                    </a>
-                </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="password" style={labelStyle}>
+              Password
+            </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password)
+                    setFieldErrors((p) => ({ ...p, password: undefined }));
+                }}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                style={{
+                  backgroundColor: "var(--input-bg)",
+                  border: `1px solid ${fieldErrors.password ? "var(--error-color)" : "var(--border-color)"}`,
+                  color: "var(--text-color)",
+                }}
+                className="h-11 pr-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                style={{ color: "var(--sub-color)" }}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
-        </div>
-    );
+            {fieldErrors.password && (
+              <p className="text-xs" style={{ color: "var(--error-color)" }}>
+                {fieldErrors.password}
+              </p>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full h-11 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{
+              backgroundColor: "var(--main-color)",
+              color: "var(--bg-color)",
+              border: "none",
+            }}
+          >
+            {loading ? "Signing in..." : "Sign in"}
+          </Button>
+        </form>
+
+        <p
+          className="mt-5 text-center text-sm"
+          style={{ color: "var(--sub-color)" }}
+        >
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/auth/signup"
+            className="font-medium transition-opacity hover:opacity-70"
+            style={{ color: "var(--main-color)" }}
+          >
+            Sign up
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
+  );
 }

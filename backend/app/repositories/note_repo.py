@@ -14,7 +14,13 @@ from sqlalchemy.orm import Session
 from app.models.note import Note
 
 
-def create(db: Session, user_id: int, title: str, content: str)-> Note | None:
+def create(
+    db: Session,
+    user_id: int,
+    title: str,
+    content: str,
+    tags: list[str] | None = None,
+) -> Note | None:
     """
     Creates a new note in the database.
 
@@ -23,7 +29,7 @@ def create(db: Session, user_id: int, title: str, content: str)-> Note | None:
     2. db.commit()  → Writes to the database
     3. db.refresh() → Reloads to get DB-generated fields (id, created_at)
     """
-    oNote = Note(user_id=user_id, title=title, content=content)
+    oNote = Note(user_id=user_id, title=title, content=content, tags=tags or [])
     db.add(oNote)
     db.commit()
     db.refresh(oNote)
@@ -40,7 +46,13 @@ def get_by_note_id(db: Session, note_id: int) -> Note | None:
     note = db.query(Note).filter(Note.id == note_id).first()
     return note
 
-def update(db: Session, note_id: int, title: str, content: str) -> Note | None:
+def update(
+    db: Session,
+    note_id: int,
+    title: str | None,
+    content: str | None,
+    tags: list[str] | None = None,
+) -> Note | None:
     """
     Updates an existing note's title and/or content.
 
@@ -50,10 +62,12 @@ def update(db: Session, note_id: int, title: str, content: str) -> Note | None:
     """
     oNote = db.query(Note).filter(Note.id == note_id).first()
     if oNote:
-        if title:
+        if title is not None:
             oNote.title = title
-        if content:
+        if content is not None:
             oNote.content = content
+        if tags is not None:
+            oNote.tags = tags
         db.commit()
         db.refresh(oNote)
         return oNote
@@ -81,3 +95,12 @@ def get_my_notes(db:Session, user_id: int) -> list[Note]:
     """
     notes = db.query(Note).filter(Note.user_id == user_id).all()
     return notes
+
+def toggle_pin(db: Session, note_id: int) -> Note:
+    """Flips is_pinned on a note and returns the updated note."""
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if note:
+        note.is_pinned = not note.is_pinned
+        db.commit()
+        db.refresh(note)
+    return note

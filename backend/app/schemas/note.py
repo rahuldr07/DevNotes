@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
@@ -12,6 +12,7 @@ class NoteCreate(BaseModel):
     """
     title: str
     content: str
+    tags: list[str] = Field(default_factory=list)
 
 class NoteResponse(BaseModel):
     """
@@ -25,6 +26,8 @@ class NoteResponse(BaseModel):
     user_id: int
     title: str
     content: str
+    tags: list[str] = Field(default_factory=list)
+    is_pinned: bool = False
     created_at: datetime
     updated_at: datetime | None = None  # None because it's null until first update
 
@@ -44,3 +47,4 @@ class NoteUpdate(BaseModel):
     """
     title: str | None = None
     content: str | None = None
+    tags: list[str] | None = None
