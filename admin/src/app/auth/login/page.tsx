@@ -18,7 +18,7 @@
  */
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthLayout } from "@/components/AuthLayout";
+import { encryptData, decryptData, type EncryptedData } from "../../../utils/crypto";
 
 interface LoginResponse {
   access_token: string;
@@ -45,6 +46,7 @@ const labelStyle = {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
@@ -53,6 +55,32 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const loadCredentials = async () => {
+      try {
+        const stored = localStorage.getItem("secure_credentials");
+        if (stored) {
+          const { email, encrypted }: { email: string; encrypted: EncryptedData } =
+            JSON.parse(stored);
+          
+          if (email && encrypted) {
+            setEmail(email);
+            const decryptedPassword = await decryptData(email, encrypted);
+            setPassword(decryptedPassword);
+            setRememberMe(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load saved credentials:", err);
+        // If decryption fails (e.g. data corruption), clear storage
+        localStorage.removeItem("secure_credentials");
+      }
+    };
+
+    loadCredentials();
+  }, []);
 
   const validate = () => {
     const e: { email?: string; password?: string } = {};
@@ -79,7 +107,25 @@ export default function LoginPage() {
           email,
           password,
         });
-        saveToken(response.access_token);
+        
+        // Handle "Remember Me" - Encrypt and store credentials if checked
+        if (rememberMe) {
+          try {
+            const encrypted = await encryptData(email, password);
+            localStorage.setItem(
+              "secure_credentials",
+              JSON.stringify({ email, encrypted })
+            );
+          } catch (cryptoError) {
+            console.error("Encryption failed:", cryptoError);
+            // Non-blocking error - login succeeds even if remember me fails
+          }
+        } else {
+          localStorage.removeItem("secure_credentials");
+        }
+
+        // Save token (session cookie only, as requested)
+        saveToken(response.access_token, { remember: false });
         router.push("/dashboard");
       } catch (err: any) {
         setServerError(err.message || "Invalid credentials. Please try again.");
@@ -87,7 +133,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     },
-    [email, password, router],
+    [email, password, rememberMe, router],
   );
 
   return (
@@ -197,6 +243,24 @@ export default function LoginPage() {
               </p>
             )}
           </div>
+
+          <label
+            htmlFor="remember-me"
+            className="flex items-center gap-2.5 text-sm cursor-pointer select-none"
+            style={{ color: "var(--sub-color)" }}
+          >
+            <input
+              id="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded-sm"
+              style={{
+                accentColor: "var(--main-color)",
+              }}
+            />
+            Remember me
+          </label>
 
           <Button
             type="submit"
