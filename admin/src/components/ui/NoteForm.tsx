@@ -13,16 +13,18 @@
  */
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useSettings } from "@/hooks/useSettings";
+import { api } from "@/lib/api";
 import { normalizeTag, normalizeTags, stripMarkdown } from "@/lib/notes";
-import dynamic from "next/dynamic";
+
+import { SharePopover } from "@/components/SharePopover";
 
 // Dynamically import to avoid SSR issues with TipTap
 const RichEditor = dynamic(() => import("@/components/ui/RichEditor"), {
@@ -35,6 +37,9 @@ interface NoteFormProps {
   initialTitle?: string;
   initialContent?: string;
   initialTags?: string[];
+  initialShareUuid?: string | null;
+  initialPublished?: boolean;
+  initialCommunity?: boolean;
 }
 
 interface NoteResponse {
@@ -44,6 +49,9 @@ interface NoteResponse {
   tags: string[];
   created_at: string;
   updated_at: string | null;
+  share_uuid: string | null;
+  is_published: boolean;
+  is_community: boolean;
 }
 
 export default function NoteForm({
@@ -52,6 +60,9 @@ export default function NoteForm({
   initialContent = "",
   initialTags = [],
   noteId,
+  initialShareUuid = null,
+  initialPublished = false,
+  initialCommunity = false,
 }: NoteFormProps) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -149,11 +160,12 @@ export default function NoteForm({
         await gooeyToast.promise(savePromise, {
           loading: mode === "create" ? "Creating note…" : "Saving changes…",
           success: mode === "create" ? "Note created!" : "Changes saved",
-          error: (err: any) =>
-            err?.message ||
-            (mode === "create"
+          error: (err: unknown) => {
+            if (err instanceof Error) return err.message;
+            return mode === "create"
               ? "Failed to create note"
-              : "Failed to save note"),
+              : "Failed to save note";
+          },
         });
         router.push("/dashboard");
       } catch {
@@ -169,20 +181,32 @@ export default function NoteForm({
     <div className="max-w-3xl mx-auto">
       {/* Back + breadcrumb */}
       <div className="flex items-center justify-between mb-8">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 text-sm transition-opacity hover:opacity-70"
-          style={{ color: "var(--sub-color)" }}
-        >
-          <ArrowLeft size={14} />
-          back to notes
-        </Link>
-        <span
-          className="text-xs font-mono tracking-widest uppercase"
-          style={{ color: "var(--sub-color)" }}
-        >
-          {mode === "create" ? "new note" : "editing"}
-        </span>
+        <div className="flex items-center gap-4">
+            <Link
+            href="/dashboard"
+            className="flex items-center gap-2 text-sm transition-opacity hover:opacity-70"
+            style={{ color: "var(--sub-color)" }}
+            >
+            <ArrowLeft size={14} />
+            back to notes
+            </Link>
+            <span
+            className="text-xs font-mono tracking-widest uppercase"
+            style={{ color: "var(--sub-color)", opacity: 0.5 }}
+            >
+            {mode === "create" ? "new note" : "editing"}
+            </span>
+        </div>
+        
+        {/* Share Button - Only in edit mode */}
+        {mode === "edit" && noteId && (
+            <SharePopover 
+                noteId={noteId} 
+                initialPublished={initialPublished} 
+                initialCommunity={initialCommunity}
+                initialShareUuid={initialShareUuid}
+            />
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,12 +245,12 @@ export default function NoteForm({
 
         {/* Tags input */}
         <div className="space-y-2">
-          <label
-            className="text-xs uppercase tracking-wider font-mono"
+          <span
+            className="text-xs uppercase tracking-wider font-mono block"
             style={{ color: "var(--sub-color)" }}
           >
             Tags
-          </label>
+          </span>
           <div
             className="rounded-lg px-3 py-2"
             style={{
@@ -247,7 +271,8 @@ export default function NoteForm({
                     backgroundColor:
                       "color-mix(in srgb, var(--main-color) 14%, transparent)",
                     color: "var(--main-color)",
-                    border: "1px solid color-mix(in srgb, var(--main-color) 40%, transparent)",
+                    border:
+                      "1px solid color-mix(in srgb, var(--main-color) 40%, transparent)",
                   }}
                   title="Remove tag"
                 >

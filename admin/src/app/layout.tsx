@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { SoundProvider } from "@/components/SoundProvider";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { GoeyToaster } from "@/components/ui/goey-toaster";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
+import { SoundProvider } from "@/components/SoundProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { GoeyToaster } from "@/components/ui/goey-toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({
   subsets: ["latin"],

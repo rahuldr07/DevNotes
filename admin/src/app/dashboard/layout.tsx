@@ -1,19 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { FileText, LogOut, Volume2, VolumeX, Compass, Library } from "lucide-react";
 import Link from "next/link";
-import { LogOut, FileText, Volume2, VolumeX } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
+import { useRouter, usePathname } from "next/navigation";
 import { useSound } from "@/components/SoundProvider";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
-import { removeToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
+import { removeToken } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
@@ -21,7 +20,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { currentThemeMeta } = useTheme();
+  const pathname = usePathname();
   const { soundEnabled, toggleSound } = useSound();
 
   const handleLogout = () => {
@@ -58,6 +57,30 @@ export default function DashboardLayout({
               DevNotes
             </span>
           </Link>
+
+          {/* Navigation */}
+          <nav className="flex items-center gap-6 ml-8 mr-auto">
+             <Link 
+               href="/dashboard" 
+               className="text-sm font-medium transition-colors flex items-center gap-2" 
+               style={{ 
+                 color: pathname === "/dashboard" ? "var(--main-color)" : "var(--sub-color)" 
+               }}
+             >
+               <Library size={16} />
+               My Notes
+             </Link>
+             <Link 
+               href="/dashboard/explore" 
+               className="text-sm font-medium transition-colors flex items-center gap-2" 
+               style={{ 
+                 color: pathname.startsWith("/dashboard/explore") ? "var(--main-color)" : "var(--sub-color)" 
+               }}
+             >
+               <Compass size={16} />
+               Explore
+             </Link>
+          </nav>
 
           {/* Right controls */}
           <div className="flex items-center gap-1">

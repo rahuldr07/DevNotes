@@ -1,20 +1,20 @@
 "use client";
 
+import { ArrowRight, Check, FileText } from "lucide-react";
 import { useState } from "react";
-import { FileText, Check, ArrowRight } from "lucide-react";
+import {
+  type ThemeId,
+  type ThemeMeta,
+  useTheme,
+} from "@/components/ThemeProvider";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  useTheme,
-  type ThemeMeta,
-  type ThemeId,
-} from "@/components/ThemeProvider";
 
 function OnboardingThemeCard({
   meta,
@@ -76,7 +76,8 @@ function OnboardingThemeCard({
       <div className="flex gap-1 mb-2.5">
         {[bg, main, subAlt, text].map((color, i) => (
           <div
-            key={i}
+            // biome-ignore lint/suspicious/noArrayIndexKey: index is stable for static color list
+            key={`${color}-${i}`}
             className="h-3 flex-1 rounded-sm"
             style={{ backgroundColor: color }}
           />
@@ -113,28 +114,23 @@ function OnboardingThemeCard({
 }
 
 export function OnboardingDialog() {
-  const {
-    theme,
-    setTheme,
-    themes,
-    currentThemeMeta,
-    isOnboarded,
-    setOnboarded,
-  } = useTheme();
+  const { theme, setTheme, themes, isOnboarded, setOnboarded } = useTheme();
   const [selected, setSelected] = useState(theme);
 
   if (isOnboarded) return null;
 
   const handleHover = (id: ThemeId) => {
     document.documentElement.setAttribute("data-theme", id);
-    const meta = themes.find((t) => t.id === id)!;
+    const meta = themes.find((t) => t.id === id);
+    if (!meta) return;
     if (meta.isDark) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   };
 
   const handleLeave = () => {
     document.documentElement.setAttribute("data-theme", selected);
-    const meta = themes.find((t) => t.id === selected)!;
+    const meta = themes.find((t) => t.id === selected);
+    if (!meta) return;
     if (meta.isDark) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   };

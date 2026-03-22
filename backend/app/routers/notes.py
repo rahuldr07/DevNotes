@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
-from app.schemas.note import NoteCreate, NoteResponse, NoteUpdate
+from app.schemas.note import NoteCreate, NoteResponse, NoteUpdate, PublicNoteResponse
 from app.services import note_service
 
 
@@ -55,6 +55,8 @@ def update_note(id: int, note: NoteUpdate,user= Depends(get_current_user),db :Se
         title=note.title,
         content=note.content,
         tags=note.tags,
+        is_published=note.is_published,
+        is_community=note.is_community,
         user_id=user.id,
     )
 
@@ -78,6 +80,15 @@ def get_my_notes(user= Depends(get_current_user),db :Session = Depends(get_db)):
     return note_service.get_my_notes(db, user_id=user.id)
 
 # ════════════════════════════════════════════
+#  GET /notes/community — List community notes
+# ════════════════════════════════════════════
+# - Requires authentication (internal feed)
+# - Returns all notes with is_community=True
+@router.get("/community", response_model=list[NoteResponse], status_code=200)
+def get_community_notes(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return note_service.get_community_notes(db)
+
+# ════════════════════════════════════════════
 #  GET /notes/{id} — Get a single note
 # ════════════════════════════════════════════
 # - Used by the edit page to fetch note data before editing
@@ -94,3 +105,13 @@ def get_note(id: int, user= Depends(get_current_user),db : Session = Depends(get
 @router.patch("/{id}/pin", response_model=NoteResponse, status_code=200)
 def pin_note(id: int, user=Depends(get_current_user), db: Session = Depends(get_db)):
     return note_service.toggle_pin(db, note_id=id, user_id=user.id)
+
+# ════════════════════════════════════════════
+#  GET /notes/public/{share_uuid} — Get a public note
+# ════════════════════════════════════════════
+# - No authentication required
+# - Returns note data if share_uuid matches AND is_published=True
+# - Uses PublicNoteResponse to avoid leaking user_id
+@router.get("/public/{share_uuid}", response_model=PublicNoteResponse, status_code=200)
+def get_public_note(share_uuid: str, db: Session = Depends(get_db)):
+    return note_service.get_public_note(db, share_uuid=share_uuid)

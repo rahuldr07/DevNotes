@@ -52,6 +52,9 @@ def update(
     title: str | None,
     content: str | None,
     tags: list[str] | None = None,
+    is_published: bool | None = None,
+    is_community: bool | None = None,
+    share_uuid: str | None = None,
 ) -> Note | None:
     """
     Updates an existing note's title and/or content.
@@ -68,6 +71,12 @@ def update(
             oNote.content = content
         if tags is not None:
             oNote.tags = tags
+        if is_published is not None:
+            oNote.is_published = is_published
+        if is_community is not None:
+            oNote.is_community = is_community
+        if share_uuid is not None:
+            oNote.share_uuid = share_uuid
         db.commit()
         db.refresh(oNote)
         return oNote
@@ -104,3 +113,11 @@ def toggle_pin(db: Session, note_id: int) -> Note:
         db.commit()
         db.refresh(note)
     return note
+
+def get_by_share_uuid(db: Session, share_uuid: str) -> Note | None:
+    """Finds a note by its share_uuid."""
+    return db.query(Note).filter(Note.share_uuid == share_uuid).first()
+
+def get_community_notes(db: Session) -> list[Note]:
+    """Fetches all community notes (is_community=True)."""
+    return db.query(Note).filter(Note.is_community == True).order_by(Note.created_at.desc()).all()

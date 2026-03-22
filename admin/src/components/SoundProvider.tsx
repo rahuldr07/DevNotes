@@ -1,14 +1,14 @@
 "use client";
 
+import { Howl } from "howler";
 import {
   createContext,
+  useCallback,
   useContext,
-  useState,
   useEffect,
   useRef,
-  useCallback,
+  useState,
 } from "react";
-import { Howl } from "howler";
 
 /* ─── Sound types ────────────────────────────────────────────────────────── */
 

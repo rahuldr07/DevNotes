@@ -20,7 +20,7 @@
  *
  * This file runs SERVER-SIDE only (Next.js Route Handler).
  */
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { backendFetch } from "@/lib/backend";
 
 /**
@@ -39,7 +39,7 @@ async function handler(
     //    ['auth', 'login'] → '/auth/login'
     //    ['notes', '5']    → '/notes/5'
     const { path } = await params;
-    const endpoint = "/" + path.join("/");
+    const endpoint = `/${path.join("/")}`;
 
     // 2. Forward the Authorization header (JWT token) if the browser sent one
     //    This allows authenticated requests to pass through to FastAPI
@@ -75,7 +75,7 @@ async function handler(
     //    This includes both success (200, 201) and error (400, 401, 404) responses
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (_error) {
     // 8. Catches proxy-level failures (FastAPI is down, network error, etc.)
     //    NOT FastAPI validation errors — those are handled by step 7 above
     return NextResponse.json(

@@ -14,45 +14,45 @@
  */
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import TaskItem from "@tiptap/extension-task-item";
+import TaskList from "@tiptap/extension-task-list";
+import Typography from "@tiptap/extension-typography";
 import {
-  useEditor,
   EditorContent,
-  NodeViewWrapper,
   NodeViewContent,
-  ReactNodeViewRenderer,
+  NodeViewWrapper,
   type ReactNodeViewProps,
+  ReactNodeViewRenderer,
+  useEditor,
 } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import Link from "@tiptap/extension-link";
-import Typography from "@tiptap/extension-typography";
 import { common, createLowlight } from "lowlight";
-import { Markdown } from "tiptap-markdown";
 import {
   Bold,
-  Italic,
+  Check,
+  CheckSquare,
   Code,
+  FileCode,
   Heading1,
   Heading2,
   Heading3,
-  List,
-  ListOrdered,
-  Quote,
-  Minus,
-  Type,
-  FileCode,
-  CheckSquare,
-  Strikethrough,
+  Italic,
   Link2,
   Link2Off,
-  Check,
+  List,
+  ListOrdered,
+  Minus,
+  Quote,
+  Strikethrough,
+  Type,
   X,
 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Markdown } from "tiptap-markdown";
 
 const lowlight = createLowlight(common);
 
@@ -105,14 +105,16 @@ function CodeBlockView({ node }: ReactNodeViewProps) {
 
 interface RichEditorProps {
   initialContent: string;
-  onChange: (markdown: string) => void;
+  onChange?: (markdown: string) => void;
   placeholder?: string;
+  editable?: boolean;
 }
 
 export default function RichEditor({
   initialContent,
   onChange,
   placeholder = "Start writing…",
+  editable = true,
 }: RichEditorProps) {
   // Link popover state — replaces window.prompt()
   const [linkView, setLinkView] = useState<{ open: boolean; draft: string }>({
@@ -136,11 +138,7 @@ export default function RichEditor({
     (editor: ReturnType<typeof useEditor>, url: string) => {
       if (!editor) return;
       if (url.trim()) {
-        editor
-          .chain()
-          .focus()
-          .setLink({ href: url.trim() })
-          .run();
+        editor.chain().focus().setLink({ href: url.trim() }).run();
       } else {
         editor.chain().focus().unsetLink().run();
       }
@@ -193,24 +191,24 @@ export default function RichEditor({
     content: initialContent,
     editorProps: { attributes: { spellcheck: "true" } },
     onUpdate({ editor }) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      onChange((editor.storage as any).markdown.getMarkdown());
+      // biome-ignore lint/suspicious/noExplicitAny: TipTap storage is untyped
+      onChange?.((editor.storage as any).markdown.getMarkdown());
     },
+    editable,
     immediatelyRender: false,
   });
 
   useEffect(() => {
     if (!editor) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: TipTap storage is untyped
     const current = (editor.storage as any).markdown.getMarkdown();
     if (current !== initialContent) editor.commands.setContent(initialContent);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent]);
+  }, [initialContent, editor]);
 
   return (
     <div className="rich-editor-root">
       {/* ── Bubble menu ─────────────────────────────────────────── */}
-      {editor && (
+      {editor && editable && (
         <BubbleMenu editor={editor} className="bubble-menu">
           {linkView.open ? (
             /* ── Link editing mode ── */
@@ -324,9 +322,7 @@ export default function RichEditor({
               </BBtn>
               <BBtn
                 active={editor.isActive("orderedList")}
-                onClick={() =>
-                  editor.chain().focus().toggleOrderedList().run()
-                }
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 title="Numbered list"
               >
                 <ListOrdered size={13} />
@@ -359,7 +355,7 @@ export default function RichEditor({
       )}
 
       {/* ── Floating menu ────────────────────────────────────────── */}
-      {editor && (
+      {editor && editable && (
         <FloatingMenu editor={editor} className="floating-menu">
           <span className="floating-label">+</span>
           <FBtn

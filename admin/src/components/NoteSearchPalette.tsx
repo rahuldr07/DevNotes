@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Fuse from "fuse.js";
-import type { FuseResultMatch } from "fuse.js";
 import { AnimatePresence, motion } from "framer-motion";
+import type { FuseResultMatch } from "fuse.js";
+import Fuse from "fuse.js";
 import { Calendar, Hash, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { stripMarkdown } from "@/lib/notes";
 
 interface NoteItem {
@@ -35,12 +35,11 @@ function formatDate(date: string) {
 function highlightText(text: string, indices: readonly [number, number][]) {
   const parts: React.ReactNode[] = [];
   let cursor = 0;
-  indices.forEach(([start, end], idx) => {
+  indices.forEach(([start, end], _idx) => {
     if (cursor < start) parts.push(text.slice(cursor, start));
     parts.push(
       <mark
-        // biome-ignore lint/suspicious/noArrayIndexKey: match segments are static for each result render
-        key={`m-${idx}-${start}-${end}`}
+        key={`m-${start}-${end}`}
         style={{ color: "var(--main-color)", background: "transparent" }}
         className="font-semibold"
       >
@@ -119,6 +118,16 @@ export function NoteSearchPalette({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose, results, selectedIndex, router]);
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      // Small timeout to ensure modal is rendered
+      setTimeout(() => inputRef.current?.focus(), 10);
+    }
+  }, [open]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset index when query changes
   useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
@@ -154,7 +163,7 @@ export function NoteSearchPalette({
             >
               <Search size={16} style={{ color: "var(--sub-color)" }} />
               <input
-                autoFocus
+                ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search notes by title, content, or tags..."
