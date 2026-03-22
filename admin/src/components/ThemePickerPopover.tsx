@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import {
+  type ThemeId,
+  type ThemeMeta,
+  useTheme,
+} from "@/components/ThemeProvider";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import {
-  useTheme,
-  type ThemeMeta,
-  type ThemeId,
-} from "@/components/ThemeProvider";
 
 function ThemeCard({
   meta,
@@ -72,6 +72,7 @@ function ThemeCard({
       <div className="flex gap-1 mb-2">
         {[bg, main, subAlt, text].map((color, i) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: index is stable for static color list
             key={i}
             className="h-3 flex-1 rounded-sm"
             style={{ backgroundColor: color }}
@@ -117,7 +118,8 @@ export function ThemePickerPopover() {
     setHovered(id);
     // Live preview: apply data-theme temporarily
     document.documentElement.setAttribute("data-theme", id);
-    const meta = themes.find((t) => t.id === id)!;
+    const meta = themes.find((t) => t.id === id);
+    if (!meta) return;
     if (meta.isDark) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   };

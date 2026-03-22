@@ -28,5 +28,9 @@ class Note(Base):
     content = Column(Text, nullable=False)
     tags = Column(ARRAY(String), default=list, nullable=False)
     is_pinned = Column(Boolean, default=False, nullable=False)
+    # Sharing features
+    share_uuid = Column(String(36), unique=True, nullable=True, index=True)
+    is_published = Column(Boolean, default=False, nullable=False)
+    is_community = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

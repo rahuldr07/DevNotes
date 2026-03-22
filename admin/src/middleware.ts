@@ -11,7 +11,7 @@
  * Therefore we use request.cookies (server-side API), NOT js-cookie
  * (which only works in the browser).
  */
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
   // Get the URL path the user is trying to visit
@@ -25,15 +25,11 @@ export function middleware(request: NextRequest) {
   const protectedRoutes = ["/dashboard"];
 
   // Routes accessible without authentication
-  const publicRoutes = ["/auth/login", "/auth/signup", "/"];
+  const _publicRoutes = ["/auth/login", "/auth/signup", "/"];
 
   // Check if the current path starts with any protected route
   // e.g., /dashboard, /dashboard/create_note, /dashboard/edit_note
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
-
-  const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );
 

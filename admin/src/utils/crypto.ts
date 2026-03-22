@@ -1,17 +1,17 @@
 /**
  * Crypto Utils for "Secure" Local Storage
- * 
+ *
  * WARNING: This is client-side encryption. The key is derived from the user's email.
- * This means anyone with access to the browser (XSS) can retrieve the email, 
+ * This means anyone with access to the browser (XSS) can retrieve the email,
  * derive the key, and decrypt the password.
- * 
+ *
  * This implementation is for "Remember Me" functionality as requested by the user,
  * bypassing standard browser password managers.
  */
 
 // Helper: Convert ArrayBuffer to Base64
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  let binary = '';
+  let binary = "";
   const bytes = new Uint8Array(buffer);
   const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
@@ -32,14 +32,17 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 // Derive a key from the email (acting as a password) and a salt
-async function deriveKey(email: string, salt: BufferSource): Promise<CryptoKey> {
+async function deriveKey(
+  email: string,
+  salt: BufferSource,
+): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await window.crypto.subtle.importKey(
     "raw",
     encoder.encode(email),
     { name: "PBKDF2" },
     false,
-    ["deriveKey"]
+    ["deriveKey"],
   );
 
   return window.crypto.subtle.deriveKey(
@@ -47,12 +50,12 @@ async function deriveKey(email: string, salt: BufferSource): Promise<CryptoKey> 
       name: "PBKDF2",
       salt: salt,
       iterations: 100000,
-      hash: "SHA-256"
+      hash: "SHA-256",
     },
     keyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   );
 }
 
@@ -66,10 +69,13 @@ export interface EncryptedData {
  * Encrypts a string using a key derived from the email.
  * Returns an object containing the salt, IV, and ciphertext (all Base64).
  */
-export async function encryptData(email: string, data: string): Promise<EncryptedData> {
+export async function encryptData(
+  email: string,
+  data: string,
+): Promise<EncryptedData> {
   const salt = window.crypto.getRandomValues(new Uint8Array(16));
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  
+
   const key = await deriveKey(email, salt);
   const encoder = new TextEncoder();
   const encodedData = encoder.encode(data);
@@ -77,16 +83,16 @@ export async function encryptData(email: string, data: string): Promise<Encrypte
   const encryptedContent = await window.crypto.subtle.encrypt(
     {
       name: "AES-GCM",
-      iv: iv
+      iv: iv,
     },
     key,
-    encodedData
+    encodedData,
   );
 
   return {
     salt: arrayBufferToBase64(salt.buffer),
     iv: arrayBufferToBase64(iv.buffer),
-    ciphertext: arrayBufferToBase64(encryptedContent)
+    ciphertext: arrayBufferToBase64(encryptedContent),
   };
 }
 
@@ -94,7 +100,10 @@ export async function encryptData(email: string, data: string): Promise<Encrypte
  * Decrypts data using a key derived from the email.
  * Expects an object with salt, IV, and ciphertext (all Base64).
  */
-export async function decryptData(email: string, encryptedData: EncryptedData): Promise<string> {
+export async function decryptData(
+  email: string,
+  encryptedData: EncryptedData,
+): Promise<string> {
   try {
     const salt = base64ToUint8Array(encryptedData.salt);
     const iv = base64ToUint8Array(encryptedData.iv);
@@ -105,10 +114,10 @@ export async function decryptData(email: string, encryptedData: EncryptedData): 
     const decryptedContent = await window.crypto.subtle.decrypt(
       {
         name: "AES-GCM",
-        iv: iv as unknown as BufferSource
+        iv: iv as unknown as BufferSource,
       },
       key,
-      ciphertext as unknown as BufferSource
+      ciphertext as unknown as BufferSource,
     );
 
     const decoder = new TextDecoder();

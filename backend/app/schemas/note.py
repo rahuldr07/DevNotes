@@ -14,9 +14,10 @@ class NoteCreate(BaseModel):
     content: str
     tags: list[str] = Field(default_factory=list)
 
+
 class NoteResponse(BaseModel):
     """
-    OUTPUT schema for returning a note to the client.
+    OUTPUT schema for returning a note to the client (authenticated routes).
 
     from_attributes = True tells Pydantic:
     "You'll receive a SQLAlchemy Note object, not a dictionary.
@@ -28,8 +29,31 @@ class NoteResponse(BaseModel):
     content: str
     tags: list[str] = Field(default_factory=list)
     is_pinned: bool = False
+    share_uuid: str | None = None
+    is_published: bool = False
+    is_community: bool = False
     created_at: datetime
     updated_at: datetime | None = None  # None because it's null until first update
+
+    class Config:
+        from_attributes = True
+
+
+class PublicNoteResponse(BaseModel):
+    """
+    OUTPUT schema for public note endpoints (unauthenticated).
+    
+    Excludes sensitive fields like user_id to prevent data leakage.
+    """
+    id: int
+    title: str
+    content: str
+    tags: list[str] = Field(default_factory=list)
+    share_uuid: str | None = None
+    is_published: bool = False
+    is_community: bool = False
+    created_at: datetime
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -48,3 +72,5 @@ class NoteUpdate(BaseModel):
     title: str | None = None
     content: str | None = None
     tags: list[str] | None = None
+    is_published: bool | None = None
+    is_community: bool | None = None

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 /* ─── Theme definitions ──────────────────────────────────────────────────── */
 
@@ -103,7 +103,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
 
     const root = document.documentElement;
-    const meta = THEMES.find((t) => t.id === theme)!;
+    const meta = THEMES.find((t) => t.id === theme);
+    if (!meta) return;
 
     // Set data-theme attribute — triggers CSS variable theme blocks in globals.css
     root.setAttribute("data-theme", theme);
@@ -125,7 +126,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setIsOnboarded(true);
   };
 
-  const currentThemeMeta = THEMES.find((t) => t.id === theme)!;
+  const currentThemeMeta = THEMES.find((t) => t.id === theme);
+  if (!currentThemeMeta) return null;
 
   // Prevent flash of wrong theme — render nothing until localStorage is read
   if (!mounted) return null;

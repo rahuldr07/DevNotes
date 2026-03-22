@@ -1,8 +1,13 @@
+import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.repositories import note_repo
 from app.models.note import Note
+
+
+MAX_UUID_RETRIES = 3  # For the astronomically unlikely UUID collision
 
 
 def normalize_tags(tags: list[str] | None) -> list[str]:
@@ -62,6 +67,8 @@ def update_note(
     title: str | None,
     content: str | None,
     tags: list[str] | None = None,
+    is_published: bool | None = None,
+    is_community: bool | None = None,
 ) -> Note | None:
     """
     Updates an existing note for the specified user.
@@ -84,13 +91,35 @@ def update_note(
     if new_note:
         if new_note.user_id == user_id:
             normalized_tags = normalize_tags(tags) if tags is not None else None
-            return note_repo.update(
-                db,
-                note_id=note_id,
-                title=title,
-                content=content,
-                tags=normalized_tags,
-            )
+            
+            # Generate share_uuid if publishing for the first time
+            share_uuid = None
+            if is_published is True and not new_note.share_uuid:
+                share_uuid = str(uuid.uuid4())
+
+            # Retry loop for the extremely rare UUID collision
+            for attempt in range(MAX_UUID_RETRIES):
+                try:
+                    return note_repo.update(
+                        db,
+                        note_id=note_id,
+                        title=title,
+                        content=content,
+                        tags=normalized_tags,
+                        is_published=is_published,
+                        is_community=is_community,
+                        share_uuid=share_uuid,
+                    )
+                except IntegrityError:
+                    db.rollback()
+                    if share_uuid and attempt < MAX_UUID_RETRIES - 1:
+                        # Regenerate UUID and retry
+                        share_uuid = str(uuid.uuid4())
+                    else:
+                        raise HTTPException(
+                            status_code=500,
+                            detail="Failed to generate unique share link. Please try again."
+                        )
         else:
             raise HTTPException(status_code=403, detail="Note does not belong to the user")
     else:
@@ -155,7 +184,8 @@ def get_note(db: Session, user_id: int, note_id: int) -> Note | None:
     """
     note = note_repo.get_by_note_id(db, note_id=note_id)
     if note:
-        if note.user_id == user_id:
+        # Allow access if owner OR if note is in community
+        if note.user_id == user_id or note.is_community:
             return note
         else:
             raise HTTPException(status_code=403, detail="Note does not belong to the user")
@@ -177,3 +207,17 @@ def toggle_pin(db: Session, user_id: int, note_id: int) -> Note:
     if note.user_id != user_id:
         raise HTTPException(status_code=403, detail="Note does not belong to the user")
     return note_repo.toggle_pin(db, note_id=note_id)
+
+def get_public_note(db: Session, share_uuid: str) -> Note:
+    """
+    Retrieves a note by its share UUID if it is published.
+    """
+    note = note_repo.get_by_share_uuid(db, share_uuid=share_uuid)
+    if not note or not note.is_published:
+        # Return 404 even if exists but not published (security)
+        raise HTTPException(status_code=404, detail="Note not found")
+    return note
+
+def get_community_notes(db: Session) -> list[Note]:
+    """Retrieves all community notes."""
+    return note_repo.get_community_notes(db)

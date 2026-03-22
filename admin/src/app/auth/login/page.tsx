@@ -18,18 +18,22 @@
  */
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import { api } from "@/lib/api";
-import { saveToken } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { AuthLayout } from "@/components/AuthLayout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AuthLayout } from "@/components/AuthLayout";
-import { encryptData, decryptData, type EncryptedData } from "../../../utils/crypto";
+import { api } from "@/lib/api";
+import { saveToken } from "@/lib/auth";
+import {
+  decryptData,
+  type EncryptedData,
+  encryptData,
+} from "../../../utils/crypto";
 
 interface LoginResponse {
   access_token: string;
@@ -62,9 +66,11 @@ export default function LoginPage() {
       try {
         const stored = localStorage.getItem("secure_credentials");
         if (stored) {
-          const { email, encrypted }: { email: string; encrypted: EncryptedData } =
-            JSON.parse(stored);
-          
+          const {
+            email,
+            encrypted,
+          }: { email: string; encrypted: EncryptedData } = JSON.parse(stored);
+
           if (email && encrypted) {
             setEmail(email);
             const decryptedPassword = await decryptData(email, encrypted);
@@ -82,14 +88,14 @@ export default function LoginPage() {
     loadCredentials();
   }, []);
 
-  const validate = () => {
+  const validate = useCallback(() => {
     const e: { email?: string; password?: string } = {};
     if (!email.trim()) e.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(email))
       e.email = "Enter a valid email address";
     if (!password) e.password = "Password is required";
     return e;
-  };
+  }, [email, password]);
 
   const handleLogin = useCallback(
     async (e: React.FormEvent) => {
@@ -107,14 +113,14 @@ export default function LoginPage() {
           email,
           password,
         });
-        
+
         // Handle "Remember Me" - Encrypt and store credentials if checked
         if (rememberMe) {
           try {
             const encrypted = await encryptData(email, password);
             localStorage.setItem(
               "secure_credentials",
-              JSON.stringify({ email, encrypted })
+              JSON.stringify({ email, encrypted }),
             );
           } catch (cryptoError) {
             console.error("Encryption failed:", cryptoError);
@@ -127,13 +133,17 @@ export default function LoginPage() {
         // Save token (session cookie only, as requested)
         saveToken(response.access_token, { remember: false });
         router.push("/dashboard");
-      } catch (err: any) {
-        setServerError(err.message || "Invalid credentials. Please try again.");
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Invalid credentials. Please try again.";
+        setServerError(message);
       } finally {
         setLoading(false);
       }
     },
-    [email, password, rememberMe, router],
+    [email, password, rememberMe, router, validate],
   );
 
   return (

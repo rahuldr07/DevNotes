@@ -15,16 +15,16 @@
  */
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+import { AuthLayout } from "@/components/AuthLayout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AuthLayout } from "@/components/AuthLayout";
+import { api } from "@/lib/api";
 
 interface SignupResponse {
   id: number;
@@ -61,7 +61,7 @@ export default function SignUpPage() {
       return n;
     });
 
-  const validate = () => {
+  const validate = useCallback(() => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "Name is required";
     if (!email.trim()) e.email = "Email is required";
@@ -73,7 +73,7 @@ export default function SignUpPage() {
     else if (password !== confirmPassword)
       e.confirmPassword = "Passwords do not match";
     return e;
-  };
+  }, [name, email, password, confirmPassword]);
 
   const handleSignUp = useCallback(
     async (e: React.FormEvent) => {
@@ -93,13 +93,17 @@ export default function SignUpPage() {
           password,
         });
         router.push("/auth/login");
-      } catch (err: any) {
-        setServerError(err.message || "Signup failed. Please try again.");
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Signup failed. Please try again.";
+        setServerError(message);
       } finally {
         setLoading(false);
       }
     },
-    [name, email, password, confirmPassword, router],
+    [name, email, password, router, validate],
   );
 
   const inputStyle = (field: string) => ({

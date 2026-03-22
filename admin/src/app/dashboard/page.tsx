@@ -12,33 +12,33 @@
  */
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Edit3,
-  Trash2,
-  Plus,
-  FileText,
   AlertCircle,
-  Pin,
-  PinOff,
+  Edit3,
+  FileText,
   LayoutGrid,
   List,
+  Pin,
+  PinOff,
+  Plus,
   Search,
+  Trash2,
 } from "lucide-react";
-import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { gooeyToast } from "@/components/ui/goey-toaster";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useConfirm } from "@/hooks/useConfirm";
+import { api } from "@/lib/api";
 import { stripMarkdown } from "@/lib/notes";
-import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 
 type SortKey = "newest" | "oldest" | "title";
 type ViewMode = "grid" | "list";
@@ -63,12 +63,25 @@ function NoteCardSkeleton({ view }: { view: ViewMode }) {
           border: "1px solid var(--border-color)",
         }}
       >
-        <Skeleton className="h-4 w-1/3" style={{ backgroundColor: "var(--hover-color)" }} />
-        <Skeleton className="h-3 flex-1" style={{ backgroundColor: "var(--hover-color)" }} />
-        <Skeleton className="h-3 w-20" style={{ backgroundColor: "var(--hover-color)" }} />
+        <Skeleton
+          className="h-4 w-1/3"
+          style={{ backgroundColor: "var(--hover-color)" }}
+        />
+        <Skeleton
+          className="h-3 flex-1"
+          style={{ backgroundColor: "var(--hover-color)" }}
+        />
+        <Skeleton
+          className="h-3 w-20"
+          style={{ backgroundColor: "var(--hover-color)" }}
+        />
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-7 w-7 rounded-md" style={{ backgroundColor: "var(--hover-color)" }} />
+            <Skeleton
+              key={i}
+              className="h-7 w-7 rounded-md"
+              style={{ backgroundColor: "var(--hover-color)" }}
+            />
           ))}
         </div>
       </div>
@@ -82,14 +95,30 @@ function NoteCardSkeleton({ view }: { view: ViewMode }) {
         border: "1px solid var(--border-color)",
       }}
     >
-      <Skeleton className="h-5 w-3/4" style={{ backgroundColor: "var(--hover-color)" }} />
-      <Skeleton className="h-4 w-full" style={{ backgroundColor: "var(--hover-color)" }} />
-      <Skeleton className="h-4 w-5/6" style={{ backgroundColor: "var(--hover-color)" }} />
+      <Skeleton
+        className="h-5 w-3/4"
+        style={{ backgroundColor: "var(--hover-color)" }}
+      />
+      <Skeleton
+        className="h-4 w-full"
+        style={{ backgroundColor: "var(--hover-color)" }}
+      />
+      <Skeleton
+        className="h-4 w-5/6"
+        style={{ backgroundColor: "var(--hover-color)" }}
+      />
       <div className="flex justify-between items-center pt-1">
-        <Skeleton className="h-3 w-20" style={{ backgroundColor: "var(--hover-color)" }} />
+        <Skeleton
+          className="h-3 w-20"
+          style={{ backgroundColor: "var(--hover-color)" }}
+        />
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-7 w-7 rounded-md" style={{ backgroundColor: "var(--hover-color)" }} />
+            <Skeleton
+              key={i}
+              className="h-7 w-7 rounded-md"
+              style={{ backgroundColor: "var(--hover-color)" }}
+            />
           ))}
         </div>
       </div>
@@ -125,7 +154,9 @@ function NoteCard({
             size="icon"
             onClick={() => onPin(note.id)}
             className="h-7 w-7 transition-opacity hover:opacity-70"
-            style={{ color: note.is_pinned ? "var(--main-color)" : "var(--sub-color)" }}
+            style={{
+              color: note.is_pinned ? "var(--main-color)" : "var(--sub-color)",
+            }}
           >
             {note.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
           </Button>
@@ -147,7 +178,9 @@ function NoteCard({
             </Button>
           </Link>
         </TooltipTrigger>
-        <TooltipContent><p>Edit note</p></TooltipContent>
+        <TooltipContent>
+          <p>Edit note</p>
+        </TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -161,7 +194,9 @@ function NoteCard({
             <Trash2 size={14} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent><p>Delete note</p></TooltipContent>
+        <TooltipContent>
+          <p>Delete note</p>
+        </TooltipContent>
       </Tooltip>
     </div>
   );
@@ -179,7 +214,10 @@ function NoteCard({
         onMouseLeave={() => setHovered(false)}
       >
         {note.is_pinned && (
-          <Pin size={11} style={{ color: "var(--main-color)", flexShrink: 0 }} />
+          <Pin
+            size={11}
+            style={{ color: "var(--main-color)", flexShrink: 0 }}
+          />
         )}
         <span
           className="text-sm font-semibold truncate flex-shrink-0 max-w-[200px]"
@@ -212,7 +250,10 @@ function NoteCard({
             ))}
           </div>
         )}
-        <span className="text-xs flex-shrink-0" style={{ color: "var(--sub-color)" }}>
+        <span
+          className="text-xs flex-shrink-0"
+          style={{ color: "var(--sub-color)" }}
+        >
           {date}
         </span>
         {actionButtons}
@@ -222,6 +263,7 @@ function NoteCard({
 
   // ── Grid view ────────────────────────────────────────────────────────────
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: card hover effect
     <div
       className="rounded-xl p-5 flex flex-col gap-3 transition-all duration-200 group"
       style={{
@@ -240,7 +282,10 @@ function NoteCard({
           {note.title || "Untitled"}
         </h2>
         {note.is_pinned && (
-          <Pin size={12} style={{ color: "var(--main-color)", flexShrink: 0, marginTop: 2 }} />
+          <Pin
+            size={12}
+            style={{ color: "var(--main-color)", flexShrink: 0, marginTop: 2 }}
+          />
         )}
       </div>
 
@@ -312,7 +357,23 @@ export default function DashboardPage() {
     setSearchOpen((prev) => !prev);
   }, []);
 
-  useEffect(() => { fetchNotes(); }, []);
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await api.get<Note[]>("/notes/notes");
+        setNotes(data);
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load notes";
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotes();
+  }, []);
 
   useEffect(() => {
     const onGlobalShortcut = (e: KeyboardEvent) => {
@@ -337,19 +398,6 @@ export default function DashboardPage() {
     return () => window.removeEventListener("keydown", onGlobalShortcut);
   }, []);
 
-  const fetchNotes = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await api.get<Note[]>("/notes/notes");
-      setNotes(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load notes");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (id: number) => {
     const note = notes.find((n) => n.id === id);
     const ok = await confirm({
@@ -365,9 +413,11 @@ export default function DashboardPage() {
       await api.delete(`/notes/${id}/delete`);
       setNotes((prev) => prev.filter((n) => n.id !== id));
       gooeyToast.success("Note deleted");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Could not delete the note.";
       gooeyToast.error("Delete failed", {
-        description: err.message || "Could not delete the note.",
+        description: message,
       });
     }
   };
@@ -379,12 +429,13 @@ export default function DashboardPage() {
     );
     try {
       await api.patch(`/notes/${id}/pin`, {});
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Revert on failure
       setNotes((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_pinned: !n.is_pinned } : n)),
       );
-      gooeyToast.error("Could not pin note");
+      const message = err instanceof Error ? err.message : "Could not pin note";
+      gooeyToast.error(message);
     }
   }, []);
 
@@ -392,9 +443,13 @@ export default function DashboardPage() {
   const sortedNotes = useMemo(() => {
     const sorted = [...notes].sort((a, b) => {
       if (sort === "newest")
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       if (sort === "oldest")
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
       return a.title.localeCompare(b.title);
     });
     // Pinned notes float to top, preserving their relative order
@@ -409,21 +464,27 @@ export default function DashboardPage() {
   const availableTags = useMemo(() => {
     const set = new Set<string>();
     notes.forEach((note) => {
-      note.tags.forEach((tag) => set.add(tag));
+      note.tags.forEach((tag) => {
+        set.add(tag);
+      });
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [notes]);
 
   const sortBtnStyle = (active: boolean) => ({
     color: active ? "var(--main-color)" : "var(--sub-color)",
-    backgroundColor: active ? "color-mix(in srgb, var(--main-color) 12%, transparent)" : "transparent",
+    backgroundColor: active
+      ? "color-mix(in srgb, var(--main-color) 12%, transparent)"
+      : "transparent",
     border: "none",
     transition: "all 0.15s ease",
   });
 
   const viewBtnStyle = (active: boolean) => ({
     color: active ? "var(--main-color)" : "var(--sub-color)",
-    backgroundColor: active ? "color-mix(in srgb, var(--main-color) 12%, transparent)" : "transparent",
+    backgroundColor: active
+      ? "color-mix(in srgb, var(--main-color) 12%, transparent)"
+      : "transparent",
     border: "none",
     transition: "all 0.15s ease",
   });
@@ -494,9 +555,14 @@ export default function DashboardPage() {
                 onClick={() => setSelectedTag(null)}
                 className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-85"
                 style={{
-                  color: selectedTag === null ? "var(--bg-color)" : "var(--sub-color)",
+                  color:
+                    selectedTag === null
+                      ? "var(--bg-color)"
+                      : "var(--sub-color)",
                   backgroundColor:
-                    selectedTag === null ? "var(--main-color)" : "var(--sub-alt-color)",
+                    selectedTag === null
+                      ? "var(--main-color)"
+                      : "var(--sub-alt-color)",
                   border: `1px solid ${selectedTag === null ? "var(--main-color)" : "var(--border-color)"}`,
                 }}
               >
@@ -509,7 +575,10 @@ export default function DashboardPage() {
                   onClick={() => setSelectedTag(tag)}
                   className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-85"
                   style={{
-                    color: selectedTag === tag ? "var(--main-color)" : "var(--sub-color)",
+                    color:
+                      selectedTag === tag
+                        ? "var(--main-color)"
+                        : "var(--sub-color)",
                     backgroundColor:
                       selectedTag === tag
                         ? "color-mix(in srgb, var(--main-color) 12%, transparent)"
@@ -523,48 +592,58 @@ export default function DashboardPage() {
             </div>
           )}
           <div className="flex items-center justify-between">
-          {/* Sort buttons */}
-          <div
-            className="flex items-center gap-1 p-1 rounded-lg"
-            style={{ backgroundColor: "var(--sub-alt-color)", border: "1px solid var(--border-color)" }}
-          >
-            {(["newest", "oldest", "title"] as SortKey[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => changeSort(key)}
-                className="px-3 py-1 rounded-md text-xs font-medium capitalize"
-                style={sortBtnStyle(sort === key)}
-              >
-                {key === "newest" ? "Newest" : key === "oldest" ? "Oldest" : "A–Z"}
-              </button>
-            ))}
-          </div>
+            {/* Sort buttons */}
+            <div
+              className="flex items-center gap-1 p-1 rounded-lg"
+              style={{
+                backgroundColor: "var(--sub-alt-color)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              {(["newest", "oldest", "title"] as SortKey[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => changeSort(key)}
+                  className="px-3 py-1 rounded-md text-xs font-medium capitalize"
+                  style={sortBtnStyle(sort === key)}
+                >
+                  {key === "newest"
+                    ? "Newest"
+                    : key === "oldest"
+                      ? "Oldest"
+                      : "A–Z"}
+                </button>
+              ))}
+            </div>
 
-          {/* Grid / List toggle */}
-          <div
-            className="flex items-center gap-1 p-1 rounded-lg"
-            style={{ backgroundColor: "var(--sub-alt-color)", border: "1px solid var(--border-color)" }}
-          >
-            <button
-              type="button"
-              onClick={() => changeView("grid")}
-              className="h-7 w-7 flex items-center justify-center rounded-md"
-              style={viewBtnStyle(view === "grid")}
-              title="Grid view"
+            {/* Grid / List toggle */}
+            <div
+              className="flex items-center gap-1 p-1 rounded-lg"
+              style={{
+                backgroundColor: "var(--sub-alt-color)",
+                border: "1px solid var(--border-color)",
+              }}
             >
-              <LayoutGrid size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => changeView("list")}
-              className="h-7 w-7 flex items-center justify-center rounded-md"
-              style={viewBtnStyle(view === "list")}
-              title="List view"
-            >
-              <List size={14} />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => changeView("grid")}
+                className="h-7 w-7 flex items-center justify-center rounded-md"
+                style={viewBtnStyle(view === "grid")}
+                title="Grid view"
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => changeView("list")}
+                className="h-7 w-7 flex items-center justify-center rounded-md"
+                style={viewBtnStyle(view === "list")}
+                title="List view"
+              >
+                <List size={14} />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -574,7 +653,10 @@ export default function DashboardPage() {
         <Alert
           variant="destructive"
           className="mb-6"
-          style={{ borderColor: "var(--error-color)", backgroundColor: "transparent" }}
+          style={{
+            borderColor: "var(--error-color)",
+            backgroundColor: "transparent",
+          }}
         >
           <AlertCircle size={15} />
           <AlertDescription style={{ color: "var(--error-color)" }}>
@@ -585,8 +667,15 @@ export default function DashboardPage() {
 
       {/* Loading skeletons */}
       {loading && (
-        <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" : "flex flex-col gap-2"}>
+        <div
+          className={
+            view === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+              : "flex flex-col gap-2"
+          }
+        >
           {Array.from({ length: 6 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton items are static
             <NoteCardSkeleton key={i} view={view} />
           ))}
         </div>
@@ -604,7 +693,10 @@ export default function DashboardPage() {
           >
             <FileText size={22} style={{ color: "var(--sub-color)" }} />
           </div>
-          <p className="text-base font-medium mb-1" style={{ color: "var(--text-color)" }}>
+          <p
+            className="text-base font-medium mb-1"
+            style={{ color: "var(--text-color)" }}
+          >
             No notes yet
           </p>
           <p className="text-sm mb-6" style={{ color: "var(--sub-color)" }}>
@@ -632,7 +724,10 @@ export default function DashboardPage() {
           className="rounded-xl flex flex-col items-center justify-center py-16 text-center"
           style={{ border: "1px dashed var(--border-color)" }}
         >
-          <p className="text-base font-medium mb-1" style={{ color: "var(--text-color)" }}>
+          <p
+            className="text-base font-medium mb-1"
+            style={{ color: "var(--text-color)" }}
+          >
             No notes for #{selectedTag}
           </p>
           <p className="text-sm mb-4" style={{ color: "var(--sub-color)" }}>
@@ -650,7 +745,13 @@ export default function DashboardPage() {
 
       {/* Notes */}
       {!loading && notes.length > 0 && sortedNotes.length > 0 && (
-        <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" : "flex flex-col gap-2"}>
+        <div
+          className={
+            view === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+              : "flex flex-col gap-2"
+          }
+        >
           {sortedNotes.map((note) => (
             <NoteCard
               key={note.id}

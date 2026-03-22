@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
+import Link from "next/link";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface AuthLayoutProps {
   children: React.ReactNode;

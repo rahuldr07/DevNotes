@@ -14,10 +14,10 @@
  */
 "use client";
 
-import NoteForm from "@/components/ui/NoteForm";
-import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import NoteForm from "@/components/ui/NoteForm";
+import { api } from "@/lib/api";
 
 interface Note {
   id: number;
@@ -26,6 +26,9 @@ interface Note {
   tags: string[];
   created_at: string;
   updated_at: string | null;
+  share_uuid: string | null;
+  is_published: boolean;
+  is_community: boolean;
 }
 
 export default function EditNotePage() {
@@ -39,24 +42,26 @@ export default function EditNotePage() {
 
   // Fetch note data when the component mounts or noteId changes
   useEffect(() => {
-    fetchNote();
-  }, [noteId]);
+    /**
+     * Fetches a single note by ID.
+     * GET /api/notes/{id} → FastAPI returns the note object
+     */
+    const fetchNote = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get<Note>(`/notes/${noteId}`);
+        setNote(response);
+      } catch (_err) {
+        setError("Failed to fetch note");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  /**
-   * Fetches a single note by ID.
-   * GET /api/notes/{id} → FastAPI returns the note object
-   */
-  const fetchNote = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get<Note>(`/notes/${noteId}`);
-      setNote(response);
-    } catch (err) {
-      setError("Failed to fetch note");
-    } finally {
-      setLoading(false);
+    if (noteId) {
+      fetchNote();
     }
-  };
+  }, [noteId]);
 
   if (loading) {
     return (
@@ -102,6 +107,9 @@ export default function EditNotePage() {
       initialTitle={note.title}
       initialContent={note.content}
       initialTags={note.tags || []}
+      initialShareUuid={note.share_uuid}
+      initialPublished={note.is_published}
+      initialCommunity={note.is_community}
     />
   );
 }

@@ -31,4 +31,3 @@ export function stripMarkdown(md: string): string {
     .replace(/[-]{3,}/g, " ")
     .trim();
 }
-
