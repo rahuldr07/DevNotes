@@ -1,5 +1,0 @@
-{
-  "builder": "nixpacks",
-  "buildCommand": "pip install -r backend/requirements.txt",
-  "startCommand": "python main.py"
-}
