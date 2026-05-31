@@ -119,6 +119,23 @@ def get_community_notes(
         limit=_clamp_limit(limit),
     )
 
+
+@router.get("/search", response_model=PaginatedNoteResponse, status_code=200)
+def search_notes(
+    q: str,
+    cursor: int | None = None,
+    limit: int = 20,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return note_service.search_notes(
+        db,
+        user_id=user.id,
+        query=q,
+        cursor=cursor,
+        limit=_clamp_limit(limit),
+    )
+
 # ════════════════════════════════════════════
 #  GET /notes/{id} — Get a single note
 # ════════════════════════════════════════════

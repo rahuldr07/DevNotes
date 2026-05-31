@@ -226,6 +226,25 @@ def toggle_pin(db: Session, user_id: int, note_id: int) -> Note:
     note = note_repo.get_by_note_id(db, note_id=note_id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
+
+
+def search_notes(
+    db: Session,
+    user_id: int,
+    query: str,
+    cursor: int | None = None,
+    limit: int = 20,
+) -> dict:
+    if not query.strip():
+        return {"data": [], "next_cursor": None}
+    notes = note_repo.search_notes(
+        db,
+        user_id=user_id,
+        search_query=query,
+        cursor=cursor,
+        limit=limit + 1,
+    )
+    return _paginate(notes, limit)
     if note.user_id != user_id:
         raise HTTPException(status_code=403, detail="Note does not belong to the user")
     return note_repo.toggle_pin(db, note_id=note_id)

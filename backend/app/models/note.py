@@ -1,5 +1,5 @@
-from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import Boolean, Column, Computed, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import ARRAY, TSVECTOR
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -32,5 +32,10 @@ class Note(Base):
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     is_published = Column(Boolean, default=False, nullable=False)
     is_community = Column(Boolean, default=False, nullable=False)
+    search_vector = Column(
+        TSVECTOR,
+        Computed("to_tsvector('english', title || ' ' || content)", persisted=True),
+        nullable=True,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

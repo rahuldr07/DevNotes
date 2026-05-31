@@ -9,6 +9,7 @@ Pattern:  Router → Service (business logic) → Repository (THIS FILE) → Dat
 The repository does NOT check ownership or authorization.
 That's the service layer's job (note_service.py).
 """
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.note import Note
@@ -109,6 +110,22 @@ def get_my_notes(
     only see their own notes (data isolation).
     """
     query = db.query(Note).filter(Note.user_id == user_id)
+    if cursor is not None:
+        query = query.filter(Note.id < cursor)
+    return query.order_by(Note.id.desc()).limit(limit).all()
+
+
+def search_notes(
+    db: Session,
+    user_id: int,
+    search_query: str,
+    cursor: int | None = None,
+    limit: int = 20,
+) -> list[Note]:
+    query = db.query(Note).filter(
+        Note.user_id == user_id,
+        Note.search_vector.op("@@")(func.plainto_tsquery("english", search_query)),
+    )
     if cursor is not None:
         query = query.filter(Note.id < cursor)
     return query.order_by(Note.id.desc()).limit(limit).all()
