@@ -148,7 +148,24 @@ def delete_note(db: Session, user_id: int, note_id: int) -> None:
     else:
         raise HTTPException(status_code=404, detail="Note not found")
     
-def get_my_notes(db: Session, user_id: int) -> list[Note]:
+def _item_id(item) -> int:
+    if isinstance(item, dict):
+        return item["id"]
+    return item.id
+
+
+def _paginate(items: list, limit: int) -> dict:
+    data = items[:limit]
+    next_cursor = _item_id(data[-1]) if len(items) > limit and data else None
+    return {"data": data, "next_cursor": next_cursor}
+
+
+def get_my_notes(
+    db: Session,
+    user_id: int,
+    cursor: int | None = None,
+    limit: int = 20,
+) -> dict:
     """
     Retrieves all notes for the specified user.
 
@@ -163,8 +180,13 @@ def get_my_notes(db: Session, user_id: int) -> list[Note]:
     Returns:
         A list of Note model instances belonging to the user.
     """
-    notes = note_repo.get_my_notes(db, user_id=user_id)
-    return notes
+    notes = note_repo.get_my_notes(
+        db,
+        user_id=user_id,
+        cursor=cursor,
+        limit=limit + 1,
+    )
+    return _paginate(notes, limit)
 
 
 def get_note(db: Session, user_id: int, note_id: int) -> Note | None:
@@ -218,6 +240,15 @@ def get_public_note(db: Session, share_uuid: str) -> Note:
         raise HTTPException(status_code=404, detail="Note not found")
     return note
 
-def get_community_notes(db: Session) -> list[dict]:
+def get_community_notes(
+    db: Session,
+    cursor: int | None = None,
+    limit: int = 20,
+) -> dict:
     """Retrieves all community notes."""
-    return note_repo.get_community_notes(db)
+    notes = note_repo.get_community_notes(
+        db,
+        cursor=cursor,
+        limit=limit + 1,
+    )
+    return _paginate(notes, limit)

@@ -96,15 +96,22 @@ def delete(db: Session, note_id: int) -> None:
         db.commit()
     return None
 
-def get_my_notes(db:Session, user_id: int) -> list[Note]:
+def get_my_notes(
+    db:Session,
+    user_id: int,
+    cursor: int | None = None,
+    limit: int = 20,
+) -> list[Note]:
     """
     Fetches all notes belonging to a specific user.
 
     Uses .filter(Note.user_id == user_id) to ensure users
     only see their own notes (data isolation).
     """
-    notes = db.query(Note).filter(Note.user_id == user_id).all()
-    return notes
+    query = db.query(Note).filter(Note.user_id == user_id)
+    if cursor is not None:
+        query = query.filter(Note.id < cursor)
+    return query.order_by(Note.id.desc()).limit(limit).all()
 
 def toggle_pin(db: Session, note_id: int) -> Note:
     """Flips is_pinned on a note and returns the updated note."""
@@ -135,13 +142,18 @@ def _community_response(note: Note, author_name: str) -> dict:
     }
 
 
-def get_community_notes(db: Session) -> list[dict]:
+def get_community_notes(
+    db: Session,
+    cursor: int | None = None,
+    limit: int = 20,
+) -> list[dict]:
     """Fetches all community notes (is_community=True)."""
-    rows = (
+    query = (
         db.query(Note, User.name)
         .join(User, Note.user_id == User.id)
         .filter(Note.is_community == True)
-        .order_by(Note.created_at.desc())
-        .all()
     )
+    if cursor is not None:
+        query = query.filter(Note.id < cursor)
+    rows = query.order_by(Note.id.desc()).limit(limit).all()
     return [_community_response(note, author_name) for note, author_name in rows]

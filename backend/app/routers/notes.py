@@ -20,6 +20,8 @@ from app.dependencies import get_db, get_current_user
 from app.schemas.note import (
     CommunityNoteResponse,
     NoteCreate,
+    PaginatedCommunityNoteResponse,
+    PaginatedNoteResponse,
     NoteResponse,
     NoteUpdate,
     PublicNoteResponse,
@@ -28,6 +30,10 @@ from app.services import note_service
 
 
 router = APIRouter(prefix="/notes",tags=["notes"])
+
+
+def _clamp_limit(limit: int) -> int:
+    return max(1, min(limit, 100))
 
 # ════════════════════════════════════════════
 #  POST /notes/create — Create a new note
@@ -81,18 +87,37 @@ def delete_note(id: int,user= Depends(get_current_user),db :Session = Depends(ge
 # ════════════════════════════════════════════
 # - response_model=list[NoteResponse] tells FastAPI to return a JSON array
 # - Only returns notes belonging to the authenticated user (user_id filter)
-@router.get("/notes",response_model=list[NoteResponse],status_code=200)
-def get_my_notes(user= Depends(get_current_user),db :Session = Depends(get_db)):
-    return note_service.get_my_notes(db, user_id=user.id)
+@router.get("/notes",response_model=PaginatedNoteResponse,status_code=200)
+def get_my_notes(
+    cursor: int | None = None,
+    limit: int = 20,
+    user= Depends(get_current_user),
+    db :Session = Depends(get_db),
+):
+    return note_service.get_my_notes(
+        db,
+        user_id=user.id,
+        cursor=cursor,
+        limit=_clamp_limit(limit),
+    )
 
 # ════════════════════════════════════════════
 #  GET /notes/community — List community notes
 # ════════════════════════════════════════════
 # - Requires authentication (internal feed)
 # - Returns all notes with is_community=True
-@router.get("/community", response_model=list[CommunityNoteResponse], status_code=200)
-def get_community_notes(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return note_service.get_community_notes(db)
+@router.get("/community", response_model=PaginatedCommunityNoteResponse, status_code=200)
+def get_community_notes(
+    cursor: int | None = None,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return note_service.get_community_notes(
+        db,
+        cursor=cursor,
+        limit=_clamp_limit(limit),
+    )
 
 # ════════════════════════════════════════════
 #  GET /notes/{id} — Get a single note

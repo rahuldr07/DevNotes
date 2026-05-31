@@ -25,13 +25,16 @@ def test_community_notes_expose_author_name_not_user_id(notes_client, monkeypatc
     monkeypatch.setattr(
         note_service,
         "get_community_notes",
-        lambda db: [_note_payload(author_name="Grace Hopper")],
+        lambda db, cursor=None, limit=20: {
+            "data": [_note_payload(author_name="Grace Hopper")],
+            "next_cursor": None,
+        },
     )
 
     response = notes_client.get("/notes/community", headers={"Authorization": "Bearer token"})
 
     assert response.status_code == 200
-    note = response.json()[0]
+    note = response.json()["data"][0]
     assert note["author_name"] == "Grace Hopper"
     assert "user_id" not in note
 

@@ -79,6 +79,17 @@ class PublicNoteResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class PaginatedNoteResponse(BaseModel):
+    data: list[NoteResponse]
+    next_cursor: int | None = None
+
+
+class PaginatedCommunityNoteResponse(BaseModel):
+    data: list[CommunityNoteResponse]
+    next_cursor: int | None = None
+
+
 class NoteUpdate(BaseModel):
     """
     INPUT schema for updating an existing note.
