@@ -32,6 +32,7 @@ class Note(Base):
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     is_published = Column(Boolean, default=False, nullable=False)
     is_community = Column(Boolean, default=False, nullable=False)
+    view_count = Column(Integer, nullable=False, server_default="0", default=0)
     search_vector = Column(
         TSVECTOR,
         Computed("to_tsvector('english', title || ' ' || content)", persisted=True),

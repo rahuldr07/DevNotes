@@ -298,7 +298,9 @@ def get_public_note(db: Session, share_uuid: str) -> Note:
     if not note or not note.is_published:
         # Return 404 even if exists but not published (security)
         raise HTTPException(status_code=404, detail="Note not found")
-    return note
+    note_repo.increment_view_count(db, note.id)
+    note.view_count = (note.view_count or 0) + 1
+    return note_repo.get_public_note_response(db, note)
 
 def get_community_notes(
     db: Session,
@@ -311,4 +313,28 @@ def get_community_notes(
         cursor=cursor,
         limit=limit + 1,
     )
-    return _paginate(notes, limit)
+    paginated = _paginate(notes, limit)
+    note_ids = [_item_id(note) for note in paginated["data"]]
+    note_repo.increment_view_counts(db, note_ids)
+    for note in paginated["data"]:
+        note["view_count"] = (note.get("view_count") or 0) + 1
+    return paginated
+
+
+def toggle_like(db: Session, user_id: int, note_id: int) -> dict:
+    note = note_repo.get_by_note_id(db, note_id=note_id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    existing_like = note_repo.get_like(db, note_id=note_id, user_id=user_id)
+    if existing_like:
+        note_repo.delete_like(db, existing_like)
+        liked = False
+    else:
+        note_repo.create_like(db, note_id=note_id, user_id=user_id)
+        liked = True
+
+    return {
+        "liked": liked,
+        "like_count": note_repo.get_like_count(db, note_id=note_id),
+    }

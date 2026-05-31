@@ -54,6 +54,8 @@ class CommunityNoteResponse(BaseModel):
     share_uuid: str | None = None
     is_published: bool = False
     is_community: bool = False
+    like_count: int = 0
+    view_count: int = 0
     created_at: datetime
     updated_at: datetime | None = None
 
@@ -73,6 +75,8 @@ class PublicNoteResponse(BaseModel):
     share_uuid: str
     is_published: bool = False
     is_community: bool = False
+    like_count: int = 0
+    view_count: int = 0
     created_at: datetime
     updated_at: datetime | None = None
 
@@ -111,6 +115,11 @@ class NoteVersionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class LikeToggleResponse(BaseModel):
+    liked: bool
+    like_count: int
 
 
 class NoteUpdate(BaseModel):

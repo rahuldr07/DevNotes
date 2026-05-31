@@ -13,6 +13,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.note import Note
+from app.models.note_like import NoteLike
 from app.models.note_version import NoteVersion
 from app.models.user import User
 
@@ -220,6 +221,23 @@ def _community_response(note: Note, author_name: str) -> dict:
         "share_uuid": note.share_uuid,
         "is_published": note.is_published,
         "is_community": note.is_community,
+        "like_count": getattr(note, "like_count", 0),
+        "view_count": note.view_count or 0,
+        "created_at": note.created_at,
+        "updated_at": note.updated_at,
+    }
+
+
+def _public_response(note: Note, like_count: int) -> dict:
+    return {
+        "title": note.title,
+        "content": note.content,
+        "tags": note.tags,
+        "share_uuid": note.share_uuid,
+        "is_published": note.is_published,
+        "is_community": note.is_community,
+        "like_count": like_count,
+        "view_count": note.view_count or 0,
         "created_at": note.created_at,
         "updated_at": note.updated_at,
     }
@@ -231,12 +249,63 @@ def get_community_notes(
     limit: int = 20,
 ) -> list[dict]:
     """Fetches all community notes (is_community=True)."""
+    like_count = func.count(NoteLike.id).label("like_count")
     query = (
         db.query(Note, User.name)
         .join(User, Note.user_id == User.id)
+        .outerjoin(NoteLike, NoteLike.note_id == Note.id)
         .filter(Note.is_community == True)
+        .group_by(Note.id, User.name)
+        .add_columns(like_count)
     )
     if cursor is not None:
         query = query.filter(Note.id < cursor)
     rows = query.order_by(Note.id.desc()).limit(limit).all()
-    return [_community_response(note, author_name) for note, author_name in rows]
+    return [
+        _community_response(note, author_name) | {"like_count": like_count}
+        for note, author_name, like_count in rows
+    ]
+
+
+def increment_view_counts(db: Session, note_ids: list[int]) -> None:
+    if not note_ids:
+        return
+    (
+        db.query(Note)
+        .filter(Note.id.in_(note_ids))
+        .update({Note.view_count: Note.view_count + 1}, synchronize_session=False)
+    )
+    db.commit()
+
+
+def increment_view_count(db: Session, note_id: int) -> None:
+    increment_view_counts(db, [note_id])
+
+
+def get_like_count(db: Session, note_id: int) -> int:
+    return db.query(NoteLike).filter(NoteLike.note_id == note_id).count()
+
+
+def get_public_note_response(db: Session, note: Note) -> dict:
+    return _public_response(note, get_like_count(db, note.id))
+
+
+def get_like(db: Session, note_id: int, user_id: int) -> NoteLike | None:
+    return (
+        db.query(NoteLike)
+        .filter(NoteLike.note_id == note_id, NoteLike.user_id == user_id)
+        .first()
+    )
+
+
+def create_like(db: Session, note_id: int, user_id: int) -> NoteLike:
+    like = NoteLike(note_id=note_id, user_id=user_id)
+    db.add(like)
+    db.commit()
+    db.refresh(like)
+    return like
+
+
+def delete_like(db: Session, like: NoteLike) -> None:
+    db.delete(like)
+    db.commit()

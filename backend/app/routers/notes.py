@@ -20,6 +20,7 @@ from app.dependencies import get_db, get_current_user
 from app.rate_limit import limiter
 from app.schemas.note import (
     CommunityNoteResponse,
+    LikeToggleResponse,
     NoteCreate,
     NoteVersionResponse,
     NoteVersionSummaryResponse,
@@ -162,6 +163,11 @@ def get_note_version(
         note_id=id,
         version_id=version_id,
     )
+
+
+@router.post("/{id}/like", response_model=LikeToggleResponse, status_code=200)
+def toggle_like(id: int, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return note_service.toggle_like(db, user_id=user.id, note_id=id)
 
 # ════════════════════════════════════════════
 #  GET /notes/{id} — Get a single note
