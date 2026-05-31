@@ -290,6 +290,29 @@ def get_public_note_response(db: Session, note: Note) -> dict:
     return _public_response(note, get_like_count(db, note.id))
 
 
+def get_public_notes_for_user(db: Session, user_id: int) -> list[dict]:
+    like_count = func.count(NoteLike.id).label("like_count")
+    rows = (
+        db.query(Note, like_count)
+        .outerjoin(NoteLike, NoteLike.note_id == Note.id)
+        .filter(Note.user_id == user_id, Note.is_published == True)
+        .group_by(Note.id)
+        .order_by(Note.id.desc())
+        .all()
+    )
+    return [
+        {
+            "title": note.title,
+            "share_uuid": note.share_uuid,
+            "tags": note.tags,
+            "like_count": count,
+            "view_count": note.view_count or 0,
+            "created_at": note.created_at,
+        }
+        for note, count in rows
+    ]
+
+
 def get_like(db: Session, note_id: int, user_id: int) -> NoteLike | None:
     return (
         db.query(NoteLike)

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+import re
 from fastapi import HTTPException
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -8,6 +9,24 @@ from app.services.security import hash_password, verify_password
 from app.models.user import User
 
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+USERNAME_MAX_LENGTH = 30
+
+
+def _username_base(name: str) -> str:
+    base = re.sub(r"\s+", "-", name.strip().lower())
+    base = re.sub(r"[^a-z0-9-]", "", base).strip("-")
+    return (base or "user")[:USERNAME_MAX_LENGTH]
+
+
+def generate_unique_username(db: Session, name: str) -> str:
+    base = _username_base(name)
+    candidate = base
+    counter = 1
+    while user_repo.get_by_username(db, candidate) is not None:
+        suffix = f"-{counter}"
+        candidate = f"{base[:USERNAME_MAX_LENGTH - len(suffix)]}{suffix}"
+        counter += 1
+    return candidate
 
 
 def create_access_token(data: dict) -> str:
@@ -113,8 +132,16 @@ def register_user(db: Session, email: str, name: str, password: str) -> User:
     # Hash the Password
     hashed_password = hash_password(password)  # "abc123" → "$2b$12$..."
 
+    username = generate_unique_username(db, name)
+
     # Create the user with hashed password
-    db_user = user_repo.create(db, name=name, email=email, hashed_password=hashed_password)
+    db_user = user_repo.create(
+        db,
+        name=name,
+        email=email,
+        hashed_password=hashed_password,
+        username=username,
+    )
     return db_user       # FastAPI filters this through UserResponse
 
 def authenticate_user(db: Session, email: str, password: str) -> dict:

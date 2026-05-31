@@ -28,6 +28,7 @@ from app.rate_limit import configure_rate_limiting
 # ── Import routers ──
 from app.routers import auth
 from app.routers import notes
+from app.routers import profiles
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -78,6 +79,7 @@ app.add_middleware(
 # ── Register routers ──
 app.include_router(auth.router)
 app.include_router(notes.router)  # ← uncomment after building notes router
+app.include_router(profiles.router)
 
 
 # ── Health checks ──

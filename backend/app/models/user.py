@@ -26,6 +26,7 @@ class User(Base):
     # Email must be unique — no two users can register with the same email
     # index=True = PostgreSQL creates a fast-lookup index on this column
     email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(30), unique=True, nullable=True, index=True)
 
     # We NEVER store plain passwords. This holds the bcrypt hash.
     # Text = unlimited length (hashes are long strings)

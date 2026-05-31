@@ -26,6 +26,10 @@ def get_by_email(db: Session, email: str) -> User | None:
     oUser = db.query(User).filter(User.email == email).first()
     return oUser
 
+
+def get_by_username(db: Session, username: str) -> User | None:
+    return db.query(User).filter(User.username == username).first()
+
 def get_by_id(db: Session, user_id: int) -> User | None:
     """
     Finds a user by their primary key ID.
@@ -37,7 +41,13 @@ def get_by_id(db: Session, user_id: int) -> User | None:
     oUser = db.query(User).filter(User.id == user_id).first()
     return oUser
 
-def create(db: Session, name: str, email: str, hashed_password: str) -> User:
+def create(
+    db: Session,
+    name: str,
+    email: str,
+    hashed_password: str,
+    username: str | None = None,
+) -> User:
     """
     Creates a new user in the database.
 
@@ -50,7 +60,12 @@ def create(db: Session, name: str, email: str, hashed_password: str) -> User:
     Note: Receives hashed_password, NOT plain text.
           The service layer hashes it before calling this function.
     """
-    oUser = User(name=name, email=email, hashed_password=hashed_password)
+    oUser = User(
+        name=name,
+        email=email,
+        hashed_password=hashed_password,
+        username=username,
+    )
     db.add(oUser)
     db.commit()
     db.refresh(oUser)
