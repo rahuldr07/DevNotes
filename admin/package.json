@@ -32,6 +32,7 @@
     "goey-toast": "^0.3.0",
     "highlight.js": "^11.11.1",
     "howler": "^2.2.4",
+    "jose": "^6.2.3",
     "js-cookie": "^3.0.5",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.564.0",
