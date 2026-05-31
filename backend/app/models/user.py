@@ -31,6 +31,9 @@ class User(Base):
     # Text = unlimited length (hashes are long strings)
     hashed_password = Column(Text, nullable=False)
 
+    # Stores a bcrypt hash of the active refresh token. The raw token is never persisted.
+    refresh_token = Column(Text, nullable=True, index=True)
+
     # Role for future authorization (admin vs regular user)
     # default="user" = if you don't specify a role, it defaults to "user"
     role = Column(String(50), nullable=False, default="user")

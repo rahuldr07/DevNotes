@@ -7,6 +7,8 @@ from app.repositories import user_repo
 from app.services.security import hash_password, verify_password
 from app.models.user import User
 
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
 
 def create_access_token(data: dict) -> str:
     """
@@ -38,6 +40,14 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 
+def create_refresh_token(data: dict) -> str:
+    settings = get_settings()
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire, "token_type": "refresh"})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
 def verify_access_token(token: str) -> dict:
     """
     Verifies a JWT token sent by the client.
@@ -59,6 +69,17 @@ def verify_access_token(token: str) -> dict:
         return payload
     except JWTError as e:
         raise JWTError("Invalid or expired token") from e
+
+
+def verify_refresh_token(token: str) -> dict:
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("token_type") != "refresh":
+            raise JWTError("Invalid refresh token")
+        return payload
+    except JWTError as e:
+        raise JWTError("Invalid or expired refresh token") from e
     
 
 def register_user(db: Session, email: str, name: str, password: str) -> User:
@@ -128,10 +149,55 @@ def authenticate_user(db: Session, email: str, password: str) -> dict:
     if not verify_password(password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Create JWT token with user ID
+    # Create JWT tokens with user ID
     access_token = create_access_token({"sub": str(db_user.id)})
+    refresh_token = create_refresh_token({"sub": str(db_user.id)})
+    user_repo.update_refresh_token(db, db_user.id, hash_password(refresh_token))
 
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",  # tells the client how to send it (Authorization: Bearer ...)
     }
+
+
+def refresh_access_token(db: Session, refresh_token: str) -> dict:
+    try:
+        payload = verify_refresh_token(refresh_token)
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid refresh token") from e
+
+    db_user = user_repo.get_by_id(db, user_id=int(user_id))
+    if not db_user or not db_user.refresh_token:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if not verify_password(refresh_token, db_user.refresh_token):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    access_token = create_access_token({"sub": str(db_user.id)})
+    new_refresh_token = create_refresh_token({"sub": str(db_user.id)})
+    user_repo.update_refresh_token(db, db_user.id, hash_password(new_refresh_token))
+    return {
+        "access_token": access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer",
+    }
+
+
+def logout_refresh_token(db: Session, refresh_token: str) -> None:
+    try:
+        payload = verify_refresh_token(refresh_token)
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid refresh token") from e
+
+    db_user = user_repo.get_by_id(db, user_id=int(user_id))
+    if not db_user or not db_user.refresh_token:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if not verify_password(refresh_token, db_user.refresh_token):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    user_repo.update_refresh_token(db, db_user.id, None)

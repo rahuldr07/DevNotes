@@ -15,7 +15,14 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_db
 from app.rate_limit import limiter
-from app.schemas.user import CurrentUserResponse, UserCreate, UserResponse, UserLogin
+from app.schemas.user import (
+    CurrentUserResponse,
+    RefreshTokenRequest,
+    TokenResponse,
+    UserCreate,
+    UserResponse,
+    UserLogin,
+)
 from app.services import auth_service
 
 # APIRouter groups related endpoints together.
@@ -37,7 +44,7 @@ def register(request: Request, response: Response, user: UserCreate, db: Session
 # ════════════════════════════════════════════
 #  POST /auth/login — Authenticate & get JWT
 # ════════════════════════════════════════════
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 @limiter.limit("10/minute")
 def login(request: Request, response: Response, credentials: UserLogin, db: Session = Depends(get_db)):
    return auth_service.authenticate_user(db, credentials.email, credentials.password)
@@ -46,3 +53,14 @@ def login(request: Request, response: Response, credentials: UserLogin, db: Sess
 @router.get("/me", response_model=CurrentUserResponse, status_code=200)
 def get_me(user=Depends(get_current_user)):
    return user
+
+
+@router.post("/refresh", response_model=TokenResponse, status_code=200)
+def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)):
+   return auth_service.refresh_access_token(db, payload.refresh_token)
+
+
+@router.post("/logout", status_code=204)
+def logout(payload: RefreshTokenRequest, db: Session = Depends(get_db)):
+   auth_service.logout_refresh_token(db, payload.refresh_token)
+   return None

@@ -55,3 +55,17 @@ def create(db: Session, name: str, email: str, hashed_password: str) -> User:
     db.commit()
     db.refresh(oUser)
     return oUser
+
+
+def update_refresh_token(
+    db: Session,
+    user_id: int,
+    refresh_token_hash: str | None,
+) -> User | None:
+    user = get_by_id(db, user_id=user_id)
+    if user is None:
+        return None
+    user.refresh_token = refresh_token_hash
+    db.commit()
+    db.refresh(user)
+    return user
