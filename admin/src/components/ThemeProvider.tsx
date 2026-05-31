@@ -37,7 +37,7 @@ export const THEMES: ThemeMeta[] = [
     id: "serika-dark",
     name: "Serika Dark",
     isDark: true,
-    swatches: ["#323437", "#e2b714", "#2c2e31", "#d1d0c5"],
+    swatches: ["#1a1a1a", "#e2b714", "#2a2a2a", "#d1d0c5"],
   },
   {
     id: "nord",
@@ -75,7 +75,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const STORAGE_KEY = "devnotes-theme";
 const ONBOARDED_KEY = "devnotes-onboarded";
-const DEFAULT_THEME: ThemeId = "catppuccin-mocha";
+const DEFAULT_THEME: ThemeId = "serika-dark";
 
 /* ─── Provider ───────────────────────────────────────────────────────────── */
 

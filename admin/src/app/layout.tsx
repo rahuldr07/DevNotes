@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { SoundProvider } from "@/components/SoundProvider";
@@ -7,9 +7,10 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { GoeyToaster } from "@/components/ui/goey-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const inter = Inter({
+const robotoMono = Roboto_Mono({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-roboto-mono",
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -27,7 +28,7 @@ export default function RootLayout({
     // suppressHydrationWarning: ThemeProvider sets data-theme + .dark class
     // on the client, which would cause a hydration mismatch warning without this.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${robotoMono.variable} font-sans antialiased`}>
         <ThemeProvider>
           <SoundProvider>
             <TooltipProvider>

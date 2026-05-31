@@ -8,8 +8,8 @@
 /* ─── Tailwind theme tokens ─────────────────────────────────────────────── */
 @theme inline {
   /* Font — Inter loaded in layout.tsx via next/font */
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-inter);
+  --font-sans: var(--font-roboto-mono);
+  --font-mono: var(--font-roboto-mono);
 
   /* Map shadcn semantic vars to Tailwind color utilities */
   --color-background: var(--background);
@@ -50,9 +50,11 @@
 /* ─── Smooth theme transitions ──────────────────────────────────────────── */
 /* One line that makes every theme switch feel buttery, not jarring */
 html {
+  background: var(--bg);
+  color: var(--text-primary);
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+    background-color 0.18s ease,
+    color 0.18s ease;
 }
 
 /* ─── Auth page background animations ───────────────────────────────────── */
@@ -204,43 +206,43 @@ html {
 
 /* ── 3. Serika Dark ── MonkeyType classic yellow-on-charcoal ── */
 [data-theme="serika-dark"] {
-  --bg-color: #323437;
+  --bg-color: #1a1a1a;
   --main-color: #e2b714;
   --sub-color: #646669;
-  --sub-alt-color: #2c2e31;
+  --sub-alt-color: #2a2a2a;
   --text-color: #d1d0c5;
   --error-color: #ca4754;
-  --border-color: #3f4143;
-  --hover-color: #404346;
-  --input-bg: #2c2e31;
+  --border-color: rgba(255, 255, 255, 0.06);
+  --hover-color: #222222;
+  --input-bg: transparent;
   --focus-ring: #e2b714;
-  --radius: 0.625rem;
+  --radius: 0.25rem;
 
-  --background: #323437;
+  --background: #1a1a1a;
   --foreground: #d1d0c5;
-  --card: #2c2e31;
+  --card: #1a1a1a;
   --card-foreground: #d1d0c5;
-  --popover: #2c2e31;
+  --popover: #2a2a2a;
   --popover-foreground: #d1d0c5;
   --primary: #e2b714;
-  --primary-foreground: #323437;
-  --secondary: #3f4143;
+  --primary-foreground: #1a1a1a;
+  --secondary: #2a2a2a;
   --secondary-foreground: #d1d0c5;
-  --muted: #2c2e31;
+  --muted: #2a2a2a;
   --muted-foreground: #646669;
-  --accent: #404346;
+  --accent: #e2b714;
   --accent-foreground: #d1d0c5;
   --destructive: #ca4754;
-  --border: #3f4143;
-  --input: #2c2e31;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: transparent;
   --ring: #e2b714;
-  --sidebar: #27292c;
+  --sidebar: #1a1a1a;
   --sidebar-foreground: #d1d0c5;
   --sidebar-primary: #e2b714;
-  --sidebar-primary-foreground: #323437;
-  --sidebar-accent: #2c2e31;
+  --sidebar-primary-foreground: #1a1a1a;
+  --sidebar-accent: #2a2a2a;
   --sidebar-accent-foreground: #d1d0c5;
-  --sidebar-border: #3f4143;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-ring: #e2b714;
 }
 
@@ -370,6 +372,19 @@ html {
   --sidebar-ring: #6366f1;
 }
 
+:root,
+[data-theme] {
+  --bg: var(--bg-color);
+  --bg-secondary: var(--sub-alt-color);
+  --text-primary: var(--text-color);
+  --text-secondary: var(--sub-color);
+  --accent: var(--main-color);
+  --accent-hover: color-mix(in srgb, var(--main-color) 82%, #000);
+  --error: var(--error-color);
+  --success: #4caf50;
+  --border: var(--border-color);
+}
+
 /* ─── Base layer ─────────────────────────────────────────────────────────── */
 @layer base {
   * {
@@ -378,7 +393,52 @@ html {
 
   body {
     @apply bg-background text-foreground font-sans;
+    min-height: 100vh;
+    font-weight: 400;
+    letter-spacing: 0;
+    background: var(--bg);
+    color: var(--text-primary);
   }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--bg);
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-secondary) var(--bg-secondary);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
 }
 /* ─── TipTap Editor ──────────────────────────────────────────────────────── */
 /* All scoped to .tiptap — TipTap's own class applied to the editor element   */
@@ -409,23 +469,23 @@ html {
 
 .tiptap h1 {
   font-size: 1.9rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
   margin: 1.8rem 0 0.6rem;
   color: var(--text-color);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .tiptap h2 {
   font-size: 1.4rem;
-  font-weight: 650;
+  font-weight: 500;
   line-height: 1.3;
   margin: 1.5rem 0 0.5rem;
   color: var(--text-color);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .tiptap h3 {
   font-size: 1.15rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.4;
   margin: 1.2rem 0 0.4rem;
   color: var(--text-color);
@@ -444,7 +504,7 @@ html {
 }
 
 .tiptap strong {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-color);
 }
 .tiptap em {
@@ -491,7 +551,7 @@ html {
 .tiptap pre .hljs-keyword,
 .tiptap pre .hljs-selector-tag {
   color: var(--main-color);
-  font-weight: 600;
+  font-weight: 500;
 }
 .tiptap pre .hljs-string,
 .tiptap pre .hljs-attr {
@@ -510,7 +570,7 @@ html {
 .tiptap pre .hljs-title,
 .tiptap pre .hljs-name {
   color: var(--text-color);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* ── Lists ── */
@@ -559,10 +619,8 @@ html {
   border-radius: 10px;
   background: var(--sub-alt-color);
   border: 1px solid var(--border-color);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.25),
-    0 2px 8px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(8px);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 .bubble-btn {
   display: flex;
@@ -578,12 +636,12 @@ html {
   transition: all 0.1s ease;
 }
 .bubble-btn:hover {
-  background: var(--hover-color);
-  color: var(--text-color);
+  background: transparent;
+  color: var(--main-color);
 }
 .bubble-btn.is-active {
-  background: var(--main-color);
-  color: var(--bg-color);
+  background: transparent;
+  color: var(--main-color);
 }
 .bubble-sep {
   width: 1px;
@@ -621,11 +679,11 @@ html {
   border-radius: 10px;
   background: var(--sub-alt-color);
   border: 1px solid var(--border-color);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: none;
 }
 .floating-label {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sub-color);
   opacity: 0.5;
   margin-right: 2px;
@@ -642,13 +700,13 @@ html {
   cursor: pointer;
   color: var(--sub-color);
   font-size: 0.72rem;
-  font-weight: 500;
+  font-weight: 400;
   transition: all 0.1s ease;
   white-space: nowrap;
 }
 .floating-btn:hover {
-  background: var(--hover-color);
-  color: var(--text-color);
+  background: transparent;
+  color: var(--main-color);
 }
 .floating-btn span {
   display: inline;
@@ -749,7 +807,7 @@ html {
   right: 10px;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--main-color);

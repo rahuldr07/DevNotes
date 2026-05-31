@@ -41,10 +41,10 @@ interface LoginResponse {
 }
 
 const labelStyle = {
-  color: "var(--sub-color)",
+  color: "var(--text-secondary)",
   fontSize: "0.75rem",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase" as const,
+  letterSpacing: "0.02em",
+  textTransform: "lowercase" as const,
 };
 
 export default function LoginPage() {
@@ -148,24 +148,15 @@ export default function LoginPage() {
 
   return (
     <AuthLayout breadcrumb="auth / login">
-      {/* Glassy card */}
-      <div
-        className="w-full max-w-sm rounded-2xl p-8"
-        style={{
-          backgroundColor: "var(--sub-alt-color)",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.12)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
+      <div className="w-full max-w-sm" style={{ color: "var(--text-primary)" }}>
         <h1
-          className="text-2xl font-bold mb-1"
-          style={{ color: "var(--text-color)" }}
+          className="mb-2 text-2xl font-medium lowercase"
+          style={{ color: "var(--text-primary)" }}
         >
-          Welcome back
+          welcome back
         </h1>
-        <p className="text-sm mb-7" style={{ color: "var(--sub-color)" }}>
-          Sign in to continue to your notes
+        <p className="mb-10 text-sm" style={{ color: "var(--text-secondary)" }}>
+          sign in to continue to your notes
         </p>
 
         {serverError && (
@@ -201,11 +192,13 @@ export default function LoginPage() {
               placeholder="you@example.com"
               autoComplete="email"
               style={{
-                backgroundColor: "var(--input-bg)",
-                border: `1px solid ${fieldErrors.email ? "var(--error-color)" : "var(--border-color)"}`,
-                color: "var(--text-color)",
+                backgroundColor: "transparent",
+                borderColor: fieldErrors.email
+                  ? "var(--error)"
+                  : "var(--border)",
+                color: "var(--text-primary)",
               }}
-              className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+              className="h-11 focus-visible:border-[var(--accent)]"
             />
             {fieldErrors.email && (
               <p className="text-xs" style={{ color: "var(--error-color)" }}>
@@ -231,11 +224,13 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 style={{
-                  backgroundColor: "var(--input-bg)",
-                  border: `1px solid ${fieldErrors.password ? "var(--error-color)" : "var(--border-color)"}`,
-                  color: "var(--text-color)",
+                  backgroundColor: "transparent",
+                  borderColor: fieldErrors.password
+                    ? "var(--error)"
+                    : "var(--border)",
+                  color: "var(--text-primary)",
                 }}
-                className="h-11 pr-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                className="h-11 pr-11 focus-visible:border-[var(--accent)]"
               />
               <button
                 type="button"
@@ -266,7 +261,7 @@ export default function LoginPage() {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="h-4 w-4 rounded-sm"
               style={{
-                accentColor: "var(--main-color)",
+                accentColor: "var(--accent)",
               }}
             />
             Remember me
@@ -275,26 +270,26 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full h-11 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="h-11 w-full text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{
-              backgroundColor: "var(--main-color)",
-              color: "var(--bg-color)",
+              backgroundColor: "var(--accent)",
+              color: "var(--bg)",
               border: "none",
             }}
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "signing in..." : "sign in"}
           </Button>
         </form>
 
         <p
-          className="mt-5 text-center text-sm"
-          style={{ color: "var(--sub-color)" }}
+          className="mt-6 text-center text-sm"
+          style={{ color: "var(--text-secondary)" }}
         >
           Don&apos;t have an account?{" "}
           <Link
             href="/auth/signup"
-            className="font-medium transition-opacity hover:opacity-70"
-            style={{ color: "var(--main-color)" }}
+            className="font-normal transition-opacity hover:opacity-70"
+            style={{ color: "var(--accent)" }}
           >
             Sign up
           </Link>

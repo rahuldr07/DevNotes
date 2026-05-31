@@ -1,9 +1,8 @@
 "use client";
 
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
-import { useTheme } from "@/components/ThemeProvider";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -11,88 +10,38 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, breadcrumb }: AuthLayoutProps) {
-  const { currentThemeMeta } = useTheme();
-
   return (
     <div
-      className="min-h-screen flex flex-col relative overflow-hidden"
-      style={{ backgroundColor: "var(--bg-color)", color: "var(--text-color)" }}
+      className="relative flex min-h-screen flex-col overflow-hidden"
+      style={{ backgroundColor: "var(--bg)", color: "var(--text-primary)" }}
     >
-      {/* Floating orbs — use main-color + sub-alt blobs for depth */}
-      <div
-        className="auth-orb-1 pointer-events-none absolute rounded-full blur-[120px]"
-        style={{
-          width: "500px",
-          height: "500px",
-          top: "-120px",
-          right: "-80px",
-          backgroundColor: "var(--main-color)",
-          opacity: currentThemeMeta.isDark ? 0.12 : 0.08,
-        }}
-      />
-      <div
-        className="auth-orb-2 pointer-events-none absolute rounded-full blur-[100px]"
-        style={{
-          width: "400px",
-          height: "400px",
-          bottom: "80px",
-          left: "-100px",
-          backgroundColor: "var(--main-color)",
-          opacity: currentThemeMeta.isDark ? 0.1 : 0.07,
-        }}
-      />
-      <div
-        className="auth-orb-3 pointer-events-none absolute rounded-full blur-[140px]"
-        style={{
-          width: "300px",
-          height: "300px",
-          top: "40%",
-          left: "55%",
-          backgroundColor: "var(--sub-alt-color)",
-          opacity: currentThemeMeta.isDark ? 0.5 : 0.4,
-        }}
-      />
-
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-8 py-5">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1000px] items-center justify-between px-8 py-6">
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-70"
-          style={{ color: "var(--sub-color)" }}
+          className="flex items-center gap-2 text-sm transition-colors hover:text-[var(--accent)]"
+          style={{ color: "var(--text-secondary)" }}
         >
           <ArrowLeft size={14} />
           back to home
         </Link>
         <span
-          className="text-xs font-mono tracking-widest uppercase"
-          style={{ color: "var(--sub-color)" }}
+          className="text-xs lowercase"
+          style={{ color: "var(--text-secondary)", letterSpacing: "0.02em" }}
         >
           {breadcrumb}
         </span>
         <ThemePickerPopover />
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-4">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-10">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-            style={{
-              backgroundColor: "var(--main-color)",
-              boxShadow: `0 8px 24px color-mix(in srgb, var(--main-color) 40%, transparent)`,
-            }}
-          >
-            <FileText size={20} color="var(--bg-color)" strokeWidth={2.5} />
-          </div>
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8">
+        <div className="mb-12 flex items-center">
           <span
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "var(--text-color)" }}
+            className="text-2xl font-medium lowercase"
+            style={{ color: "var(--accent)" }}
           >
-            DevNotes
+            devnotes
           </span>
         </div>
-
         {children}
       </div>
     </div>

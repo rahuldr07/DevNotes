@@ -36,10 +36,10 @@ interface SignupResponse {
 }
 
 const labelStyle = {
-  color: "var(--sub-color)",
+  color: "var(--text-secondary)",
   fontSize: "0.75rem",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase" as const,
+  letterSpacing: "0.02em",
+  textTransform: "lowercase" as const,
 };
 
 export default function SignUpPage() {
@@ -107,30 +107,22 @@ export default function SignUpPage() {
   );
 
   const inputStyle = (field: string) => ({
-    backgroundColor: "var(--input-bg)",
-    border: `1px solid ${fieldErrors[field] ? "var(--error-color)" : "var(--border-color)"}`,
-    color: "var(--text-color)",
+    backgroundColor: "transparent",
+    borderColor: fieldErrors[field] ? "var(--error)" : "var(--border)",
+    color: "var(--text-primary)",
   });
 
   return (
     <AuthLayout breadcrumb="auth / signup">
-      <div
-        className="w-full max-w-md rounded-2xl p-8"
-        style={{
-          backgroundColor: "var(--sub-alt-color)",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.12)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
+      <div className="w-full max-w-md" style={{ color: "var(--text-primary)" }}>
         <h1
-          className="text-2xl font-bold mb-1"
-          style={{ color: "var(--text-color)" }}
+          className="mb-2 text-2xl font-medium lowercase"
+          style={{ color: "var(--text-primary)" }}
         >
-          Create account
+          create account
         </h1>
-        <p className="text-sm mb-7" style={{ color: "var(--sub-color)" }}>
-          Join DevNotes and start writing
+        <p className="mb-10 text-sm" style={{ color: "var(--text-secondary)" }}>
+          join devnotes and start writing
         </p>
 
         {serverError && (
@@ -167,7 +159,7 @@ export default function SignUpPage() {
                 placeholder="John Doe"
                 autoComplete="name"
                 style={inputStyle("name")}
-                className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                className="h-11 focus-visible:border-[var(--accent)]"
               />
               {fieldErrors.name && (
                 <p className="text-xs" style={{ color: "var(--error-color)" }}>
@@ -190,7 +182,7 @@ export default function SignUpPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 style={inputStyle("email")}
-                className="h-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                className="h-11 focus-visible:border-[var(--accent)]"
               />
               {fieldErrors.email && (
                 <p className="text-xs" style={{ color: "var(--error-color)" }}>
@@ -218,7 +210,7 @@ export default function SignUpPage() {
                   placeholder="min. 8 chars"
                   autoComplete="new-password"
                   style={inputStyle("password")}
-                  className="h-11 pr-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                  className="h-11 pr-11 focus-visible:border-[var(--accent)]"
                 />
                 <button
                   type="button"
@@ -252,7 +244,7 @@ export default function SignUpPage() {
                   placeholder="••••••••"
                   autoComplete="new-password"
                   style={inputStyle("confirmPassword")}
-                  className="h-11 pr-11 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[var(--main-color)]"
+                  className="h-11 pr-11 focus-visible:border-[var(--accent)]"
                 />
                 <button
                   type="button"
@@ -275,26 +267,26 @@ export default function SignUpPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full h-11 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 mt-2"
+            className="mt-2 h-11 w-full text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{
-              backgroundColor: "var(--main-color)",
-              color: "var(--bg-color)",
+              backgroundColor: "var(--accent)",
+              color: "var(--bg)",
               border: "none",
             }}
           >
-            {loading ? "Creating account..." : "Create account"}
+            {loading ? "creating account..." : "create account"}
           </Button>
         </form>
 
         <p
           className="mt-5 text-center text-sm"
-          style={{ color: "var(--sub-color)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           Already have an account?{" "}
           <Link
             href="/auth/login"
-            className="font-medium transition-opacity hover:opacity-70"
-            style={{ color: "var(--main-color)" }}
+            className="font-normal transition-opacity hover:opacity-70"
+            style={{ color: "var(--accent)" }}
           >
             Sign in
           </Link>
