@@ -3,7 +3,7 @@ export interface Note {
   title: string;
   content: string;
   tags: string[];
-  is_pinned: boolean;
+  is_pinned?: boolean;
   created_at: string;
   updated_at: string | null;
   share_uuid?: string | null;

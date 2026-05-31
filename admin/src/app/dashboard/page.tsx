@@ -14,7 +14,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type Ref,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useConfirm } from "@/hooks/useConfirm";
 import { api } from "@/lib/api";
+import { getUserNotesPage } from "@/lib/note-api";
 import { stripMarkdown } from "@/lib/notes";
 import type { Note } from "@/types/notes";
 
@@ -38,6 +46,11 @@ function formatDate(note: Note) {
     "en-US",
     { month: "short", day: "numeric", year: "numeric" },
   );
+}
+
+function appendUniqueNotes(current: Note[], incoming: Note[]) {
+  const seen = new Set(current.map((note) => note.id));
+  return [...current, ...incoming.filter((note) => !seen.has(note.id))];
 }
 
 function NoteCardSkeleton({ view }: { view: ViewMode }) {
@@ -139,11 +152,13 @@ function NoteCard({
   view,
   onDelete,
   onPin,
+  observeRef,
 }: {
   note: Note;
   view: ViewMode;
   onDelete: (id: number) => void;
   onPin: (id: number) => void;
+  observeRef?: Ref<HTMLElement>;
 }) {
   const router = useRouter();
   const [showActions, setShowActions] = useState(false);
@@ -173,6 +188,7 @@ function NoteCard({
   if (view === "list") {
     return (
       <article
+        ref={observeRef}
         {...interactiveProps}
         className="group flex cursor-pointer items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
       >
@@ -204,6 +220,7 @@ function NoteCard({
 
   return (
     <article
+      ref={observeRef}
       {...interactiveProps}
       className="group relative mb-4 break-inside-avoid cursor-pointer rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
     >
@@ -252,11 +269,14 @@ function NoteCard({
 export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
   const [view, setView] = useState<ViewMode>("grid");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const { confirm, ConfirmDialog } = useConfirm();
 
   useEffect(() => {
@@ -276,12 +296,13 @@ export default function DashboardPage() {
     localStorage.setItem("devnotes-view", value);
   };
 
-  const fetchNotes = useCallback(async () => {
+  const fetchFirstPage = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      const data = await api.get<Note[]>("/notes/notes");
-      setNotes(data);
+      const page = await getUserNotesPage({ limit: 20 });
+      setNotes(page.items);
+      setNextCursor(page.next_cursor);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to load notes";
@@ -292,8 +313,41 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+    fetchFirstPage();
+  }, [fetchFirstPage]);
+
+  const fetchNextPage = useCallback(async () => {
+    if (loading || loadingMore || nextCursor === null) return;
+
+    try {
+      setLoadingMore(true);
+      const page = await getUserNotesPage({ limit: 20, cursor: nextCursor });
+      setNotes((prev) => appendUniqueNotes(prev, page.items));
+      setNextCursor(page.next_cursor);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load more notes";
+      setError(message);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loading, loadingMore, nextCursor]);
+
+  const lastNoteRef = useCallback(
+    (node: HTMLElement | null) => {
+      if (loading || loadingMore) return;
+      if (observerRef.current) observerRef.current.disconnect();
+      if (!node || nextCursor === null) return;
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0]?.isIntersecting) {
+          fetchNextPage();
+        }
+      });
+      observerRef.current.observe(node);
+    },
+    [fetchNextPage, loading, loadingMore, nextCursor],
+  );
 
   useEffect(() => {
     const onGlobalShortcut = (event: KeyboardEvent) => {
@@ -571,15 +625,28 @@ export default function DashboardPage() {
               : "space-y-1"
           }
         >
-          {sortedNotes.map((note) => (
+          {sortedNotes.map((note, index) => (
             <NoteCard
               key={note.id}
               note={note}
               view={view}
               onDelete={handleDelete}
               onPin={handlePin}
+              observeRef={
+                index === sortedNotes.length - 1 ? lastNoteRef : undefined
+              }
             />
           ))}
+        </div>
+      )}
+
+      {!loading && notes.length > 0 && (
+        <div className="py-8 text-center text-xs text-[var(--text-secondary)]">
+          {loadingMore
+            ? "loading..."
+            : nextCursor === null
+              ? "you've reached the end"
+              : ""}
         </div>
       )}
 
