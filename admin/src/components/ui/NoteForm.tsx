@@ -13,12 +13,13 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SharePopover } from "@/components/SharePopover";
+import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { useSettings } from "@/hooks/useSettings";
 import { api } from "@/lib/api";
 import { normalizeTag, normalizeTags, stripMarkdown } from "@/lib/notes";
-import type { Note } from "@/types/notes";
+import type { Note, NoteVersion } from "@/types/notes";
 
 const RichEditor = dynamic(() => import("@/components/ui/RichEditor"), {
   ssr: false,
@@ -72,6 +73,8 @@ export default function NoteForm({
   const [shareUuid, setShareUuid] = useState(initialShareUuid);
   const [isPublished, setIsPublished] = useState(initialPublished);
   const [isCommunity, setIsCommunity] = useState(initialCommunity);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [restoringVersion, setRestoringVersion] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -257,6 +260,41 @@ export default function NoteForm({
     [isCommunity, mode, noteId],
   );
 
+  const restoreVersion = useCallback(
+    async (version: NoteVersion) => {
+      if (mode !== "edit" || !noteId) return;
+      const nextTags = normalizeTags(version.tags);
+      setRestoringVersion(true);
+      setLoading(true);
+      setSaveStatus("saving");
+      try {
+        const restored = await api.patch<Note>(`/notes/${noteId}/update`, {
+          title: version.title,
+          content: version.content,
+          tags: nextTags,
+        });
+        const nextTitle = restored.title ?? version.title;
+        const nextContent = restored.content ?? version.content;
+        const restoredTags = normalizeTags(restored.tags ?? nextTags);
+        setTitle(nextTitle);
+        setContent(nextContent);
+        setTags(restoredTags);
+        setTagInput("");
+        markSaved(nextTitle, nextContent, restoredTags);
+        setHistoryOpen(false);
+        gooeyToast.success(`Restored v${version.version}`);
+      } catch (err: unknown) {
+        setSaveStatus("error");
+        const message = err instanceof Error ? err.message : "Restore failed";
+        gooeyToast.error(message);
+      } finally {
+        setLoading(false);
+        setRestoringVersion(false);
+      }
+    },
+    [markSaved, mode, noteId],
+  );
+
   useEffect(() => {
     const onShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
@@ -328,8 +366,8 @@ export default function NoteForm({
                 <>
                   <button
                     type="button"
-                    disabled
-                    className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] opacity-60"
+                    onClick={() => setHistoryOpen(true)}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                     aria-label="Version history"
                     title="Version history"
                   >
@@ -451,6 +489,16 @@ export default function NoteForm({
         </div>
       </div>
       <div className="h-14" />
+      {mode === "edit" && noteId && (
+        <VersionHistoryDrawer
+          open={historyOpen}
+          noteId={noteId}
+          current={{ title, content, tags: normalizedTags }}
+          restoring={restoringVersion}
+          onClose={() => setHistoryOpen(false)}
+          onRestore={restoreVersion}
+        />
+      )}
     </div>
   );
 }
