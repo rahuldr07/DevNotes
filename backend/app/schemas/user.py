@@ -50,3 +50,14 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CurrentUserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    role: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

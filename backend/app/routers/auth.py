@@ -13,8 +13,8 @@ Flow: Router (THIS FILE) → Service (auth_service.py) → Repository (user_repo
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
-from app.schemas.user import UserCreate, UserResponse, UserLogin
+from app.dependencies import get_current_user, get_db
+from app.schemas.user import CurrentUserResponse, UserCreate, UserResponse, UserLogin
 from app.services import auth_service
 
 # APIRouter groups related endpoints together.
@@ -38,3 +38,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(credentials: UserLogin, db: Session = Depends(get_db)):
    return auth_service.authenticate_user(db, credentials.email, credentials.password)
+
+
+@router.get("/me", response_model=CurrentUserResponse, status_code=200)
+def get_me(user=Depends(get_current_user)):
+   return user
