@@ -15,7 +15,7 @@ python-multipart==0.0.22
 slowapi==0.1.9
 
 # Validation & config
-pydantic==2.12.5
+pydantic[email]==2.12.5
 pydantic-settings>=2.0.0
 pydantic_core==2.41.5
 
