@@ -1,178 +1,149 @@
 "use client";
 
-import { Copy, Globe, Users, Share2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Copy, Globe, Share2, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { api } from "@/lib/api";
 import { gooeyToast } from "@/components/ui/goey-toaster";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 
 interface SharePopoverProps {
   noteId: number;
-  initialPublished: boolean;
-  initialCommunity: boolean;
-  initialShareUuid: string | null;
+  isPublished: boolean;
+  isCommunity: boolean;
+  shareUuid: string | null;
+  onPublishToggle: (checked: boolean) => Promise<void>;
+  onCommunityToggle: (checked: boolean) => Promise<void>;
 }
 
 export function SharePopover({
-  noteId,
-  initialPublished,
-  initialCommunity,
-  initialShareUuid,
+  isPublished,
+  isCommunity,
+  shareUuid,
+  onPublishToggle,
+  onCommunityToggle,
 }: SharePopoverProps) {
-  const [isPublished, setIsPublished] = useState(initialPublished);
-  const [isCommunity, setIsCommunity] = useState(initialCommunity);
-  const [shareUuid, setShareUuid] = useState(initialShareUuid);
-  const [loading, setLoading] = useState(false);
-
-  // Use window.location only on client
   const [origin, setOrigin] = useState("");
+  const [loading, setLoading] = useState<"publish" | "community" | null>(null);
+
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
 
   const publicUrl = shareUuid ? `${origin}/s/${shareUuid}` : "";
 
-  const handlePublishToggle = async (checked: boolean) => {
-    setLoading(true);
-    // Optimistic update
-    setIsPublished(checked);
-    
-    try {
-      const updatedNote = await api.patch<any>(`/notes/${noteId}/update`, {
-        is_published: checked,
-      });
-      // Update UUID if it was generated
-      if (updatedNote.share_uuid) {
-        setShareUuid(updatedNote.share_uuid);
-      }
-      // Sync state with server response to be safe
-      setIsPublished(updatedNote.is_published);
-      gooeyToast.success(checked ? "Note published to web" : "Note unpublished");
-    } catch (err) {
-      setIsPublished(!checked); // Revert
-      gooeyToast.error("Failed to update publish settings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCommunityToggle = async (checked: boolean) => {
-    setLoading(true);
-    setIsCommunity(checked);
-    
-    try {
-      await api.patch(`/notes/${noteId}/update`, {
-        is_community: checked,
-      });
-      gooeyToast.success(checked ? "Added to community feed" : "Removed from community feed");
-    } catch (err) {
-      setIsCommunity(!checked);
-      gooeyToast.error("Failed to update community settings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyLink = () => {
+  const copyLink = async () => {
     if (!publicUrl) return;
-    navigator.clipboard.writeText(publicUrl);
-    gooeyToast.success("Link copied to clipboard");
+    await navigator.clipboard.writeText(publicUrl);
+    gooeyToast.success("Link copied");
+  };
+
+  const runToggle = async (type: "publish" | "community", checked: boolean) => {
+    setLoading(type);
+    try {
+      if (type === "publish") {
+        await onPublishToggle(checked);
+      } else {
+        await onCommunityToggle(checked);
+      }
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="gap-2 h-8 px-3 transition-opacity hover:opacity-70"
-          style={{ color: "var(--sub-color)" }}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-2 px-2 text-xs text-[var(--text-secondary)]"
         >
           <Share2 size={14} />
-          Share
+          share
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0 overflow-hidden" style={{ backgroundColor: "var(--sub-alt-color)", border: "1px solid var(--border-color)" }}>
-        <div className="p-4 space-y-4">
-            <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg" style={{ backgroundColor: "var(--bg-color)" }}>
-                    <Globe size={18} style={{ color: "var(--main-color)" }} />
-                </div>
-                <div>
-                    <h4 className="text-sm font-semibold" style={{ color: "var(--text-color)" }}>Share Note</h4>
-                    <p className="text-xs" style={{ color: "var(--sub-color)" }}>Manage visibility and access</p>
-                </div>
+      <PopoverContent
+        align="end"
+        className="w-80 bg-[var(--bg-secondary)] p-0"
+        style={{ border: "1px solid var(--border)" }}
+      >
+        <div className="space-y-4 p-4">
+          <div>
+            <h4 className="text-sm font-medium text-[var(--text-primary)]">
+              share note
+            </h4>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              publish a public link or include it in explore
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Globe
+                  size={14}
+                  className={
+                    isPublished
+                      ? "text-[var(--accent)]"
+                      : "text-[var(--text-secondary)]"
+                  }
+                />
+                <span className="text-xs text-[var(--text-primary)]">
+                  public link
+                </span>
+              </div>
+              <Switch
+                checked={isPublished}
+                onCheckedChange={(checked) => runToggle("publish", checked)}
+                disabled={loading !== null}
+              />
             </div>
 
-            {/* Public Link Section */}
-            <div className="rounded-xl p-3" style={{ backgroundColor: "var(--bg-color)", border: "1px solid var(--border-color)" }}>
-                <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                        <Globe size={14} style={{ color: isPublished ? "var(--main-color)" : "var(--sub-color)" }} />
-                        <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-color)" }}>Public Link</span>
-                    </div>
-                    <Switch 
-                        checked={isPublished} 
-                        onCheckedChange={handlePublishToggle} 
-                        disabled={loading}
-                    />
-                </div>
-                
-                <AnimatePresence>
-                    {isPublished && (
-                        <motion.div 
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="pt-3 flex gap-2">
-                                <input 
-                                    readOnly 
-                                    value={publicUrl} 
-                                    className="flex-1 text-xs px-2 py-1.5 rounded border bg-transparent truncate font-mono"
-                                    style={{ 
-                                        borderColor: "var(--border-color)", 
-                                        color: "var(--sub-color)" 
-                                    }} 
-                                />
-                                <Button 
-                                    size="sm" 
-                                    variant="ghost" 
-                                    onClick={copyLink}
-                                    className="h-7 px-2 hover:opacity-90"
-                                    style={{ backgroundColor: "var(--main-color)", color: "var(--bg-color)" }}
-                                >
-                                    <Copy size={12} />
-                                </Button>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+            {isPublished && (
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={publicUrl}
+                  placeholder="link appears after publish"
+                  className="min-w-0 flex-1 border-b border-[var(--border)] bg-transparent py-1 text-xs text-[var(--text-secondary)] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+                  aria-label="Copy public link"
+                >
+                  <Copy size={14} />
+                </button>
+              </div>
+            )}
+          </div>
 
-            {/* Community Section */}
-            <div className="rounded-xl p-3" style={{ backgroundColor: "var(--bg-color)", border: "1px solid var(--border-color)" }}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Users size={14} style={{ color: isCommunity ? "var(--main-color)" : "var(--sub-color)" }} />
-                        <div className="flex flex-col">
-                            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-color)" }}>Community Feed</span>
-                        </div>
-                    </div>
-                    <Switch 
-                        checked={isCommunity} 
-                        onCheckedChange={handleCommunityToggle}
-                        disabled={loading}
-                    />
-                </div>
-                <p className="text-[10px] mt-1.5 ml-0.5" style={{ color: "var(--sub-color)" }}>
-                    Visible to other users in the Explore tab.
-                </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Users
+                size={14}
+                className={
+                  isCommunity
+                    ? "text-[var(--accent)]"
+                    : "text-[var(--text-secondary)]"
+                }
+              />
+              <span className="text-xs text-[var(--text-primary)]">
+                explore
+              </span>
             </div>
+            <Switch
+              checked={isCommunity}
+              onCheckedChange={(checked) => runToggle("community", checked)}
+              disabled={loading !== null}
+            />
+          </div>
         </div>
       </PopoverContent>
     </Popover>
