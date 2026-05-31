@@ -1,20 +1,12 @@
 "use client";
 
-import {
-  Compass,
-  FileText,
-  Library,
-  LogOut,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { LogOut, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSound } from "@/components/SoundProvider";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -59,78 +51,72 @@ export default function DashboardLayout({
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: "var(--bg-color)", color: "var(--text-color)" }}
-    >
-      {/* Sticky top navbar */}
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
       <header
-        className="sticky top-0 z-40"
+        className="sticky top-0 z-40 bg-[var(--bg)]"
         style={{
-          backgroundColor: "var(--sub-alt-color)",
-          borderBottom: "1px solid var(--border-color)",
+          borderBottom: "1px solid var(--border)",
         }}
       >
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center transition-opacity group-hover:opacity-80"
-              style={{ backgroundColor: "var(--main-color)" }}
-            >
-              <FileText size={14} color="var(--bg-color)" strokeWidth={2.5} />
-            </div>
-            <span
-              className="text-base font-bold tracking-tight"
-              style={{ color: "var(--text-color)" }}
-            >
-              DevNotes
-            </span>
+        <div className="relative mx-auto flex h-14 max-w-[1000px] items-center justify-between px-4 sm:px-6">
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
+          >
+            devnotes
           </Link>
 
-          {/* Navigation */}
-          <nav className="flex items-center gap-6 ml-8 mr-auto">
+          <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-3 text-sm sm:flex">
             <Link
               href="/dashboard"
-              className="text-sm font-medium transition-colors flex items-center gap-2"
+              className="transition-colors"
               style={{
                 color:
                   pathname === "/dashboard"
-                    ? "var(--main-color)"
-                    : "var(--sub-color)",
+                    ? "var(--accent)"
+                    : "var(--text-secondary)",
               }}
             >
-              <Library size={16} />
-              My Notes
+              my notes
             </Link>
+            <span className="text-[var(--text-secondary)]">·</span>
             <Link
               href="/dashboard/explore"
-              className="text-sm font-medium transition-colors flex items-center gap-2"
+              className="transition-colors"
               style={{
                 color: pathname.startsWith("/dashboard/explore")
-                  ? "var(--main-color)"
-                  : "var(--sub-color)",
+                  ? "var(--accent)"
+                  : "var(--text-secondary)",
               }}
             >
-              <Compass size={16} />
-              Explore
+              explore
             </Link>
           </nav>
 
-          {/* Right controls */}
           <div className="flex items-center gap-1">
-            <ThemePickerPopover />
+            {user?.name && (
+              <span
+                className="hidden max-w-32 truncate px-2 text-xs md:inline"
+                style={{ color: "var(--text-secondary)" }}
+                title={user.name}
+              >
+                {user.name}
+              </span>
+            )}
+            <div className="hidden sm:block">
+              <ThemePickerPopover />
+            </div>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleSound}
-                  className="h-8 w-8 transition-opacity hover:opacity-70"
+                  className="h-8 w-8"
                   style={{
                     color: soundEnabled
-                      ? "var(--main-color)"
-                      : "var(--sub-color)",
+                      ? "var(--accent)"
+                      : "var(--text-secondary)",
                   }}
                   aria-label={soundEnabled ? "Mute sounds" : "Enable sounds"}
                 >
@@ -141,28 +127,14 @@ export default function DashboardLayout({
                 <p>{soundEnabled ? "Mute sounds" : "Enable sounds"}</p>
               </TooltipContent>
             </Tooltip>
-            <Separator
-              orientation="vertical"
-              className="h-5 mx-1"
-              style={{ backgroundColor: "var(--border-color)" }}
-            />
-            {user?.name && (
-              <span
-                className="hidden max-w-36 truncate px-2 text-xs md:inline"
-                style={{ color: "var(--text-secondary)" }}
-                title={user.name}
-              >
-                {user.name}
-              </span>
-            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  className="h-8 w-8 transition-opacity hover:opacity-70"
-                  style={{ color: "var(--sub-color)" }}
+                  className="h-8 w-8"
+                  style={{ color: "var(--text-secondary)" }}
                   aria-label="Logout"
                 >
                   <LogOut size={15} />
@@ -174,10 +146,40 @@ export default function DashboardLayout({
             </Tooltip>
           </div>
         </div>
+        <nav
+          className="flex h-10 items-center justify-center gap-3 text-sm sm:hidden"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <Link
+            href="/dashboard"
+            className="transition-colors"
+            style={{
+              color:
+                pathname === "/dashboard"
+                  ? "var(--accent)"
+                  : "var(--text-secondary)",
+            }}
+          >
+            my notes
+          </Link>
+          <span className="text-[var(--text-secondary)]">·</span>
+          <Link
+            href="/dashboard/explore"
+            className="transition-colors"
+            style={{
+              color: pathname.startsWith("/dashboard/explore")
+                ? "var(--accent)"
+                : "var(--text-secondary)",
+            }}
+          >
+            explore
+          </Link>
+        </nav>
       </header>
 
-      {/* Page content */}
-      <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-[1000px] px-4 py-8 sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }

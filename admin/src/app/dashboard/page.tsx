@@ -1,15 +1,3 @@
-/**
- * Dashboard Page — Main notes listing with CRUD operations.
- *
- * Route: /dashboard (protected — requires authentication)
- *
- * Features:
- * - Fetches and displays all user's notes in a responsive grid or list view
- * - Pin notes (float to top, persisted to backend)
- * - Sort: Newest / Oldest / Title A-Z (persisted to localStorage)
- * - View toggle: Grid / List (persisted to localStorage)
- * - Create, Edit, Delete notes
- */
 "use client";
 
 import {
@@ -25,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -39,89 +28,108 @@ import {
 import { useConfirm } from "@/hooks/useConfirm";
 import { api } from "@/lib/api";
 import { stripMarkdown } from "@/lib/notes";
+import type { Note } from "@/types/notes";
 
 type SortKey = "newest" | "oldest" | "title";
 type ViewMode = "grid" | "list";
 
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-  tags: string[];
-  is_pinned: boolean;
-  created_at: string;
-  updated_at: string | null;
+function formatDate(note: Note) {
+  return new Date(note.updated_at ?? note.created_at).toLocaleDateString(
+    "en-US",
+    { month: "short", day: "numeric", year: "numeric" },
+  );
 }
 
 function NoteCardSkeleton({ view }: { view: ViewMode }) {
   if (view === "list") {
     return (
-      <div
-        className="rounded-xl px-4 py-3 flex items-center gap-4"
-        style={{
-          backgroundColor: "var(--sub-alt-color)",
-          border: "1px solid var(--border-color)",
-        }}
-      >
-        <Skeleton
-          className="h-4 w-1/3"
-          style={{ backgroundColor: "var(--hover-color)" }}
-        />
-        <Skeleton
-          className="h-3 flex-1"
-          style={{ backgroundColor: "var(--hover-color)" }}
-        />
-        <Skeleton
-          className="h-3 w-20"
-          style={{ backgroundColor: "var(--hover-color)" }}
-        />
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => (
-            <Skeleton
-              key={i}
-              className="h-7 w-7 rounded-md"
-              style={{ backgroundColor: "var(--hover-color)" }}
-            />
-          ))}
-        </div>
+      <div className="flex items-center gap-4 px-2 py-3">
+        <Skeleton className="h-4 w-1/4 bg-[var(--bg-secondary)]" />
+        <Skeleton className="h-3 flex-1 bg-[var(--bg-secondary)]" />
+        <Skeleton className="h-3 w-24 bg-[var(--bg-secondary)]" />
       </div>
     );
   }
+
   return (
-    <div
-      className="rounded-xl p-5 space-y-3"
-      style={{
-        backgroundColor: "var(--sub-alt-color)",
-        border: "1px solid var(--border-color)",
-      }}
-    >
-      <Skeleton
-        className="h-5 w-3/4"
-        style={{ backgroundColor: "var(--hover-color)" }}
-      />
-      <Skeleton
-        className="h-4 w-full"
-        style={{ backgroundColor: "var(--hover-color)" }}
-      />
-      <Skeleton
-        className="h-4 w-5/6"
-        style={{ backgroundColor: "var(--hover-color)" }}
-      />
-      <div className="flex justify-between items-center pt-1">
-        <Skeleton
-          className="h-3 w-20"
-          style={{ backgroundColor: "var(--hover-color)" }}
-        />
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => (
-            <Skeleton
-              key={i}
-              className="h-7 w-7 rounded-md"
-              style={{ backgroundColor: "var(--hover-color)" }}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="mb-4 break-inside-avoid space-y-3 rounded-md bg-[var(--bg-secondary)] p-4">
+      <Skeleton className="h-5 w-3/4 bg-[var(--border)]" />
+      <Skeleton className="h-3 w-full bg-[var(--border)]" />
+      <Skeleton className="h-3 w-5/6 bg-[var(--border)]" />
+      <Skeleton className="h-3 w-24 bg-[var(--border)]" />
+    </div>
+  );
+}
+
+function GhostActions({
+  note,
+  onDelete,
+  onPin,
+}: {
+  note: Note;
+  onDelete: (id: number) => void;
+  onPin: (id: number) => void;
+}) {
+  const router = useRouter();
+  const iconClass =
+    "flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]";
+
+  return (
+    <div className="flex items-center gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={iconClass}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPin(note.id);
+            }}
+            aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
+          >
+            {note.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{note.is_pinned ? "Unpin" : "Pin note"}</p>
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={iconClass}
+            onClick={(event) => {
+              event.stopPropagation();
+              router.push(`/dashboard/edit_note?id=${note.id}`);
+            }}
+            aria-label="Edit note"
+          >
+            <Edit3 size={14} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Edit note</p>
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={`${iconClass} hover:text-[var(--error)]`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(note.id);
+            }}
+            aria-label="Delete note"
+          >
+            <Trash2 size={14} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Delete note</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }
@@ -137,192 +145,107 @@ function NoteCard({
   onDelete: (id: number) => void;
   onPin: (id: number) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const router = useRouter();
+  const [showActions, setShowActions] = useState(false);
+  const plain = stripMarkdown(note.content);
+  const preview = plain.length > 150 ? `${plain.slice(0, 150)}...` : plain;
 
-  const preview = stripMarkdown(note.content).slice(0, 160);
-  const date = new Date(note.updated_at ?? note.created_at).toLocaleDateString(
-    "en-US",
-    { month: "short", day: "numeric", year: "numeric" },
-  );
+  const openNote = () => router.push(`/dashboard/edit_note?id=${note.id}`);
 
-  const actionButtons = (
-    <div className="flex gap-1 flex-shrink-0">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onPin(note.id)}
-            className="h-7 w-7 transition-opacity hover:opacity-70"
-            style={{
-              color: note.is_pinned ? "var(--main-color)" : "var(--sub-color)",
-            }}
-          >
-            {note.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{note.is_pinned ? "Unpin" : "Pin note"}</p>
-        </TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link href={`/dashboard/edit_note?id=${note.id}`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 transition-opacity hover:opacity-70"
-              style={{ color: "var(--sub-color)" }}
-            >
-              <Edit3 size={14} />
-            </Button>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Edit note</p>
-        </TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(note.id)}
-            className="h-7 w-7 transition-opacity hover:opacity-70"
-            style={{ color: "var(--error-color)" }}
-          >
-            <Trash2 size={14} />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Delete note</p>
-        </TooltipContent>
-      </Tooltip>
-    </div>
-  );
+  const interactiveProps = {
+    role: "link",
+    tabIndex: 0,
+    onClick: openNote,
+    onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openNote();
+      }
+    },
+    onContextMenu: (event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      setShowActions(true);
+    },
+    onMouseEnter: () => setShowActions(true),
+    onMouseLeave: () => setShowActions(false),
+  };
 
-  // ── List view ────────────────────────────────────────────────────────────
   if (view === "list") {
     return (
-      <div
-        className="rounded-xl px-4 py-3 flex items-center gap-4 transition-all duration-200"
-        style={{
-          backgroundColor: "var(--sub-alt-color)",
-          border: `1px solid ${hovered ? "var(--main-color)" : "var(--border-color)"}`,
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+      <article
+        {...interactiveProps}
+        className="group flex cursor-pointer items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
       >
-        {note.is_pinned && (
-          <Pin
-            size={11}
-            style={{ color: "var(--main-color)", flexShrink: 0 }}
-          />
-        )}
         <span
-          className="text-sm font-semibold truncate flex-shrink-0 max-w-[200px]"
-          style={{ color: "var(--text-color)" }}
-        >
-          {note.title || "Untitled"}
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{
+            backgroundColor: note.is_pinned ? "var(--accent)" : "transparent",
+          }}
+        />
+        <h2 className="min-w-0 max-w-[220px] flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
+          {note.title || "untitled"}
+        </h2>
+        <p className="hidden min-w-0 flex-[2] truncate text-xs text-[var(--text-secondary)] md:block">
+          {preview || "empty note"}
+        </p>
+        <span className="hidden shrink-0 text-xs text-[var(--text-secondary)] sm:inline">
+          {formatDate(note)}
         </span>
-        {preview && (
-          <span
-            className="text-xs truncate flex-1 min-w-0"
-            style={{ color: "var(--sub-color)" }}
-          >
-            {preview}
-          </span>
-        )}
-        {note.tags.length > 0 && (
-          <div className="hidden lg:flex items-center gap-1 max-w-[200px] truncate">
-            {note.tags.slice(0, 2).map((tag) => (
-              <span
-                key={`${note.id}-list-${tag}`}
-                className="text-[10px] px-1.5 py-0.5 rounded-full truncate"
-                style={{
-                  color: "var(--main-color)",
-                  backgroundColor:
-                    "color-mix(in srgb, var(--main-color) 12%, transparent)",
-                }}
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-        <span
-          className="text-xs flex-shrink-0"
-          style={{ color: "var(--sub-color)" }}
+        <div
+          className={`shrink-0 transition-opacity ${
+            showActions ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
         >
-          {date}
-        </span>
-        {actionButtons}
-      </div>
+          <GhostActions note={note} onDelete={onDelete} onPin={onPin} />
+        </div>
+      </article>
     );
   }
 
-  // ── Grid view ────────────────────────────────────────────────────────────
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: card hover effect
-    <div
-      className="rounded-xl p-5 flex flex-col gap-3 transition-all duration-200 group"
-      style={{
-        backgroundColor: "var(--sub-alt-color)",
-        border: `1px solid ${hovered ? "var(--main-color)" : "var(--border-color)"}`,
-        boxShadow: hovered ? "0 0 0 1px var(--main-color)" : "none",
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+    <article
+      {...interactiveProps}
+      className="group relative mb-4 break-inside-avoid cursor-pointer rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
     >
-      <div className="flex items-start justify-between gap-2">
-        <h2
-          className="text-base font-semibold leading-snug line-clamp-2 flex-1"
-          style={{ color: "var(--text-color)" }}
-        >
-          {note.title || "Untitled"}
-        </h2>
-        {note.is_pinned && (
-          <Pin
-            size={12}
-            style={{ color: "var(--main-color)", flexShrink: 0, marginTop: 2 }}
-          />
-        )}
-      </div>
-
-      {preview && (
-        <p
-          className="text-sm leading-relaxed line-clamp-3 flex-1"
-          style={{ color: "var(--sub-color)" }}
-        >
-          {preview}
-          {stripMarkdown(note.content).length > 160 && "…"}
-        </p>
-      )}
-      {note.tags.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap -mt-1">
-          {note.tags.slice(0, 4).map((tag) => (
-            <span
-              key={`${note.id}-grid-${tag}`}
-              className="text-[10px] px-2 py-0.5 rounded-full"
-              style={{
-                color: "var(--main-color)",
-                backgroundColor:
-                  "color-mix(in srgb, var(--main-color) 12%, transparent)",
-              }}
-            >
-              #{tag}
-            </span>
-          ))}
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="mb-2 flex items-center gap-2">
+            {note.is_pinned && (
+              <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+            )}
+            <h2 className="line-clamp-2 text-base font-medium leading-snug text-[var(--text-primary)]">
+              {note.title || "untitled"}
+            </h2>
+          </div>
+          {note.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {note.tags.slice(0, 4).map((tag) => (
+                <span
+                  key={`${note.id}-${tag}`}
+                  className="text-[11px] text-[var(--accent)]"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-
-      <div className="flex items-center justify-between mt-auto pt-1">
-        <span className="text-xs" style={{ color: "var(--sub-color)" }}>
-          {date}
-        </span>
-        {actionButtons}
+        <div
+          className={`shrink-0 transition-opacity ${
+            showActions ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <GhostActions note={note} onDelete={onDelete} onPin={onPin} />
+        </div>
       </div>
-    </div>
+
+      <p className="line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-[var(--text-secondary)]">
+        {preview || "empty note"}
+      </p>
+      <div className="mt-4 flex justify-end text-xs text-[var(--text-secondary)]">
+        {formatDate(note)}
+      </div>
+    </article>
   );
 }
 
@@ -336,7 +259,6 @@ export default function DashboardPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
-  // Restore persisted preferences
   useEffect(() => {
     const savedSort = localStorage.getItem("devnotes-sort") as SortKey | null;
     const savedView = localStorage.getItem("devnotes-view") as ViewMode | null;
@@ -344,52 +266,51 @@ export default function DashboardPage() {
     if (savedView) setView(savedView);
   }, []);
 
-  const changeSort = (s: SortKey) => {
-    setSort(s);
-    localStorage.setItem("devnotes-sort", s);
-  };
-  const changeView = (v: ViewMode) => {
-    setView(v);
-    localStorage.setItem("devnotes-view", v);
+  const changeSort = (value: SortKey) => {
+    setSort(value);
+    localStorage.setItem("devnotes-sort", value);
   };
 
-  const toggleSearch = useCallback(() => {
-    setSearchOpen((prev) => !prev);
+  const changeView = (value: ViewMode) => {
+    setView(value);
+    localStorage.setItem("devnotes-view", value);
+  };
+
+  const fetchNotes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await api.get<Note[]>("/notes/notes");
+      setNotes(data);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load notes";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    const fetchNotes = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const data = await api.get<Note[]>("/notes/notes");
-        setNotes(data);
-      } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "Failed to load notes";
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchNotes();
-  }, []);
+  }, [fetchNotes]);
 
   useEffect(() => {
-    const onGlobalShortcut = (e: KeyboardEvent) => {
+    const onGlobalShortcut = (event: KeyboardEvent) => {
+      const target = event.target;
       const inInput =
-        e.target instanceof HTMLElement &&
-        (e.target.tagName === "INPUT" ||
-          e.target.tagName === "TEXTAREA" ||
-          e.target.isContentEditable);
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
         setSearchOpen(true);
-      } else if (!inInput && e.key === "/") {
-        e.preventDefault();
+      } else if (!inInput && event.key === "/") {
+        event.preventDefault();
         setSearchOpen(true);
-      } else if (e.key === "Escape") {
+      } else if (event.key === "Escape") {
         setSearchOpen(false);
       }
     };
@@ -399,7 +320,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    const note = notes.find((n) => n.id === id);
+    const note = notes.find((item) => item.id === id);
     const ok = await confirm({
       title: "Delete this note?",
       description: note?.title
@@ -409,347 +330,245 @@ export default function DashboardPage() {
       destructive: true,
     });
     if (!ok) return;
+
     try {
       await api.delete(`/notes/${id}/delete`);
-      setNotes((prev) => prev.filter((n) => n.id !== id));
+      setNotes((prev) => prev.filter((item) => item.id !== id));
       gooeyToast.success("Note deleted");
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Could not delete the note.";
-      gooeyToast.error("Delete failed", {
-        description: message,
-      });
+      gooeyToast.error("Delete failed", { description: message });
     }
   };
 
   const handlePin = useCallback(async (id: number) => {
-    // Optimistic update
     setNotes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_pinned: !n.is_pinned } : n)),
+      prev.map((note) =>
+        note.id === id ? { ...note, is_pinned: !note.is_pinned } : note,
+      ),
     );
+
     try {
       await api.patch(`/notes/${id}/pin`, {});
     } catch (err: unknown) {
-      // Revert on failure
       setNotes((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_pinned: !n.is_pinned } : n)),
+        prev.map((note) =>
+          note.id === id ? { ...note, is_pinned: !note.is_pinned } : note,
+        ),
       );
       const message = err instanceof Error ? err.message : "Could not pin note";
       gooeyToast.error(message);
     }
   }, []);
 
-  // Sort: pinned first, then by selected sort key
   const sortedNotes = useMemo(() => {
     const sorted = [...notes].sort((a, b) => {
-      if (sort === "newest")
+      if (sort === "newest") {
         return (
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-      if (sort === "oldest")
+      }
+      if (sort === "oldest") {
         return (
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
-      return a.title.localeCompare(b.title);
+      }
+      return (a.title || "").localeCompare(b.title || "");
     });
-    // Pinned notes float to top, preserving their relative order
-    const pinnedSorted = [
-      ...sorted.filter((n) => n.is_pinned),
-      ...sorted.filter((n) => !n.is_pinned),
+
+    const pinnedFirst = [
+      ...sorted.filter((note) => note.is_pinned),
+      ...sorted.filter((note) => !note.is_pinned),
     ];
-    if (!selectedTag) return pinnedSorted;
-    return pinnedSorted.filter((note) => note.tags.includes(selectedTag));
-  }, [notes, sort, selectedTag]);
+
+    if (!selectedTag) return pinnedFirst;
+    return pinnedFirst.filter((note) => note.tags.includes(selectedTag));
+  }, [notes, selectedTag, sort]);
 
   const availableTags = useMemo(() => {
-    const set = new Set<string>();
+    const tags = new Set<string>();
     notes.forEach((note) => {
-      note.tags.forEach((tag) => {
-        set.add(tag);
-      });
+      note.tags.forEach((tag) => tags.add(tag));
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return Array.from(tags).sort((a, b) => a.localeCompare(b));
   }, [notes]);
-
-  const sortBtnStyle = (active: boolean) => ({
-    color: active ? "var(--main-color)" : "var(--sub-color)",
-    backgroundColor: active
-      ? "color-mix(in srgb, var(--main-color) 12%, transparent)"
-      : "transparent",
-    border: "none",
-    transition: "all 0.15s ease",
-  });
-
-  const viewBtnStyle = (active: boolean) => ({
-    color: active ? "var(--main-color)" : "var(--sub-color)",
-    backgroundColor: active
-      ? "color-mix(in srgb, var(--main-color) 12%, transparent)"
-      : "transparent",
-    border: "none",
-    transition: "all 0.15s ease",
-  });
 
   return (
     <>
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "var(--text-color)" }}
-          >
-            My Notes
-          </h1>
-          {!loading && (
-            <p className="text-sm mt-0.5" style={{ color: "var(--sub-color)" }}>
-              {notes.length} {notes.length === 1 ? "note" : "notes"}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            className="gap-1.5 text-xs"
-            onClick={toggleSearch}
-            style={{
-              color: "var(--sub-color)",
-              border: "1px solid var(--border-color)",
-              backgroundColor: "var(--sub-alt-color)",
-            }}
-          >
-            <Search size={13} />
-            Search
-            <kbd
-              className="text-[10px] px-1 py-0.5 rounded"
-              style={{
-                backgroundColor: "var(--hover-color)",
-                color: "var(--sub-color)",
-              }}
-            >
-              ⌘K
-            </kbd>
-          </Button>
-          <Link href="/dashboard/create_note">
+      <div className="mb-8 flex flex-col gap-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-medium tracking-normal text-[var(--text-primary)]">
+              my notes
+            </h1>
+            {!loading && (
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                {notes.length} {notes.length === 1 ? "note" : "notes"}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
-              className="gap-2 font-semibold transition-opacity hover:opacity-90"
-              style={{
-                backgroundColor: "var(--main-color)",
-                color: "var(--bg-color)",
-                border: "none",
-              }}
+              variant="ghost"
+              className="gap-2 px-2 text-xs text-[var(--text-secondary)]"
+              onClick={() => setSearchOpen(true)}
             >
-              <Plus size={16} />
-              New note
+              <Search size={14} />
+              search
+              <kbd className="rounded bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                /
+              </kbd>
             </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Controls bar — sort + view toggle */}
-      {!loading && notes.length > 0 && (
-        <div className="space-y-3 mb-5">
-          {availableTags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setSelectedTag(null)}
-                className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-85"
-                style={{
-                  color:
-                    selectedTag === null
-                      ? "var(--bg-color)"
-                      : "var(--sub-color)",
-                  backgroundColor:
-                    selectedTag === null
-                      ? "var(--main-color)"
-                      : "var(--sub-alt-color)",
-                  border: `1px solid ${selectedTag === null ? "var(--main-color)" : "var(--border-color)"}`,
-                }}
-              >
-                All
-              </button>
-              {availableTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setSelectedTag(tag)}
-                  className="text-xs px-2 py-1 rounded-full transition-opacity hover:opacity-85"
-                  style={{
-                    color:
-                      selectedTag === tag
-                        ? "var(--main-color)"
-                        : "var(--sub-color)",
-                    backgroundColor:
-                      selectedTag === tag
-                        ? "color-mix(in srgb, var(--main-color) 12%, transparent)"
-                        : "var(--sub-alt-color)",
-                    border: `1px solid ${selectedTag === tag ? "color-mix(in srgb, var(--main-color) 35%, transparent)" : "var(--border-color)"}`,
-                  }}
-                >
-                  #{tag}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            {/* Sort buttons */}
-            <div
-              className="flex items-center gap-1 p-1 rounded-lg"
-              style={{
-                backgroundColor: "var(--sub-alt-color)",
-                border: "1px solid var(--border-color)",
-              }}
+            <select
+              value={sort}
+              onChange={(event) => changeSort(event.target.value as SortKey)}
+              className="h-8 rounded-md border-none bg-[var(--bg)] px-2 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
+              aria-label="Sort notes"
             >
-              {(["newest", "oldest", "title"] as SortKey[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => changeSort(key)}
-                  className="px-3 py-1 rounded-md text-xs font-medium capitalize"
-                  style={sortBtnStyle(sort === key)}
-                >
-                  {key === "newest"
-                    ? "Newest"
-                    : key === "oldest"
-                      ? "Oldest"
-                      : "A–Z"}
-                </button>
-              ))}
-            </div>
-
-            {/* Grid / List toggle */}
-            <div
-              className="flex items-center gap-1 p-1 rounded-lg"
-              style={{
-                backgroundColor: "var(--sub-alt-color)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
+              <option value="newest">newest</option>
+              <option value="oldest">oldest</option>
+              <option value="title">a-z</option>
+            </select>
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => changeView("grid")}
-                className="h-7 w-7 flex items-center justify-center rounded-md"
-                style={viewBtnStyle(view === "grid")}
-                title="Grid view"
+                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
+                style={{
+                  color:
+                    view === "grid" ? "var(--accent)" : "var(--text-secondary)",
+                }}
+                aria-label="Grid view"
               >
-                <LayoutGrid size={14} />
+                <LayoutGrid size={15} />
               </button>
               <button
                 type="button"
                 onClick={() => changeView("list")}
-                className="h-7 w-7 flex items-center justify-center rounded-md"
-                style={viewBtnStyle(view === "list")}
-                title="List view"
+                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
+                style={{
+                  color:
+                    view === "list" ? "var(--accent)" : "var(--text-secondary)",
+                }}
+                aria-label="List view"
               >
-                <List size={14} />
+                <List size={15} />
               </button>
             </div>
+            <Link href="/dashboard/create_note">
+              <Button className="gap-2 bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                <Plus size={14} />
+                new note
+              </Button>
+            </Link>
           </div>
         </div>
-      )}
 
-      {/* Error */}
+        {!loading && availableTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedTag(null)}
+              className="transition-colors hover:text-[var(--accent)]"
+              style={{
+                color:
+                  selectedTag === null
+                    ? "var(--accent)"
+                    : "var(--text-secondary)",
+              }}
+            >
+              all
+            </button>
+            {availableTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTag(tag)}
+                className="transition-colors hover:text-[var(--accent)]"
+                style={{
+                  color:
+                    selectedTag === tag
+                      ? "var(--accent)"
+                      : "var(--text-secondary)",
+                }}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {error && (
         <Alert
           variant="destructive"
-          className="mb-6"
-          style={{
-            borderColor: "var(--error-color)",
-            backgroundColor: "transparent",
-          }}
+          className="mb-6 border-[var(--error)] bg-transparent"
         >
           <AlertCircle size={15} />
-          <AlertDescription style={{ color: "var(--error-color)" }}>
+          <AlertDescription className="text-[var(--error)]">
             {error}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Loading skeletons */}
       {loading && (
         <div
           className={
             view === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-              : "flex flex-col gap-2"
+              ? "columns-1 gap-4 md:columns-2 lg:columns-3"
+              : "space-y-1"
           }
         >
-          {Array.from({ length: 6 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton items are static
-            <NoteCardSkeleton key={i} view={view} />
+          {Array.from({ length: 8 }).map((_, index) => (
+            <NoteCardSkeleton
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable skeleton count
+              key={index}
+              view={view}
+            />
           ))}
         </div>
       )}
 
-      {/* Empty state */}
       {!loading && notes.length === 0 && !error && (
-        <div
-          className="rounded-xl flex flex-col items-center justify-center py-20 text-center"
-          style={{ border: "1px dashed var(--border-color)" }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-            style={{ backgroundColor: "var(--sub-alt-color)" }}
-          >
-            <FileText size={22} style={{ color: "var(--sub-color)" }} />
-          </div>
-          <p
-            className="text-base font-medium mb-1"
-            style={{ color: "var(--text-color)" }}
-          >
-            No notes yet
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <FileText size={28} className="mb-4 text-[var(--text-secondary)]" />
+          <p className="text-base font-medium text-[var(--text-primary)]">
+            no notes yet
           </p>
-          <p className="text-sm mb-6" style={{ color: "var(--sub-color)" }}>
-            Create your first note to get started
+          <p className="mb-6 mt-2 text-sm text-[var(--text-secondary)]">
+            start with a blank page
           </p>
           <Link href="/dashboard/create_note">
-            <Button
-              className="gap-2 font-semibold transition-opacity hover:opacity-90"
-              style={{
-                backgroundColor: "var(--main-color)",
-                color: "var(--bg-color)",
-                border: "none",
-              }}
-            >
-              <Plus size={15} />
-              Create note
+            <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+              <Plus size={14} />
+              new note
             </Button>
           </Link>
         </div>
       )}
 
-      {/* Empty filtered state */}
       {!loading && notes.length > 0 && sortedNotes.length === 0 && !error && (
-        <div
-          className="rounded-xl flex flex-col items-center justify-center py-16 text-center"
-          style={{ border: "1px dashed var(--border-color)" }}
-        >
-          <p
-            className="text-base font-medium mb-1"
-            style={{ color: "var(--text-color)" }}
-          >
-            No notes for #{selectedTag}
-          </p>
-          <p className="text-sm mb-4" style={{ color: "var(--sub-color)" }}>
-            Try another tag or clear the tag filter.
+        <div className="py-16 text-center">
+          <p className="text-base font-medium text-[var(--text-primary)]">
+            no notes for #{selectedTag}
           </p>
           <Button
             variant="ghost"
             onClick={() => setSelectedTag(null)}
-            style={{ color: "var(--main-color)" }}
+            className="mt-3 text-[var(--accent)]"
           >
-            Clear filter
+            clear filter
           </Button>
         </div>
       )}
 
-      {/* Notes */}
-      {!loading && notes.length > 0 && sortedNotes.length > 0 && (
+      {!loading && sortedNotes.length > 0 && (
         <div
           className={
             view === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-              : "flex flex-col gap-2"
+              ? "columns-1 gap-4 md:columns-2 lg:columns-3"
+              : "space-y-1"
           }
         >
           {sortedNotes.map((note) => (
