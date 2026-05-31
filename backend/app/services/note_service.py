@@ -8,6 +8,7 @@ from app.models.note import Note
 
 
 MAX_UUID_RETRIES = 3  # For the astronomically unlikely UUID collision
+MAX_NOTE_VERSIONS = 20
 
 
 def normalize_tags(tags: list[str] | None) -> list[str]:
@@ -91,6 +92,20 @@ def update_note(
     if new_note:
         if new_note.user_id == user_id:
             normalized_tags = normalize_tags(tags) if tags is not None else None
+            version_number = note_repo.get_latest_version_number(db, note_id) + 1
+            note_repo.create_note_version(
+                db,
+                note_id=note_id,
+                title=new_note.title,
+                content=new_note.content,
+                tags=list(new_note.tags or []),
+                version_number=version_number,
+            )
+            note_repo.trim_note_versions(
+                db,
+                note_id=note_id,
+                max_versions=MAX_NOTE_VERSIONS,
+            )
             
             # Generate share_uuid if publishing for the first time
             share_uuid = None
@@ -124,6 +139,32 @@ def update_note(
             raise HTTPException(status_code=403, detail="Note does not belong to the user")
     else:
         raise HTTPException(status_code=404, detail="Note not found")
+
+
+def _get_owned_note(db: Session, user_id: int, note_id: int) -> Note:
+    note = note_repo.get_by_note_id(db, note_id=note_id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    if note.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Note does not belong to the user")
+    return note
+
+
+def get_note_versions(db: Session, user_id: int, note_id: int) -> list:
+    _get_owned_note(db, user_id=user_id, note_id=note_id)
+    return note_repo.get_note_versions(db, note_id=note_id)
+
+
+def get_note_version(db: Session, user_id: int, note_id: int, version_id: int):
+    _get_owned_note(db, user_id=user_id, note_id=note_id)
+    version = note_repo.get_note_version_by_id(
+        db,
+        note_id=note_id,
+        version_id=version_id,
+    )
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return version
 
 def delete_note(db: Session, user_id: int, note_id: int) -> None:
     """

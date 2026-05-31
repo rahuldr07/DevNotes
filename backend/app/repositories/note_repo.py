@@ -13,6 +13,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.note import Note
+from app.models.note_version import NoteVersion
 from app.models.user import User
 
 
@@ -83,6 +84,71 @@ def update(
         db.refresh(oNote)
         return oNote
     return None
+
+
+def get_latest_version_number(db: Session, note_id: int) -> int:
+    latest = (
+        db.query(func.max(NoteVersion.version_number))
+        .filter(NoteVersion.note_id == note_id)
+        .scalar()
+    )
+    return latest or 0
+
+
+def create_note_version(
+    db: Session,
+    note_id: int,
+    title: str,
+    content: str,
+    tags: list[str],
+    version_number: int,
+) -> NoteVersion:
+    version = NoteVersion(
+        note_id=note_id,
+        title=title,
+        content=content,
+        tags=tags or [],
+        version_number=version_number,
+    )
+    db.add(version)
+    db.commit()
+    db.refresh(version)
+    return version
+
+
+def trim_note_versions(db: Session, note_id: int, max_versions: int = 20) -> None:
+    old_versions = (
+        db.query(NoteVersion)
+        .filter(NoteVersion.note_id == note_id)
+        .order_by(NoteVersion.version_number.desc())
+        .offset(max_versions)
+        .all()
+    )
+    for version in old_versions:
+        db.delete(version)
+    if old_versions:
+        db.commit()
+
+
+def get_note_versions(db: Session, note_id: int) -> list[NoteVersion]:
+    return (
+        db.query(NoteVersion)
+        .filter(NoteVersion.note_id == note_id)
+        .order_by(NoteVersion.version_number.desc())
+        .all()
+    )
+
+
+def get_note_version_by_id(
+    db: Session,
+    note_id: int,
+    version_id: int,
+) -> NoteVersion | None:
+    return (
+        db.query(NoteVersion)
+        .filter(NoteVersion.note_id == note_id, NoteVersion.id == version_id)
+        .first()
+    )
 
 def delete(db: Session, note_id: int) -> None:
     """

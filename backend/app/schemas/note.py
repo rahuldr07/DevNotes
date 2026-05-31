@@ -90,6 +90,29 @@ class PaginatedCommunityNoteResponse(BaseModel):
     next_cursor: int | None = None
 
 
+class NoteVersionSummaryResponse(BaseModel):
+    id: int
+    version_number: int
+    title: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class NoteVersionResponse(BaseModel):
+    id: int
+    note_id: int
+    version_number: int
+    title: str
+    content: str
+    tags: list[str] = Field(default_factory=list)
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class NoteUpdate(BaseModel):
     """
     INPUT schema for updating an existing note.

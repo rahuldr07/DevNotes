@@ -21,6 +21,8 @@ from app.rate_limit import limiter
 from app.schemas.note import (
     CommunityNoteResponse,
     NoteCreate,
+    NoteVersionResponse,
+    NoteVersionSummaryResponse,
     PaginatedCommunityNoteResponse,
     PaginatedNoteResponse,
     NoteResponse,
@@ -139,6 +141,26 @@ def search_notes(
         query=q,
         cursor=cursor,
         limit=_clamp_limit(limit),
+    )
+
+
+@router.get("/{id}/versions", response_model=list[NoteVersionSummaryResponse], status_code=200)
+def get_note_versions(id: int, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return note_service.get_note_versions(db, user_id=user.id, note_id=id)
+
+
+@router.get("/{id}/versions/{version_id}", response_model=NoteVersionResponse, status_code=200)
+def get_note_version(
+    id: int,
+    version_id: int,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return note_service.get_note_version(
+        db,
+        user_id=user.id,
+        note_id=id,
+        version_id=version_id,
     )
 
 # ════════════════════════════════════════════
