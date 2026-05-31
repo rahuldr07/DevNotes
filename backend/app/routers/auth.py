@@ -10,10 +10,11 @@ All other endpoints require authentication via Depends(get_current_user).
 
 Flow: Router (THIS FILE) → Service (auth_service.py) → Repository (user_repo.py)
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_db
+from app.rate_limit import limiter
 from app.schemas.user import CurrentUserResponse, UserCreate, UserResponse, UserLogin
 from app.services import auth_service
 
@@ -27,7 +28,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 #  POST /auth/register — Create a new user
 # ════════════════════════════════════════════
 @router.post("/register", response_model=UserResponse, status_code=201)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, response: Response, user: UserCreate, db: Session = Depends(get_db)):
    return auth_service.register_user(db, email = user.email, name = user.name, password = user.password)
  # pass the params only if the fields are less than 5 fields else pass the schema itself
 
@@ -36,7 +38,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 #  POST /auth/login — Authenticate & get JWT
 # ════════════════════════════════════════════
 @router.post("/login")
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, response: Response, credentials: UserLogin, db: Session = Depends(get_db)):
    return auth_service.authenticate_user(db, credentials.email, credentials.password)
 
 

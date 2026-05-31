@@ -23,6 +23,7 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.config import get_settings
+from app.rate_limit import configure_rate_limiting
 
 # ── Import routers ──
 from app.routers import auth
@@ -58,6 +59,7 @@ async def lifespan(app: FastAPI):
 
 # ── Create the app ──
 app = FastAPI(title="DevNotes API", lifespan=lifespan)
+configure_rate_limiting(app)
 
 # ── CORS Middleware ──
 # Allows the Next.js frontend (localhost:3000) to call this API.

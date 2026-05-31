@@ -13,10 +13,11 @@ Endpoints:
 
 Flow: Router → Service (business logic) → Repository (database queries)
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
+from app.rate_limit import limiter
 from app.schemas.note import (
     CommunityNoteResponse,
     NoteCreate,
@@ -43,7 +44,8 @@ def _clamp_limit(limit: int) -> int:
 # - status_code=201 = HTTP "Created" (not the default 200)
 # - Depends(get_current_user) extracts user from JWT — note is linked to this user
 @router.post("/create",response_model=NoteResponse,status_code=201)
-def my_notes(note: NoteCreate,user= Depends(get_current_user),db :Session = Depends(get_db)):
+@limiter.limit("30/minute")
+def my_notes(request: Request, response: Response, note: NoteCreate,user= Depends(get_current_user),db :Session = Depends(get_db)):
     return note_service.create_note(
         db,
         user_id=user.id,
@@ -121,7 +123,10 @@ def get_community_notes(
 
 
 @router.get("/search", response_model=PaginatedNoteResponse, status_code=200)
+@limiter.limit("30/minute")
 def search_notes(
+    request: Request,
+    response: Response,
     q: str,
     cursor: int | None = None,
     limit: int = 20,
