@@ -12,6 +12,7 @@ That's the service layer's job (note_service.py).
 from sqlalchemy.orm import Session
 
 from app.models.note import Note
+from app.models.user import User
 
 
 def create(
@@ -118,6 +119,29 @@ def get_by_share_uuid(db: Session, share_uuid: str) -> Note | None:
     """Finds a note by its share_uuid."""
     return db.query(Note).filter(Note.share_uuid == share_uuid).first()
 
-def get_community_notes(db: Session) -> list[Note]:
+def _community_response(note: Note, author_name: str) -> dict:
+    return {
+        "id": note.id,
+        "author_name": author_name,
+        "title": note.title,
+        "content": note.content,
+        "tags": note.tags,
+        "is_pinned": note.is_pinned,
+        "share_uuid": note.share_uuid,
+        "is_published": note.is_published,
+        "is_community": note.is_community,
+        "created_at": note.created_at,
+        "updated_at": note.updated_at,
+    }
+
+
+def get_community_notes(db: Session) -> list[dict]:
     """Fetches all community notes (is_community=True)."""
-    return db.query(Note).filter(Note.is_community == True).order_by(Note.created_at.desc()).all()
+    rows = (
+        db.query(Note, User.name)
+        .join(User, Note.user_id == User.id)
+        .filter(Note.is_community == True)
+        .order_by(Note.created_at.desc())
+        .all()
+    )
+    return [_community_response(note, author_name) for note, author_name in rows]

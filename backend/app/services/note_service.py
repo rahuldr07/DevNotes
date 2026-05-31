@@ -218,6 +218,6 @@ def get_public_note(db: Session, share_uuid: str) -> Note:
         raise HTTPException(status_code=404, detail="Note not found")
     return note
 
-def get_community_notes(db: Session) -> list[Note]:
+def get_community_notes(db: Session) -> list[dict]:
     """Retrieves all community notes."""
     return note_repo.get_community_notes(db)

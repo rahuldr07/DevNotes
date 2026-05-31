@@ -38,3 +38,17 @@ def auth_client(current_user):
 
     with TestClient(app) as client:
         yield client
+
+
+@pytest.fixture
+def notes_client(current_user):
+    from app.dependencies import get_current_user, get_db
+    from app.routers import notes
+
+    app = FastAPI()
+    app.include_router(notes.router)
+    app.dependency_overrides[get_current_user] = lambda: current_user
+    app.dependency_overrides[get_db] = lambda: None
+
+    with TestClient(app) as client:
+        yield client

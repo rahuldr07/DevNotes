@@ -39,17 +39,38 @@ class NoteResponse(BaseModel):
         from_attributes = True
 
 
+class CommunityNoteResponse(BaseModel):
+    """
+    OUTPUT schema for community notes.
+
+    Includes the author's display name instead of exposing user_id.
+    """
+    id: int
+    author_name: str
+    title: str
+    content: str
+    tags: list[str] = Field(default_factory=list)
+    is_pinned: bool = False
+    share_uuid: str | None = None
+    is_published: bool = False
+    is_community: bool = False
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class PublicNoteResponse(BaseModel):
     """
     OUTPUT schema for public note endpoints (unauthenticated).
     
     Excludes sensitive fields like user_id to prevent data leakage.
     """
-    id: int
     title: str
     content: str
     tags: list[str] = Field(default_factory=list)
-    share_uuid: str | None = None
+    share_uuid: str
     is_published: bool = False
     is_community: bool = False
     created_at: datetime

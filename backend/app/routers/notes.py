@@ -17,7 +17,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
-from app.schemas.note import NoteCreate, NoteResponse, NoteUpdate, PublicNoteResponse
+from app.schemas.note import (
+    CommunityNoteResponse,
+    NoteCreate,
+    NoteResponse,
+    NoteUpdate,
+    PublicNoteResponse,
+)
 from app.services import note_service
 
 
@@ -84,7 +90,7 @@ def get_my_notes(user= Depends(get_current_user),db :Session = Depends(get_db)):
 # ════════════════════════════════════════════
 # - Requires authentication (internal feed)
 # - Returns all notes with is_community=True
-@router.get("/community", response_model=list[NoteResponse], status_code=200)
+@router.get("/community", response_model=list[CommunityNoteResponse], status_code=200)
 def get_community_notes(db: Session = Depends(get_db), user=Depends(get_current_user)):
     return note_service.get_community_notes(db)
 
