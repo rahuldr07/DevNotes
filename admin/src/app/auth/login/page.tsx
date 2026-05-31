@@ -28,7 +28,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-import { saveToken } from "@/lib/auth";
+import { saveRefreshToken, saveToken } from "@/lib/auth";
+import { getCurrentUserAfterAuth } from "@/lib/session";
+import { useAuthStore } from "@/stores/useAuthStore";
 import {
   decryptData,
   type EncryptedData,
@@ -38,6 +40,7 @@ import {
 interface LoginResponse {
   access_token: string;
   token_type: string;
+  refresh_token?: string;
 }
 
 const labelStyle = {
@@ -59,6 +62,7 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -132,6 +136,9 @@ export default function LoginPage() {
 
         // Save token (session cookie only, as requested)
         saveToken(response.access_token, { remember: false });
+        saveRefreshToken(response.refresh_token);
+        const user = await getCurrentUserAfterAuth(email);
+        setUser(user);
         router.push("/dashboard");
       } catch (err: unknown) {
         const message =
@@ -143,7 +150,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     },
-    [email, password, rememberMe, router, validate],
+    [email, password, rememberMe, router, setUser, validate],
   );
 
   return (

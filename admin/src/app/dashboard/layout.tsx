@@ -1,8 +1,16 @@
 "use client";
 
-import { FileText, LogOut, Volume2, VolumeX, Compass, Library } from "lucide-react";
+import {
+  Compass,
+  FileText,
+  Library,
+  LogOut,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useSound } from "@/components/SoundProvider";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
 import { Button } from "@/components/ui/button";
@@ -12,7 +20,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { removeToken } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
+import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
 
 export default function DashboardLayout({
   children,
@@ -22,9 +32,29 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { soundEnabled, toggleSound } = useSound();
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const clearUser = useAuthStore((state) => state.clearUser);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    if (user) return;
+    api
+      .get<AuthUser>("/auth/me")
+      .then(setUser)
+      .catch(() => {
+        // The frontend contract is ready even if the current backend lacks /auth/me.
+      });
+  }, [setUser, user]);
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout", { refresh_token: getRefreshToken() });
+    } catch {
+      // Clear local auth even if the assumed logout endpoint is unavailable.
+    }
     removeToken();
+    removeRefreshToken();
+    clearUser();
     router.push("/auth/login");
   };
 
@@ -60,26 +90,31 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="flex items-center gap-6 ml-8 mr-auto">
-             <Link 
-               href="/dashboard" 
-               className="text-sm font-medium transition-colors flex items-center gap-2" 
-               style={{ 
-                 color: pathname === "/dashboard" ? "var(--main-color)" : "var(--sub-color)" 
-               }}
-             >
-               <Library size={16} />
-               My Notes
-             </Link>
-             <Link 
-               href="/dashboard/explore" 
-               className="text-sm font-medium transition-colors flex items-center gap-2" 
-               style={{ 
-                 color: pathname.startsWith("/dashboard/explore") ? "var(--main-color)" : "var(--sub-color)" 
-               }}
-             >
-               <Compass size={16} />
-               Explore
-             </Link>
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium transition-colors flex items-center gap-2"
+              style={{
+                color:
+                  pathname === "/dashboard"
+                    ? "var(--main-color)"
+                    : "var(--sub-color)",
+              }}
+            >
+              <Library size={16} />
+              My Notes
+            </Link>
+            <Link
+              href="/dashboard/explore"
+              className="text-sm font-medium transition-colors flex items-center gap-2"
+              style={{
+                color: pathname.startsWith("/dashboard/explore")
+                  ? "var(--main-color)"
+                  : "var(--sub-color)",
+              }}
+            >
+              <Compass size={16} />
+              Explore
+            </Link>
           </nav>
 
           {/* Right controls */}
@@ -111,6 +146,15 @@ export default function DashboardLayout({
               className="h-5 mx-1"
               style={{ backgroundColor: "var(--border-color)" }}
             />
+            {user?.name && (
+              <span
+                className="hidden max-w-36 truncate px-2 text-xs md:inline"
+                style={{ color: "var(--text-secondary)" }}
+                title={user.name}
+              >
+                {user.name}
+              </span>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

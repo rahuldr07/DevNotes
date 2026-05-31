@@ -13,6 +13,7 @@
 import Cookies from "js-cookie";
 
 const TOKEN_KEY = "auth_token";
+const REFRESH_TOKEN_KEY = "devnotes_refresh_token";
 const REMEMBER_ME_DAYS = 30;
 
 const TOKEN_COOKIE_OPTIONS = {
@@ -37,6 +38,16 @@ export function saveToken(token: string, options: SaveTokenOptions = {}) {
   );
 }
 
+export function saveRefreshToken(token?: string | null) {
+  if (!token || typeof window === "undefined") return;
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
 /** Retrieve the JWT token from the cookie (undefined if not logged in) */
 export function getToken(): string | undefined {
   return Cookies.get(TOKEN_KEY);
@@ -45,6 +56,11 @@ export function getToken(): string | undefined {
 /** Remove the JWT token — used during logout */
 export function removeToken() {
   Cookies.remove(TOKEN_KEY, { path: "/" });
+}
+
+export function removeRefreshToken() {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 /**

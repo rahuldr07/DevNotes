@@ -25,6 +25,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { saveRefreshToken, saveToken } from "@/lib/auth";
+import { getCurrentUserAfterAuth } from "@/lib/session";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 interface SignupResponse {
   id: number;
@@ -33,6 +36,12 @@ interface SignupResponse {
   role: string;
   created_at: string;
   updated_at: string | null;
+}
+
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  refresh_token?: string;
 }
 
 const labelStyle = {
@@ -53,6 +62,7 @@ export default function SignUpPage() {
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
 
   const clearField = (field: string) =>
     setFieldErrors((p) => {
@@ -92,7 +102,15 @@ export default function SignUpPage() {
           email,
           password,
         });
-        router.push("/auth/login");
+        const login = await api.post<LoginResponse>("/auth/login", {
+          email,
+          password,
+        });
+        saveToken(login.access_token, { remember: false });
+        saveRefreshToken(login.refresh_token);
+        const user = await getCurrentUserAfterAuth(email);
+        setUser(user);
+        router.push("/dashboard");
       } catch (err: unknown) {
         const message =
           err instanceof Error
@@ -103,7 +121,7 @@ export default function SignUpPage() {
         setLoading(false);
       }
     },
-    [name, email, password, router, validate],
+    [name, email, password, router, setUser, validate],
   );
 
   const inputStyle = (field: string) => ({
