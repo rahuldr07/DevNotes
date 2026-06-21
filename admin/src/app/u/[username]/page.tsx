@@ -1,3 +1,11 @@
+import {
+  CalendarDays,
+  Eye,
+  FileText,
+  Heart,
+  Sparkles,
+  UserCircle,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -37,6 +45,18 @@ function formatNoteDate(note: Note) {
   );
 }
 
+function getTopTags(notes: Note[]) {
+  const counts = new Map<string, number>();
+  for (const note of notes) {
+    for (const tag of note.tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 8);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -46,8 +66,13 @@ export async function generateMetadata({
   const profile = await getAuthorProfile(username);
   if (!profile) return { title: "Author not found" };
   return {
-    title: `${profile.username} on DevNotes`,
-    description: `Public notes by ${profile.username}`,
+    title: `@${profile.username} · DevNotes`,
+    description: `Public developer knowledge by ${profile.username}`,
+    openGraph: {
+      title: `@${profile.username} on DevNotes`,
+      description: `Explore public notes, guides, and developer knowledge by ${profile.username}.`,
+      type: "profile",
+    },
   };
 }
 
@@ -62,56 +87,173 @@ export default async function AuthorProfilePage({
   if (!profile) notFound();
 
   const publicNotes = profile.notes.filter((note) => note.share_uuid);
+  const topTags = getTopTags(publicNotes);
+  const totalLikes = publicNotes.reduce(
+    (sum, note) => sum + (note.like_count ?? 0),
+    0,
+  );
+  const totalViews = publicNotes.reduce(
+    (sum, note) => sum + (note.view_count ?? 0),
+    0,
+  );
+  const featuredNote = publicNotes[0];
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] px-4 py-12 text-[var(--text-primary)] sm:px-6">
-      <main className="mx-auto max-w-[1000px]">
-        <header
-          className="mb-10 pb-6"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
+    <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[var(--accent)]/12 blur-3xl" />
+        <div className="absolute bottom-[-14rem] right-[-10rem] h-[30rem] w-[30rem] rounded-full bg-[var(--main-color)]/10 blur-3xl" />
+        <div
+          className="absolute inset-0 opacity-[0.13]"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(circle at top, black, transparent 76%)",
+          }}
+        />
+      </div>
+
+      <header className="relative border-b border-[var(--border)] bg-[var(--bg)]/75 px-4 py-4 backdrop-blur-xl sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <Link
             href="/"
-            className="text-sm font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
+            className="text-sm font-semibold tracking-[0.22em] text-[var(--accent)] uppercase transition-colors hover:text-[var(--accent-hover)]"
           >
-            devnotes
+            DevNotes
           </Link>
-          <h1 className="mt-8 text-3xl font-medium tracking-normal">
-            @{profile.username}
-          </h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            joined {formatJoined(profile.joined_at)} / {publicNotes.length}{" "}
-            public {publicNotes.length === 1 ? "note" : "notes"}
-          </p>
-        </header>
+          <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--text-secondary)]">
+            public profile
+          </span>
+        </div>
+      </header>
+
+      <main className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
+        <section className="mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-6 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-8 lg:p-10">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <div>
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
+                <UserCircle size={34} />
+              </div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
+                <Sparkles size={13} className="text-[var(--accent)]" />
+                developer knowledge profile
+              </div>
+              <h1 className="break-words text-4xl font-semibold tracking-[-0.07em] text-[var(--text-primary)] sm:text-6xl">
+                @{profile.username}
+              </h1>
+              <p className="mt-5 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+                Public notes, technical guides, and reusable knowledge shared
+                from a DevNotes workspace.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
+                  <CalendarDays size={13} /> joined{" "}
+                  {formatJoined(profile.joined_at)}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
+                  <FileText size={13} /> {publicNotes.length} public notes
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+                <p className="text-2xl font-semibold tracking-[-0.04em]">
+                  {publicNotes.length}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  notes
+                </p>
+              </div>
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+                <p className="text-2xl font-semibold tracking-[-0.04em]">
+                  {totalLikes}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  likes
+                </p>
+              </div>
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+                <p className="text-2xl font-semibold tracking-[-0.04em]">
+                  {totalViews}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  views
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {featuredNote && (
+          <section className="mb-8 rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/60 p-5 backdrop-blur-xl sm:p-6">
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+              featured latest
+            </p>
+            <Link
+              href={`/s/${featuredNote.share_uuid}`}
+              className="group block rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 transition-colors hover:border-[var(--accent)]/50"
+            >
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
+                <span>{formatNoteDate(featuredNote)}</span>
+                <span>·</span>
+                <span>{featuredNote.view_count ?? 0} views</span>
+              </div>
+              <h2 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
+                {featuredNote.title || "untitled"}
+              </h2>
+              <p className="mt-3 line-clamp-2 text-sm leading-6 text-[var(--text-secondary)]">
+                {stripMarkdown(featuredNote.content) || "empty note"}
+              </p>
+            </Link>
+          </section>
+        )}
+
+        {topTags.length > 0 && (
+          <section className="mb-8 flex flex-wrap gap-2">
+            {topTags.map(([tag, count]) => (
+              <span
+                key={tag}
+                className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--accent)]"
+              >
+                #{tag}{" "}
+                <span className="text-[var(--text-secondary)]">{count}</span>
+              </span>
+            ))}
+          </section>
+        )}
 
         {publicNotes.length === 0 ? (
-          <div className="py-16 text-sm text-[var(--text-secondary)]">
-            nothing here yet
+          <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/50 py-20 text-center text-sm text-[var(--text-secondary)] backdrop-blur-xl">
+            <FileText className="mx-auto mb-4 text-[var(--accent)]" size={30} />
+            Nothing published yet.
           </div>
         ) : (
-          <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {publicNotes.map((note) => (
               <Link
                 key={note.id}
                 href={`/s/${note.share_uuid}`}
-                className="mb-4 block break-inside-avoid rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="group block rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:bg-[var(--bg-secondary)]/70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
               >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <h2 className="line-clamp-2 text-base font-medium leading-snug">
-                    {note.title || "untitled"}
-                  </h2>
-                  <span className="shrink-0 text-xs text-[var(--text-secondary)]">
-                    {formatNoteDate(note)}
+                <div className="mb-4 flex items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
+                  <span>{formatNoteDate(note)}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye size={13} /> {note.view_count ?? 0}
                   </span>
                 </div>
 
+                <h2 className="line-clamp-2 text-lg font-semibold leading-snug tracking-[-0.04em] text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
+                  {note.title || "untitled"}
+                </h2>
+
                 {note.tags.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-1.5">
+                  <div className="mt-4 flex flex-wrap gap-1.5">
                     {note.tags.slice(0, 4).map((tag) => (
                       <span
                         key={tag}
-                        className="text-[11px] text-[var(--accent)]"
+                        className="rounded-full bg-[var(--bg)]/70 px-2 py-0.5 text-[11px] text-[var(--accent)]"
                       >
                         #{tag}
                       </span>
@@ -119,16 +261,19 @@ export default async function AuthorProfilePage({
                   </div>
                 )}
 
-                <p className="line-clamp-3 text-sm leading-5 text-[var(--text-secondary)]">
+                <p className="mt-4 line-clamp-3 text-sm leading-6 text-[var(--text-secondary)]">
                   {stripMarkdown(note.content) || "empty note"}
                 </p>
 
-                <div className="mt-4 text-xs text-[var(--text-secondary)]">
-                  {note.like_count ?? 0} likes / {note.view_count ?? 0} views
+                <div className="mt-5 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span className="inline-flex items-center gap-1">
+                    <Heart size={13} /> {note.like_count ?? 0}
+                  </span>
+                  <span className="text-[var(--accent)]">Read note →</span>
                 </div>
               </Link>
             ))}
-          </div>
+          </section>
         )}
       </main>
     </div>
