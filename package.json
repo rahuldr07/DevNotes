@@ -1,0 +1,21 @@
+{
+  "name": "devnotes",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DevNotes full-stack developer knowledge platform",
+  "scripts": {
+    "dev:db": "docker compose up -d db",
+    "dev:frontend": "npm --prefix admin run dev",
+    "dev:backend": "cd backend && python -m uvicorn app.main:app --reload",
+    "db:migrate": "cd backend && python -m alembic upgrade head",
+    "lint": "npm --prefix admin run lint",
+    "typecheck": "cd admin && npx tsc --noEmit",
+    "build": "npm --prefix admin run build",
+    "test:backend": "cd backend && python -m pytest -q",
+    "test": "npm run lint && npm run typecheck && npm run test:backend"
+  },
+  "engines": {
+    "node": ">=20",
+    "python": ">=3.11"
+  }
+}
