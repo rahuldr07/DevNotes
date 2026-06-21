@@ -2,6 +2,7 @@
 
 import {
   AlertCircle,
+  BookOpen,
   Edit3,
   FileText,
   LayoutGrid,
@@ -10,6 +11,7 @@ import {
   PinOff,
   Plus,
   Search,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -443,29 +445,119 @@ export default function DashboardPage() {
   const availableTags = useMemo(() => {
     const tags = new Set<string>();
     notes.forEach((note) => {
-      note.tags.forEach((tag) => tags.add(tag));
+      note.tags.forEach((tag) => {
+        tags.add(tag);
+      });
     });
     return Array.from(tags).sort((a, b) => a.localeCompare(b));
   }, [notes]);
 
+  const cockpitStats = useMemo(
+    () => [
+      {
+        label: "total notes",
+        value: notes.length,
+        hint: "captured knowledge",
+      },
+      {
+        label: "published",
+        value: notes.filter((note) => note.is_published).length,
+        hint: "shareable pages",
+      },
+      {
+        label: "pinned",
+        value: notes.filter((note) => note.is_pinned).length,
+        hint: "active priorities",
+      },
+      {
+        label: "tags",
+        value: availableTags.length,
+        hint: "retrieval paths",
+      },
+    ],
+    [availableTags.length, notes],
+  );
+
   return (
     <>
-      <div className="mb-8 flex flex-col gap-5">
+      <section className="mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+          <div className="min-w-0">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
+              <Sparkles size={13} className="text-[var(--accent)]" />
+              DevNotes Cockpit v1
+            </div>
+            <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] sm:text-5xl">
+              Capture fast. Reuse smarter. Publish beautifully.
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+              Your notes workspace is becoming a developer knowledge cockpit:
+              private thinking, public writing, and AI-ready retrieval in one
+              focused surface.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <Link href="/dashboard/create_note">
+                <Button className="gap-2 rounded-2xl bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                  <Plus size={15} />
+                  create note
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                onClick={() => setSearchOpen(true)}
+              >
+                <Search size={15} />
+                search workspace
+                <kbd className="rounded-lg bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                  /
+                </kbd>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {cockpitStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4"
+              >
+                <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                  {loading ? "—" : stat.value}
+                </p>
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  {stat.label}
+                </p>
+                <p className="mt-2 text-xs text-[var(--text-secondary)]">
+                  {stat.hint}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="mb-6 flex flex-col gap-5 rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-medium tracking-normal text-[var(--text-primary)]">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+              <BookOpen size={14} className="text-[var(--accent)]" />
+              library
+            </div>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
               my notes
-            </h1>
+            </h2>
             {!loading && (
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                {notes.length} {notes.length === 1 ? "note" : "notes"}
+                Showing {sortedNotes.length} of {notes.length}{" "}
+                {notes.length === 1 ? "note" : "notes"}
               </p>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="ghost"
-              className="gap-2 px-2 text-xs text-[var(--text-secondary)]"
+              className="gap-2 rounded-2xl px-3 text-xs text-[var(--text-secondary)]"
               onClick={() => setSearchOpen(true)}
             >
               <Search size={14} />
@@ -477,7 +569,7 @@ export default function DashboardPage() {
             <select
               value={sort}
               onChange={(event) => changeSort(event.target.value as SortKey)}
-              className="h-8 rounded-md border-none bg-[var(--bg)] px-2 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
+              className="h-9 rounded-2xl border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
               aria-label="Sort notes"
             >
               <option value="newest">newest</option>
@@ -488,7 +580,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => changeView("grid")}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-2xl transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
                   color:
                     view === "grid" ? "var(--accent)" : "var(--text-secondary)",
@@ -500,7 +592,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => changeView("list")}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-2xl transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
                   color:
                     view === "list" ? "var(--accent)" : "var(--text-secondary)",
@@ -511,7 +603,7 @@ export default function DashboardPage() {
               </button>
             </div>
             <Link href="/dashboard/create_note">
-              <Button className="gap-2 bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+              <Button className="gap-2 rounded-2xl bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                 <Plus size={14} />
                 new note
               </Button>

@@ -1,6 +1,17 @@
 "use client";
 
-import { LogOut, Volume2, VolumeX } from "lucide-react";
+import {
+  Compass,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Plus,
+  Search,
+  Sparkles,
+  UserCircle,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -15,6 +26,28 @@ import {
 import { api } from "@/lib/api";
 import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
 import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
+
+const navItems = [
+  {
+    href: "/dashboard",
+    label: "Notes",
+    icon: FileText,
+    matcher: (pathname: string) => pathname === "/dashboard",
+  },
+  {
+    href: "/dashboard/explore",
+    label: "Explore",
+    icon: Compass,
+    matcher: (pathname: string) => pathname.startsWith("/dashboard/explore"),
+  },
+  {
+    href: "/dashboard/create_note",
+    label: "New note",
+    icon: Plus,
+    matcher: (pathname: string) =>
+      pathname.startsWith("/dashboard/create_note"),
+  },
+];
 
 export default function DashboardLayout({
   children,
@@ -34,7 +67,7 @@ export default function DashboardLayout({
       .get<AuthUser>("/auth/me")
       .then(setUser)
       .catch(() => {
-        // The frontend contract is ready even if the current backend lacks /auth/me.
+        // Keep the shell usable even if the current backend/session is stale.
       });
   }, [setUser, user]);
 
@@ -42,7 +75,7 @@ export default function DashboardLayout({
     try {
       await api.post("/auth/logout", { refresh_token: getRefreshToken() });
     } catch {
-      // Clear local auth even if the assumed logout endpoint is unavailable.
+      // Clear local auth even if logout fails or the backend is offline.
     }
     removeToken();
     removeRefreshToken();
@@ -51,135 +84,216 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
-      <header
-        className="sticky top-0 z-40 bg-[var(--bg)]"
-        style={{
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div className="relative mx-auto flex h-14 max-w-[1000px] items-center justify-between px-4 sm:px-6">
+    <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <div className="pointer-events-none fixed inset-0 opacity-70">
+        <div className="absolute left-[-12rem] top-[-10rem] h-80 w-80 rounded-full bg-[var(--accent)]/10 blur-3xl" />
+        <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-96 rounded-full bg-[var(--main-color)]/10 blur-3xl" />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+            maskImage: "radial-gradient(circle at top, black, transparent 68%)",
+            opacity: 0.18,
+          }}
+        />
+      </div>
+
+      <div className="relative grid min-h-screen lg:grid-cols-[17rem_minmax(0,1fr)]">
+        <aside className="hidden border-r border-[var(--border)] bg-[var(--bg)]/80 p-4 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
-            className="text-sm font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
+            className="group mb-8 flex items-center gap-3"
           >
-            devnotes
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-lg shadow-black/10 transition-transform group-hover:scale-105">
+              <LayoutDashboard size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold tracking-[0.22em] text-[var(--text-primary)] uppercase">
+                DevNotes
+              </p>
+              <p className="text-xs text-[var(--text-secondary)]">
+                knowledge cockpit
+              </p>
+            </div>
           </Link>
 
-          <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-3 text-sm sm:flex">
-            <Link
-              href="/dashboard"
-              className="transition-colors"
-              style={{
-                color:
-                  pathname === "/dashboard"
-                    ? "var(--accent)"
-                    : "var(--text-secondary)",
-              }}
-            >
-              my notes
-            </Link>
-            <span className="text-[var(--text-secondary)]">·</span>
-            <Link
-              href="/dashboard/explore"
-              className="transition-colors"
-              style={{
-                color: pathname.startsWith("/dashboard/explore")
-                  ? "var(--accent)"
-                  : "var(--text-secondary)",
-              }}
-            >
-              explore
-            </Link>
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = item.matcher(pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all ${
+                    active
+                      ? "bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  <Icon size={16} />
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          <div className="flex items-center gap-1">
-            {user?.name && (
-              <span
-                className="hidden max-w-32 truncate px-2 text-xs md:inline"
-                style={{ color: "var(--text-secondary)" }}
-                title={user.name}
-              >
-                {user.name}
-              </span>
-            )}
-            <div className="hidden sm:block">
-              <ThemePickerPopover />
+          <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+              <Sparkles size={14} />
+              next up
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleSound}
-                  className="h-8 w-8"
-                  style={{
-                    color: soundEnabled
-                      ? "var(--accent)"
-                      : "var(--text-secondary)",
-                  }}
-                  aria-label={soundEnabled ? "Mute sounds" : "Enable sounds"}
-                >
-                  {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{soundEnabled ? "Mute sounds" : "Enable sounds"}</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <p className="text-sm leading-6 text-[var(--text-primary)]">
+              AI semantic search, snippets, and beautiful public publishing are
+              staged after this Cockpit foundation.
+            </p>
+          </div>
+
+          <div className="mt-auto space-y-3 rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--accent)]">
+                <UserCircle size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-[var(--text-primary)]">
+                  {user?.name ?? "Developer"}
+                </p>
+                <p className="truncate text-xs text-[var(--text-secondary)]">
+                  {user?.email ?? "private workspace"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemePickerPopover />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSound}
+                    className="h-9 w-9"
+                    style={{
+                      color: soundEnabled
+                        ? "var(--accent)"
+                        : "var(--text-secondary)",
+                    }}
+                    aria-label={soundEnabled ? "Mute sounds" : "Enable sounds"}
+                  >
+                    {soundEnabled ? (
+                      <Volume2 size={16} />
+                    ) : (
+                      <VolumeX size={16} />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p>{soundEnabled ? "Mute sounds" : "Enable sounds"}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleLogout}
+                    className="h-9 w-9 text-[var(--text-secondary)]"
+                    aria-label="Logout"
+                  >
+                    <LogOut size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p>Sign out</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex min-w-0 flex-col">
+          <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/82 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 lg:hidden"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)]">
+                  <LayoutDashboard size={16} />
+                </span>
+                <span className="text-sm font-semibold tracking-[0.18em] uppercase">
+                  DevNotes
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new KeyboardEvent("keydown", { key: "/" }),
+                  )
+                }
+                className="hidden min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-4 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
+              >
+                <Search size={15} />
+                <span className="min-w-0 flex-1 truncate">
+                  Search notes, snippets, tags, or ask AI soon...
+                </span>
+                <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                  /
+                </kbd>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard/create_note">
+                  <Button className="gap-2 rounded-2xl bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                    <Plus size={15} />
+                    <span className="hidden sm:inline">New note</span>
+                  </Button>
+                </Link>
+                <div className="lg:hidden">
+                  <ThemePickerPopover />
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  className="h-8 w-8"
-                  style={{ color: "var(--text-secondary)" }}
+                  className="h-9 w-9 text-[var(--text-secondary)] lg:hidden"
                   aria-label="Logout"
                 >
-                  <LogOut size={15} />
+                  <LogOut size={16} />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Sign out</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-        <nav
-          className="flex h-10 items-center justify-center gap-3 text-sm sm:hidden"
-          style={{ borderTop: "1px solid var(--border)" }}
-        >
-          <Link
-            href="/dashboard"
-            className="transition-colors"
-            style={{
-              color:
-                pathname === "/dashboard"
-                  ? "var(--accent)"
-                  : "var(--text-secondary)",
-            }}
-          >
-            my notes
-          </Link>
-          <span className="text-[var(--text-secondary)]">·</span>
-          <Link
-            href="/dashboard/explore"
-            className="transition-colors"
-            style={{
-              color: pathname.startsWith("/dashboard/explore")
-                ? "var(--accent)"
-                : "var(--text-secondary)",
-            }}
-          >
-            explore
-          </Link>
-        </nav>
-      </header>
+              </div>
+            </div>
 
-      <main className="mx-auto max-w-[1000px] px-4 py-8 sm:px-6">
-        {children}
-      </main>
+            <nav className="mt-3 flex gap-2 overflow-x-auto lg:hidden">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = item.matcher(pathname);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-colors ${
+                      active
+                        ? "bg-[var(--bg-secondary)] text-[var(--accent)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+                    }`}
+                  >
+                    <Icon size={13} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </header>
+
+          <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div className="mx-auto max-w-7xl">{children}</div>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

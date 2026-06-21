@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -11,6 +12,8 @@ class Settings(BaseSettings):
     the app crashes immediately with a clear error
     instead of failing randomly later.
     """
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     # Database connection
     DB_HOST: str
@@ -44,11 +47,6 @@ class Settings(BaseSettings):
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
             f"?sslmode={self.DB_SSL_MODE}"
         )
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
 
 @lru_cache()
 def get_settings() -> Settings:
