@@ -1,5 +1,7 @@
 import {
   BookOpen,
+  Code2,
+  ExternalLink,
   Eye,
   Heart,
   Share2,
@@ -12,6 +14,7 @@ import { notFound } from "next/navigation";
 import { ReadOnlyEditor } from "@/components/ReadOnlyEditor";
 import { backendFetch } from "@/lib/backend";
 import { stripMarkdown } from "@/lib/notes";
+import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
 
 async function getPublicNote(shareUuid: string): Promise<Note | null> {
@@ -37,11 +40,6 @@ function formatDate(date: string) {
 
 function authorName(note: Note) {
   return note.author_name || note.author_username || "DevNotes author";
-}
-
-function readingTime(content: string) {
-  const words = stripMarkdown(content).split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 220));
 }
 
 export async function generateMetadata({
@@ -78,7 +76,8 @@ export default async function PublicNotePage({
 
   const author = authorName(note);
   const publishedAt = formatDate(note.updated_at ?? note.created_at);
-  const minutes = readingTime(note.content);
+  const minutes = readingTimeMinutes(note.content);
+  const kind = noteKindLabel(note.note_type);
 
   return (
     <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
@@ -115,6 +114,14 @@ export default async function PublicNotePage({
         <article className="min-w-0">
           <section className="mb-8 rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-6 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-8 lg:p-10">
             <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
+              <span className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                {kind}
+              </span>
+              {note.language && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                  <Code2 size={13} /> {note.language}
+                </span>
+              )}
               <span className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                 {publishedAt}
               </span>
@@ -180,6 +187,22 @@ export default async function PublicNotePage({
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-[var(--text-secondary)]">
+                  <Code2 size={15} /> Type
+                </span>
+                <span className="font-medium capitalize text-[var(--text-primary)]">
+                  {kind}
+                </span>
+              </div>
+              {note.language && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[var(--text-secondary)]">Language</span>
+                  <span className="font-medium text-[var(--text-primary)]">
+                    {note.language}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 text-[var(--text-secondary)]">
                   <Heart size={15} /> Likes
                 </span>
                 <span className="font-medium text-[var(--text-primary)]">
@@ -204,6 +227,18 @@ export default async function PublicNotePage({
               </div>
             </div>
           </div>
+
+          {note.source_url && (
+            <a
+              href={note.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+            >
+              <span>Original source</span>
+              <ExternalLink size={15} />
+            </a>
+          )}
 
           <div className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">
             <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">

@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  Code2,
   Eye,
   FileText,
   Heart,
@@ -11,6 +12,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { backendFetch } from "@/lib/backend";
 import { stripMarkdown } from "@/lib/notes";
+import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { AuthorProfile, Note } from "@/types/notes";
 
 async function getAuthorProfile(
@@ -201,6 +203,20 @@ export default async function AuthorProfilePage({
               <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
                 <span>{formatNoteDate(featuredNote)}</span>
                 <span>·</span>
+                <span className="capitalize">
+                  {noteKindLabel(featuredNote.note_type)}
+                </span>
+                <span>·</span>
+                <span>{readingTimeMinutes(featuredNote.content)} min read</span>
+                {featuredNote.language && (
+                  <>
+                    <span>·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Code2 size={12} /> {featuredNote.language}
+                    </span>
+                  </>
+                )}
+                <span>·</span>
                 <span>{featuredNote.view_count ?? 0} views</span>
               </div>
               <h2 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
@@ -241,7 +257,9 @@ export default async function AuthorProfilePage({
                 className="group block rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:bg-[var(--bg-secondary)]/70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
               >
                 <div className="mb-4 flex items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
-                  <span>{formatNoteDate(note)}</span>
+                  <span className="capitalize">
+                    {noteKindLabel(note.note_type)} · {formatNoteDate(note)}
+                  </span>
                   <span className="inline-flex items-center gap-1">
                     <Eye size={13} /> {note.view_count ?? 0}
                   </span>
@@ -272,6 +290,7 @@ export default async function AuthorProfilePage({
                   <span className="inline-flex items-center gap-1">
                     <Heart size={13} /> {note.like_count ?? 0}
                   </span>
+                  <span>{readingTimeMinutes(note.content)} min read</span>
                   <span className="text-[var(--accent)]">Read note →</span>
                 </div>
               </Link>
