@@ -116,8 +116,8 @@ class ApiClient {
   }
 
   /** GET request — for fetching data (notes list, single note, etc.) */
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: "GET" });
+  async get<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: "GET" });
   }
 
   /** POST request — for creating resources (login, register, create note) */

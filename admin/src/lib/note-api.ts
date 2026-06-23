@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { api } from "@/lib/api";
 import type { Note, NoteVersion, PaginatedNotesResponse } from "@/types/notes";
 
@@ -10,7 +9,7 @@ function normalizePage(
   }
 
   return {
-    items: response.items ?? [],
+    items: response.items ?? response.data ?? [],
     next_cursor: response.next_cursor ?? null,
   };
 }
@@ -54,25 +53,11 @@ export async function getCommunityNotesPage({
 }
 
 export async function searchNotes(query: string, signal?: AbortSignal) {
-  const token = Cookies.get("auth_token");
-  const response = await fetch(
-    `/api/notes/search?q=${encodeURIComponent(query)}`,
-    {
-      method: "GET",
-      signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    },
+  const response = await api.get<Note[] | PaginatedNotesResponse>(
+    `/notes/search?q=${encodeURIComponent(query)}`,
+    { signal },
   );
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || "Search failed");
-  }
-
-  return (await response.json()) as Note[];
+  return normalizePage(response);
 }
 
 export async function likeNote(noteId: number) {

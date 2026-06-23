@@ -18,6 +18,7 @@ export interface Note {
 
 export interface PaginatedNotesResponse {
   items: Note[];
+  data?: Note[];
   next_cursor: number | null;
 }
 

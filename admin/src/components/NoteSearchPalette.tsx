@@ -3,7 +3,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { FuseResultMatch } from "fuse.js";
 import Fuse from "fuse.js";
-import { Calendar, Hash, Search } from "lucide-react";
+import {
+  Calendar,
+  Command,
+  Database,
+  Hash,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchNotes as searchNotesApi } from "@/lib/note-api";
@@ -74,6 +81,22 @@ function titleTermIndices(text: string, query: string) {
     }, []);
 }
 
+function buildSnippet(content: string, query: string, fallbackLength = 130) {
+  const plain = stripMarkdown(content).replace(/\s+/g, " ").trim();
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const lower = plain.toLowerCase();
+  const firstHit = terms
+    .map((term) => lower.indexOf(term))
+    .filter((index) => index >= 0)
+    .sort((a, b) => a - b)[0];
+
+  if (firstHit === undefined) return plain.slice(0, fallbackLength);
+
+  const start = Math.max(0, firstHit - 48);
+  const end = Math.min(plain.length, firstHit + fallbackLength);
+  return `${start > 0 ? "..." : ""}${plain.slice(start, end)}${end < plain.length ? "..." : ""}`;
+}
+
 export function NoteSearchPalette({
   open,
   notes,
@@ -131,7 +154,7 @@ export function NoteSearchPalette({
       try {
         setFullLoading(true);
         const results = await searchNotesApi(trimmed, controller.signal);
-        setFullResults(results);
+        setFullResults(results.items ?? []);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setFullResults([]);
@@ -206,15 +229,17 @@ export function NoteSearchPalette({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="w-full max-w-2xl overflow-hidden rounded-md bg-[var(--bg-secondary)]"
+            className="w-full max-w-3xl overflow-hidden rounded-[1.75rem] bg-[var(--bg-secondary)] shadow-2xl shadow-black/30"
             style={{ border: "1px solid var(--border)" }}
             onClick={(event) => event.stopPropagation()}
           >
             <div
-              className="flex items-center gap-2 px-4 py-3"
+              className="flex items-center gap-3 px-5 py-4"
               style={{ borderBottom: "1px solid var(--border)" }}
             >
-              <Search size={16} className="text-[var(--text-secondary)]" />
+              <div className="grid h-9 w-9 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+                <Search size={16} />
+              </div>
               <input
                 ref={inputRef}
                 value={query}
@@ -223,9 +248,11 @@ export function NoteSearchPalette({
                   setSelectedIndex(0);
                 }}
                 placeholder={
-                  mode === "local" ? "search loaded notes" : "search all notes"
+                  mode === "local"
+                    ? "search loaded notes, tags, snippets..."
+                    : "deep search all notes..."
                 }
-                className="w-full border-none bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+                className="w-full border-none bg-transparent text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
               />
               <div className="flex shrink-0 items-center gap-1">
                 {(["local", "full"] as SearchMode[]).map((item) => (
@@ -236,7 +263,7 @@ export function NoteSearchPalette({
                       setMode(item);
                       setSelectedIndex(0);
                     }}
-                    className="rounded-md px-2 py-1 text-[11px] transition-colors hover:bg-[var(--border)]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3 py-1.5 text-[11px] transition-all hover:-translate-y-0.5 hover:bg-[var(--border)]"
                     style={{
                       color:
                         mode === item
@@ -244,7 +271,12 @@ export function NoteSearchPalette({
                           : "var(--text-secondary)",
                     }}
                   >
-                    {item === "local" ? "local" : "full search"}
+                    {item === "local" ? (
+                      <Command size={11} />
+                    ) : (
+                      <Database size={11} />
+                    )}
+                    {item === "local" ? "loaded" : "deep"}
                   </button>
                 ))}
               </div>
@@ -253,22 +285,31 @@ export function NoteSearchPalette({
               </kbd>
             </div>
 
-            <div className="max-h-[62vh] overflow-y-auto p-2">
+            <div className="border-b border-[var(--border)] bg-[var(--bg)]/30 px-5 py-2 text-[11px] text-[var(--text-secondary)]">
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles size={12} className="text-[var(--accent)]" />
+                {mode === "local"
+                  ? "instant Fuse retrieval across loaded notes"
+                  : "server-backed full-text retrieval with contextual snippets"}
+              </span>
+            </div>
+
+            <div className="max-h-[62vh] overflow-y-auto p-3">
               {mode === "full" && !query.trim() ? (
-                <div className="px-3 py-8 text-center text-sm text-[var(--text-secondary)]">
-                  type to search all notes
+                <div className="rounded-3xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                  type to deep search every note in your vault
                 </div>
               ) : fullLoading ? (
-                <div className="px-3 py-8 text-center text-sm text-[var(--text-secondary)]">
-                  loading...
+                <div className="rounded-3xl border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                  searching your knowledge graph...
                 </div>
               ) : fullError ? (
-                <div className="px-3 py-8 text-center text-sm text-[var(--error)]">
+                <div className="rounded-3xl border border-[var(--error)] px-4 py-10 text-center text-sm text-[var(--error)]">
                   {fullError}
                 </div>
               ) : results.length === 0 ? (
-                <div className="px-3 py-8 text-center text-sm text-[var(--text-secondary)]">
-                  no matching notes
+                <div className="rounded-3xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                  no matching notes yet
                 </div>
               ) : (
                 results.map((result, index) => {
@@ -279,7 +320,7 @@ export function NoteSearchPalette({
                   const contentMatch = result.matches?.find(
                     (match) => match.key === "content",
                   );
-                  const plainPreview = stripMarkdown(note.content).slice(0, 80);
+                  const plainPreview = buildSnippet(note.content, query);
                   const isSelected = selectedIndex === index;
                   const fullTitleMatch =
                     mode === "full" ? titleTermIndices(note.title, query) : [];
@@ -293,15 +334,18 @@ export function NoteSearchPalette({
                         router.push(`/dashboard/edit_note?id=${note.id}`);
                         onClose();
                       }}
-                      className="mb-1 w-full rounded-md px-3 py-2.5 text-left transition-colors"
+                      className="group mb-2 w-full rounded-3xl border px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
                       style={{
                         backgroundColor: isSelected
                           ? "color-mix(in srgb, var(--accent) 10%, transparent)"
                           : "transparent",
+                        borderColor: isSelected
+                          ? "var(--accent)"
+                          : "var(--border)",
                       }}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <div className="truncate text-sm font-medium text-[var(--text-primary)]">
+                        <div className="truncate text-sm font-semibold text-[var(--text-primary)]">
                           {mode === "full" && fullTitleMatch.length > 0
                             ? highlightText(note.title, fullTitleMatch)
                             : titleMatch?.indices
@@ -313,7 +357,7 @@ export function NoteSearchPalette({
                           {formatDate(note.updated_at ?? note.created_at)}
                         </div>
                       </div>
-                      <div className="mt-1.5 line-clamp-1 text-xs text-[var(--text-secondary)]">
+                      <div className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
                         {contentMatch?.indices
                           ? highlightText(note.content, contentMatch.indices)
                           : plainPreview}
@@ -323,7 +367,7 @@ export function NoteSearchPalette({
                           {note.tags.slice(0, 4).map((tag) => (
                             <span
                               key={`${note.id}-${tag}`}
-                              className="inline-flex items-center gap-1 text-[10px] text-[var(--accent)]"
+                              className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[10px] text-[var(--accent)]"
                             >
                               <Hash size={10} />
                               {tag}
