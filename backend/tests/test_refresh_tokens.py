@@ -28,6 +28,80 @@ def test_login_returns_refresh_token_and_stores_hash(monkeypatch):
     assert verify_password(result["refresh_token"], saved["refresh_token_hash"])
 
 
+def test_login_creates_session_when_db_available(monkeypatch):
+    from app.repositories import session_repo, user_repo
+    from app.services import auth_service
+    from app.services.security import hash_password, verify_password
+
+    user = SimpleNamespace(id=1, hashed_password=hash_password("abc12345"))
+    saved = {}
+    sessions = {}
+
+    monkeypatch.setattr(user_repo, "get_by_email", lambda db, email: user)
+    monkeypatch.setattr(
+        user_repo,
+        "update_refresh_token",
+        lambda db, user_id, refresh_token_hash: saved.update(
+            {"user_id": user_id, "refresh_token_hash": refresh_token_hash}
+        ),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        session_repo,
+        "create",
+        lambda db, **kwargs: sessions.update(kwargs),
+        raising=False,
+    )
+
+    result = auth_service.authenticate_user(object(), "ada@example.com", "abc12345")
+
+    assert sessions["user_id"] == 1
+    assert sessions["session_id"]
+    assert verify_password(result["refresh_token"], sessions["refresh_token_hash"])
+    assert verify_password(result["refresh_token"], saved["refresh_token_hash"])
+
+
+def test_refresh_rotates_session_token(monkeypatch):
+    from app.repositories import session_repo, user_repo
+    from app.services import auth_service
+    from app.services.security import hash_password, verify_password
+
+    user = SimpleNamespace(id=1, refresh_token=None)
+    refresh_token = auth_service.create_refresh_token({"sub": "1", "sid": "session-1"})
+    session = SimpleNamespace(
+        id="session-1",
+        user_id=1,
+        refresh_token_hash=hash_password(refresh_token),
+    )
+    rotated = {}
+
+    monkeypatch.setattr(user_repo, "get_by_id", lambda db, user_id: user)
+    monkeypatch.setattr(
+        user_repo,
+        "update_refresh_token",
+        lambda db, user_id, refresh_token_hash: None,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        session_repo,
+        "get_active",
+        lambda db, session_id: session,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        session_repo,
+        "rotate",
+        lambda db, **kwargs: rotated.update(kwargs),
+        raising=False,
+    )
+
+    result = auth_service.refresh_access_token(object(), refresh_token)
+
+    assert result["refresh_token"] != refresh_token
+    assert rotated["session"] is session
+    assert verify_password(result["refresh_token"], rotated["refresh_token_hash"])
+
+
 def test_refresh_endpoint_returns_rotated_tokens(auth_client, monkeypatch):
     from app.services import auth_service
 

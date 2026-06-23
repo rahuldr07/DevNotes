@@ -14,6 +14,7 @@ from app.models.user import User
 from app.models.note import Note
 from app.models.note_like import NoteLike
 from app.models.note_version import NoteVersion
+from app.models.user_session import UserSession
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

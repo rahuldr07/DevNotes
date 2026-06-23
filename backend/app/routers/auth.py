@@ -30,6 +30,40 @@ from app.services import auth_service
 # tags=["auth"] → groups them under "auth" in Swagger docs (/docs)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+ACCESS_COOKIE = "auth_token"
+REFRESH_COOKIE = "devnotes_refresh_token"
+
+
+def _cookie_secure(request: Request) -> bool:
+   return request.url.scheme == "https"
+
+
+def set_auth_cookies(request: Request, response: Response, tokens: dict) -> None:
+   secure = _cookie_secure(request)
+   response.set_cookie(
+      ACCESS_COOKIE,
+      tokens["access_token"],
+      httponly=True,
+      secure=secure,
+      samesite="lax",
+      path="/",
+      max_age=60 * 30,
+   )
+   response.set_cookie(
+      REFRESH_COOKIE,
+      tokens["refresh_token"],
+      httponly=True,
+      secure=secure,
+      samesite="lax",
+      path="/",
+      max_age=60 * 60 * 24 * auth_service.REFRESH_TOKEN_EXPIRE_DAYS,
+   )
+
+
+def clear_auth_cookies(response: Response) -> None:
+   response.delete_cookie(ACCESS_COOKIE, path="/")
+   response.delete_cookie(REFRESH_COOKIE, path="/")
+
 
 # ════════════════════════════════════════════
 #  POST /auth/register — Create a new user
@@ -47,7 +81,15 @@ def register(request: Request, response: Response, user: UserCreate, db: Session
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("10/minute")
 def login(request: Request, response: Response, credentials: UserLogin, db: Session = Depends(get_db)):
-   return auth_service.authenticate_user(db, credentials.email, credentials.password)
+   tokens = auth_service.authenticate_user(
+      db,
+      credentials.email,
+      credentials.password,
+      user_agent=request.headers.get("user-agent"),
+      ip_address=request.client.host if request.client else None,
+   )
+   set_auth_cookies(request, response, tokens)
+   return tokens
 
 
 @router.get("/me", response_model=CurrentUserResponse, status_code=200)
@@ -56,11 +98,14 @@ def get_me(user=Depends(get_current_user)):
 
 
 @router.post("/refresh", response_model=TokenResponse, status_code=200)
-def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)):
-   return auth_service.refresh_access_token(db, payload.refresh_token)
+def refresh_token(request: Request, response: Response, payload: RefreshTokenRequest, db: Session = Depends(get_db)):
+   tokens = auth_service.refresh_access_token(db, payload.refresh_token)
+   set_auth_cookies(request, response, tokens)
+   return tokens
 
 
 @router.post("/logout", status_code=204)
-def logout(payload: RefreshTokenRequest, db: Session = Depends(get_db)):
+def logout(response: Response, payload: RefreshTokenRequest, db: Session = Depends(get_db)):
    auth_service.logout_refresh_token(db, payload.refresh_token)
+   clear_auth_cookies(response)
    return None

@@ -14,6 +14,7 @@ const HOP_BY_HOP_HEADERS = new Set([
 ]);
 
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const ACCESS_COOKIE = "auth_token";
 
 function buildBackendEndpoint(request: NextRequest, path: string[]) {
   const endpoint = `/${path.map(encodeURIComponent).join("/")}`;
@@ -37,6 +38,13 @@ function buildForwardHeaders(request: NextRequest) {
 
   if (!headers.has("accept")) {
     headers.set("accept", "application/json");
+  }
+
+  if (!headers.has("authorization")) {
+    const token = request.cookies.get(ACCESS_COOKIE)?.value;
+    if (token) {
+      headers.set("authorization", `Bearer ${token}`);
+    }
   }
 
   return headers;
