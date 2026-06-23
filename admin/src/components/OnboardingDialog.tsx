@@ -37,20 +37,61 @@ function ThemeChoice({
       onClick={() => onSelect(meta.id)}
       onMouseEnter={() => onHover(meta.id)}
       onMouseLeave={onLeave}
-      className="flex items-center gap-3 px-1 py-3 text-left transition-colors hover:text-[var(--accent)]"
+      className="group relative overflow-hidden rounded-2xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
       style={{ color: isSelected ? "var(--accent)" : "var(--text-secondary)" }}
     >
-      <span className="flex gap-1">
-        {[bg, main, subAlt, text].map((color) => (
+      <span
+        className="absolute inset-x-0 top-0 h-1 opacity-90"
+        style={{
+          background: `linear-gradient(90deg, ${bg}, ${main}, ${subAlt}, ${text})`,
+        }}
+      />
+      <span className="flex items-center gap-3">
+        <span
+          className="relative flex h-11 w-16 shrink-0 overflow-hidden rounded-xl border"
+          style={{ borderColor: main, backgroundColor: bg }}
+        >
           <span
-            key={`${meta.id}-${color}`}
-            className="h-4 w-4 rounded-[2px]"
-            style={{ backgroundColor: color }}
+            className="absolute left-2 top-2 h-2 w-7 rounded-full"
+            style={{ backgroundColor: main }}
           />
-        ))}
+          <span
+            className="absolute bottom-2 left-2 h-2 w-10 rounded-full"
+            style={{ backgroundColor: text }}
+          />
+          <span
+            className="absolute bottom-2 right-2 h-5 w-2 rounded-full"
+            style={{ backgroundColor: subAlt }}
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span
+            className="block text-sm font-medium"
+            style={{
+              color: isSelected ? "var(--accent)" : "var(--text-primary)",
+            }}
+          >
+            {meta.name}
+          </span>
+          <span className="mt-1 flex gap-1">
+            {[bg, main, subAlt, text].map((color) => (
+              <span
+                key={`${meta.id}-${color}`}
+                className="h-2 w-5 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </span>
+        </span>
+        <span
+          className="grid h-7 w-7 place-items-center rounded-full border transition-transform group-hover:scale-105"
+          style={{
+            borderColor: isSelected ? "var(--accent)" : "var(--border)",
+          }}
+        >
+          {isSelected && <Check size={14} />}
+        </span>
       </span>
-      <span className="flex-1 text-sm">{meta.name}</span>
-      {isSelected && <Check size={14} />}
     </button>
   );
 }
@@ -87,21 +128,48 @@ export function OnboardingDialog() {
   return (
     <Dialog open={!isOnboarded}>
       <DialogContent
-        className="max-w-xl"
+        className="onboarding-dialog max-w-2xl overflow-hidden p-0"
         onInteractOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => event.preventDefault()}
       >
-        <DialogHeader>
-          <p className="text-sm lowercase" style={{ color: "var(--accent)" }}>
-            devnotes
-          </p>
-          <DialogTitle>choose your theme</DialogTitle>
-          <DialogDescription>
-            Pick a writing surface. You can change it later.
-          </DialogDescription>
-        </DialogHeader>
+        <div
+          className="border-b px-6 py-5"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <DialogHeader>
+            <div className="mb-2 flex items-center justify-between gap-4">
+              <p
+                className="text-sm font-semibold lowercase"
+                style={{ color: "var(--accent)" }}
+              >
+                devnotes
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--error-color)" }}
+                />
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--accent)" }}
+                />
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--success)" }}
+                />
+              </div>
+            </div>
+            <DialogTitle className="text-2xl">
+              choose your writing surface
+            </DialogTitle>
+            <DialogDescription>
+              Start with a theme that feels like your editor. Hover to preview,
+              commit when it clicks.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="my-2 flex flex-col">
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
           {themes.map((meta) => (
             <ThemeChoice
               key={meta.id}
@@ -114,7 +182,10 @@ export function OnboardingDialog() {
           ))}
         </div>
 
-        <div className="mt-2 flex items-center justify-between">
+        <div
+          className="flex items-center justify-between border-t px-6 py-5"
+          style={{ borderColor: "var(--border)" }}
+        >
           <button
             type="button"
             onClick={handleSkip}
@@ -123,7 +194,12 @@ export function OnboardingDialog() {
           >
             use serika
           </button>
-          <Button onClick={handleConfirm}>continue</Button>
+          <Button
+            onClick={handleConfirm}
+            className="px-6 shadow-lg shadow-black/20"
+          >
+            continue
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

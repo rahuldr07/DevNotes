@@ -99,6 +99,101 @@ html {
 .auth-orb-3 {
   animation: auth-orb-float 18s ease-in-out infinite 3s;
 }
+
+.auth-workbench-shell {
+  isolation: isolate;
+}
+
+.auth-workbench-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      color-mix(in srgb, var(--main-color) 14%, transparent),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--bg-color) 70%, black) 100%
+    );
+  opacity: 0.9;
+  z-index: 0;
+}
+
+.auth-workbench-grid {
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--border-color) 46%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--border-color) 46%, transparent) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 18% 18%,
+      color-mix(in srgb, var(--main-color) 18%, transparent),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 82% 76%,
+      color-mix(in srgb, var(--main-color) 13%, transparent),
+      transparent 32%
+    );
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto,
+    auto;
+  mask-image: radial-gradient(
+    ellipse at center,
+    black 0%,
+    black 48%,
+    transparent 82%
+  );
+  opacity: 0.45;
+}
+
+.auth-orb-1,
+.auth-orb-2,
+.auth-orb-3 {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--main-color) 18%, transparent),
+    transparent 68%
+  );
+  filter: blur(8px);
+  opacity: 0.7;
+  z-index: 0;
+}
+
+.auth-command-card,
+.onboarding-dialog {
+  border: 1px solid color-mix(in srgb, var(--border-color) 92%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sub-alt-color) 92%, transparent),
+      color-mix(in srgb, var(--bg-color) 88%, transparent)
+    ), var(--sub-alt-color);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    0 0 0 1px color-mix(in srgb, var(--main-color) 9%, transparent) inset;
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.auth-command-card {
+  border-radius: 1.75rem;
+}
+
+.onboarding-dialog {
+  border-radius: 1.5rem;
+}
 /* ═══════════════════════════════════════════════════════════════════════════
    DEVNOTES THEME SYSTEM — MonkeyType-inspired CSS variable architecture
    
