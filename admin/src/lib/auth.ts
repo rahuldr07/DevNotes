@@ -16,11 +16,20 @@ const TOKEN_KEY = "auth_token";
 const REFRESH_TOKEN_KEY = "devnotes_refresh_token";
 const REMEMBER_ME_DAYS = 30;
 
-const TOKEN_COOKIE_OPTIONS = {
+const BASE_TOKEN_COOKIE_OPTIONS = {
   path: "/",
   sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
 };
+
+function tokenCookieOptions(remember = false) {
+  const isHttps =
+    typeof window !== "undefined" && window.location.protocol === "https:";
+  return {
+    ...BASE_TOKEN_COOKIE_OPTIONS,
+    ...(isHttps ? { secure: true } : {}),
+    ...(remember ? { expires: REMEMBER_ME_DAYS } : {}),
+  };
+}
 
 interface SaveTokenOptions {
   remember?: boolean;
@@ -29,13 +38,7 @@ interface SaveTokenOptions {
 /** Store the JWT token in a browser cookie after successful login */
 export function saveToken(token: string, options: SaveTokenOptions = {}) {
   const { remember = false } = options;
-  Cookies.set(
-    TOKEN_KEY,
-    token,
-    remember
-      ? { ...TOKEN_COOKIE_OPTIONS, expires: REMEMBER_ME_DAYS }
-      : TOKEN_COOKIE_OPTIONS,
-  );
+  Cookies.set(TOKEN_KEY, token, tokenCookieOptions(remember));
 }
 
 export function saveRefreshToken(token?: string | null) {

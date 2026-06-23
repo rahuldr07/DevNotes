@@ -13,6 +13,7 @@
  * This eliminates CORS issues and hides the backend URL from the browser.
  */
 import Cookies from "js-cookie";
+import { removeRefreshToken, removeToken } from "@/lib/auth";
 
 /**
  * Base URL for all API calls.
@@ -29,9 +30,14 @@ const API_BASE_URL = "/api";
  * Shape of API errors thrown by the client.
  * FastAPI returns errors as { detail: "message" }, which we map to this.
  */
-interface ApiError {
-  message: string;
+export class ApiError extends Error {
   status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
 }
 
 /**
@@ -91,10 +97,12 @@ class ApiClient {
     // parse the error body and throw it so the calling component can catch it
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw {
-        message: error.detail || "An error occurred",
-        status: response.status,
-      } as ApiError;
+      const message = error.detail || "An error occurred";
+      if (response.status === 401) {
+        removeToken();
+        removeRefreshToken();
+      }
+      throw new ApiError(message, response.status);
     }
 
     // Handle 204 No Content — returned by DELETE endpoints

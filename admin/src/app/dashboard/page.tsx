@@ -10,6 +10,7 @@ import {
   Pin,
   PinOff,
   Plus,
+  RefreshCw,
   Search,
   Sparkles,
   Trash2,
@@ -192,7 +193,7 @@ function NoteCard({
       <article
         ref={observeRef}
         {...interactiveProps}
-        className="group flex cursor-pointer items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+        className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-transparent px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:bg-[var(--bg-secondary)]/80 hover:shadow-lg hover:shadow-black/5 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
       >
         <span
           className="h-2 w-2 shrink-0 rounded-full"
@@ -224,8 +225,9 @@ function NoteCard({
     <article
       ref={observeRef}
       {...interactiveProps}
-      className="group relative mb-4 break-inside-avoid cursor-pointer rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+      className="group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg)]/58 p-4 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-1 hover:bg-[var(--bg-secondary)]/70 hover:shadow-xl hover:shadow-black/10 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
     >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-0 transition-opacity group-hover:opacity-60" />
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2">
@@ -241,7 +243,7 @@ function NoteCard({
               {note.tags.slice(0, 4).map((tag) => (
                 <span
                   key={`${note.id}-${tag}`}
-                  className="text-[11px] text-[var(--accent)]"
+                  className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-2 py-0.5 text-[11px] text-[var(--accent)]"
                 >
                   #{tag}
                 </span>
@@ -261,8 +263,9 @@ function NoteCard({
       <p className="line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-[var(--text-secondary)]">
         {preview || "empty note"}
       </p>
-      <div className="mt-4 flex justify-end text-xs text-[var(--text-secondary)]">
-        {formatDate(note)}
+      <div className="mt-4 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+        <span>{note.is_published ? "published" : "private"}</span>
+        <span>{formatDate(note)}</span>
       </div>
     </article>
   );
@@ -480,7 +483,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      <section className="mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-8">
+      <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-8">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[var(--accent)] opacity-[0.07] blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-50" />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
           <div className="min-w-0">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
@@ -520,8 +525,9 @@ export default function DashboardPage() {
             {cockpitStats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4"
+                className="group relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:shadow-xl hover:shadow-black/10"
               >
+                <div className="absolute right-3 top-3 h-8 w-8 rounded-full border border-[var(--border)] opacity-40 transition-transform group-hover:scale-125" />
                 <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
                   {loading ? "—" : stat.value}
                 </p>
@@ -612,16 +618,18 @@ export default function DashboardPage() {
         </div>
 
         {!loading && availableTags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <button
               type="button"
               onClick={() => setSelectedTag(null)}
-              className="transition-colors hover:text-[var(--accent)]"
+              className="rounded-full border px-3 py-1.5 transition-all hover:-translate-y-0.5 hover:text-[var(--accent)]"
               style={{
                 color:
                   selectedTag === null
                     ? "var(--accent)"
                     : "var(--text-secondary)",
+                borderColor:
+                  selectedTag === null ? "var(--accent)" : "var(--border)",
               }}
             >
               all
@@ -631,12 +639,14 @@ export default function DashboardPage() {
                 key={tag}
                 type="button"
                 onClick={() => setSelectedTag(tag)}
-                className="transition-colors hover:text-[var(--accent)]"
+                className="rounded-full border px-3 py-1.5 transition-all hover:-translate-y-0.5 hover:text-[var(--accent)]"
                 style={{
                   color:
                     selectedTag === tag
                       ? "var(--accent)"
                       : "var(--text-secondary)",
+                  borderColor:
+                    selectedTag === tag ? "var(--accent)" : "var(--border)",
                 }}
               >
                 #{tag}
@@ -649,12 +659,22 @@ export default function DashboardPage() {
       {error && (
         <Alert
           variant="destructive"
-          className="mb-6 border-[var(--error)] bg-transparent"
+          className="mb-6 flex items-center justify-between gap-4 rounded-3xl border-[var(--error)] bg-[var(--bg-secondary)]/45 p-4"
         >
-          <AlertCircle size={15} />
-          <AlertDescription className="text-[var(--error)]">
-            {error}
-          </AlertDescription>
+          <div className="flex items-center gap-3">
+            <AlertCircle size={17} />
+            <AlertDescription className="text-[var(--error)]">
+              {error}
+            </AlertDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={fetchFirstPage}
+            className="gap-2 rounded-2xl border border-[var(--border)] text-xs text-[var(--text-secondary)]"
+          >
+            <RefreshCw size={13} /> retry
+          </Button>
         </Alert>
       )}
 
@@ -677,13 +697,16 @@ export default function DashboardPage() {
       )}
 
       {!loading && notes.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <FileText size={28} className="mb-4 text-[var(--text-secondary)]" />
-          <p className="text-base font-medium text-[var(--text-primary)]">
+        <div className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-6 py-20 text-center shadow-xl shadow-black/5">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-3xl border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+            <FileText size={28} />
+          </div>
+          <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
             no notes yet
           </p>
-          <p className="mb-6 mt-2 text-sm text-[var(--text-secondary)]">
-            start with a blank page
+          <p className="mx-auto mb-6 mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
+            start with a blank page, then pin, tag, publish, and retrieve your
+            thinking from one cockpit
           </p>
           <Link href="/dashboard/create_note">
             <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">

@@ -25,8 +25,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { api } from "@/lib/api";
-import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
+import { ApiError, api } from "@/lib/api";
+import {
+  getRefreshToken,
+  getToken,
+  removeRefreshToken,
+  removeToken,
+} from "@/lib/auth";
 import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
 
 const navItems = [
@@ -71,14 +76,23 @@ export default function DashboardLayout({
   const clearUser = useAuthStore((state) => state.clearUser);
 
   useEffect(() => {
-    if (user) return;
+    const token = getToken();
+    if (!token) {
+      clearUser();
+      router.replace("/auth/login");
+      return;
+    }
+
     api
       .get<AuthUser>("/auth/me")
       .then(setUser)
-      .catch(() => {
-        // Keep the shell usable even if the current backend/session is stale.
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.status === 401) {
+          clearUser();
+          router.replace("/auth/login");
+        }
       });
-  }, [setUser, user]);
+  }, [clearUser, router, setUser]);
 
   const handleLogout = async () => {
     try {
