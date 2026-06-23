@@ -4,12 +4,15 @@ from pydantic import BaseModel, Field
 
 
 class PublicProfileNoteResponse(BaseModel):
+    id: int
     title: str
+    content: str
     share_uuid: str
     tags: list[str] = Field(default_factory=list)
     like_count: int = 0
     view_count: int = 0
     created_at: datetime
+    updated_at: datetime | None = None
 
 
 class PublicProfileResponse(BaseModel):

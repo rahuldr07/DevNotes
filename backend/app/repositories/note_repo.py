@@ -302,12 +302,15 @@ def get_public_notes_for_user(db: Session, user_id: int) -> list[dict]:
     )
     return [
         {
+            "id": note.id,
             "title": note.title,
+            "content": note.content,
             "share_uuid": note.share_uuid,
             "tags": note.tags,
             "like_count": count,
             "view_count": note.view_count or 0,
             "created_at": note.created_at,
+            "updated_at": note.updated_at,
         }
         for note, count in rows
     ]

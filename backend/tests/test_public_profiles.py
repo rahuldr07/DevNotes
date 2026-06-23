@@ -31,12 +31,15 @@ def test_public_profile_endpoint_returns_published_notes(monkeypatch):
             "created_at": datetime(2026, 1, 5, tzinfo=timezone.utc),
             "public_notes": [
                 {
+                    "id": 7,
                     "title": "Published note",
+                    "content": "Public profile body",
                     "share_uuid": "share-uuid",
                     "tags": ["math"],
                     "like_count": 2,
                     "view_count": 5,
                     "created_at": datetime(2026, 1, 6, tzinfo=timezone.utc),
+                    "updated_at": None,
                 }
             ],
         },
@@ -51,3 +54,4 @@ def test_public_profile_endpoint_returns_published_notes(monkeypatch):
     assert response.status_code == 200
     assert response.json()["username"] == "ada-lovelace"
     assert response.json()["public_notes"][0]["share_uuid"] == "share-uuid"
+    assert response.json()["public_notes"][0]["content"] == "Public profile body"

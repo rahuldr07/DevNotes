@@ -86,7 +86,7 @@ export default async function AuthorProfilePage({
 
   if (!profile) notFound();
 
-  const publicNotes = profile.notes.filter((note) => note.share_uuid);
+  const publicNotes = profile.public_notes.filter((note) => note.share_uuid);
   const topTags = getTopTags(publicNotes);
   const totalLikes = publicNotes.reduce(
     (sum, note) => sum + (note.like_count ?? 0),
@@ -142,6 +142,9 @@ export default async function AuthorProfilePage({
               <h1 className="break-words text-4xl font-semibold tracking-[-0.07em] text-[var(--text-primary)] sm:text-6xl">
                 @{profile.username}
               </h1>
+              <p className="mt-3 text-lg font-medium text-[var(--accent)]">
+                {profile.name}
+              </p>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
                 Public notes, technical guides, and reusable knowledge shared
                 from a DevNotes workspace.
@@ -149,7 +152,7 @@ export default async function AuthorProfilePage({
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
                   <CalendarDays size={13} /> joined{" "}
-                  {formatJoined(profile.joined_at)}
+                  {formatJoined(profile.created_at)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
                   <FileText size={13} /> {publicNotes.length} public notes

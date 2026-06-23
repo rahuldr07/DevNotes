@@ -33,6 +33,7 @@ export interface NoteVersion {
 
 export interface AuthorProfile {
   username: string;
-  joined_at: string;
-  notes: Note[];
+  name: string;
+  created_at: string;
+  public_notes: Note[];
 }

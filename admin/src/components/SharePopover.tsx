@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Globe, Share2, Users } from "lucide-react";
+import { Copy, ExternalLink, Globe, Share2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -42,6 +42,11 @@ export function SharePopover({
     gooeyToast.success("Link copied");
   };
 
+  const openPublicLink = () => {
+    if (!publicUrl) return;
+    window.open(publicUrl, "_blank", "noopener,noreferrer");
+  };
+
   const runToggle = async (type: "publish" | "community", checked: boolean) => {
     setLoading(type);
     try {
@@ -69,31 +74,38 @@ export function SharePopover({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-80 bg-[var(--bg-secondary)] p-0"
+        className="w-96 overflow-hidden rounded-3xl bg-[var(--bg-secondary)] p-0 shadow-2xl shadow-black/25"
         style={{ border: "1px solid var(--border)" }}
       >
-        <div className="space-y-4 p-4">
-          <div>
-            <h4 className="text-sm font-medium text-[var(--text-primary)]">
-              share note
-            </h4>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
-              publish a public link or include it in explore
-            </p>
+        <div className="border-b border-[var(--border)] bg-[var(--bg)]/35 p-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
+              <Share2 size={16} />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-[var(--text-primary)]">
+                publish console
+              </h4>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                ship a public note or add it to explore
+              </p>
+            </div>
           </div>
+        </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
+        <div className="space-y-4 p-4">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+            <div className="mb-3 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Globe
-                  size={14}
+                  size={15}
                   className={
                     isPublished
                       ? "text-[var(--accent)]"
                       : "text-[var(--text-secondary)]"
                   }
                 />
-                <span className="text-xs text-[var(--text-primary)]">
+                <span className="text-xs font-medium text-[var(--text-primary)]">
                   public link
                 </span>
               </div>
@@ -103,46 +115,65 @@ export function SharePopover({
                 disabled={loading !== null}
               />
             </div>
+            <p className="text-xs leading-5 text-[var(--text-secondary)]">
+              Anyone with the URL can read this note. The link stays stable
+              while published.
+            </p>
 
             {isPublished && (
-              <div className="flex items-center gap-2">
+              <div className="mt-3 flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-2">
                 <input
                   readOnly
                   value={publicUrl}
                   placeholder="link appears after publish"
-                  className="min-w-0 flex-1 border-b border-[var(--border)] bg-transparent py-1 text-xs text-[var(--text-secondary)] outline-none"
+                  className="min-w-0 flex-1 bg-transparent px-1 text-xs text-[var(--text-secondary)] outline-none"
                 />
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+                  className="grid h-8 w-8 place-items-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
                   aria-label="Copy public link"
                 >
                   <Copy size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={openPublicLink}
+                  className="grid h-8 w-8 place-items-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+                  aria-label="Open public link"
+                >
+                  <ExternalLink size={14} />
                 </button>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Users
-                size={14}
-                className={
-                  isCommunity
-                    ? "text-[var(--accent)]"
-                    : "text-[var(--text-secondary)]"
-                }
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Users
+                  size={15}
+                  className={
+                    isCommunity
+                      ? "text-[var(--accent)]"
+                      : "text-[var(--text-secondary)]"
+                  }
+                />
+                <span className="text-xs font-medium text-[var(--text-primary)]">
+                  explore feed
+                </span>
+              </div>
+              <Switch
+                checked={isCommunity}
+                onCheckedChange={(checked) => runToggle("community", checked)}
+                disabled={loading !== null || (!isPublished && !isCommunity)}
               />
-              <span className="text-xs text-[var(--text-primary)]">
-                explore
-              </span>
             </div>
-            <Switch
-              checked={isCommunity}
-              onCheckedChange={(checked) => runToggle("community", checked)}
-              disabled={loading !== null}
-            />
+            <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+              {isPublished
+                ? "Let signed-in readers discover this note from Explore."
+                : "Publish the note first before adding it to Explore."}
+            </p>
           </div>
         </div>
       </PopoverContent>
