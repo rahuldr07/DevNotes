@@ -18,18 +18,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import NoteForm from "@/components/ui/NoteForm";
 import { api } from "@/lib/api";
-
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-  tags: string[];
-  created_at: string;
-  updated_at: string | null;
-  share_uuid: string | null;
-  is_published: boolean;
-  is_community: boolean;
-}
+import type { Note } from "@/types/notes";
 
 export default function EditNotePage() {
   // useSearchParams reads URL query params: /edit_note?id=5 → id = '5'
@@ -122,6 +111,9 @@ export default function EditNotePage() {
       initialTitle={note.title}
       initialContent={note.content}
       initialTags={note.tags || []}
+      initialNoteType={note.note_type ?? "note"}
+      initialLanguage={note.language}
+      initialSourceUrl={note.source_url}
       initialShareUuid={note.share_uuid}
       initialPublished={note.is_published}
       initialCommunity={note.is_community}

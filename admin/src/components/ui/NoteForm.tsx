@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Check,
   Clock3,
+  Code2,
   History,
   Loader2,
   Save,
@@ -31,12 +32,23 @@ interface NoteFormProps {
   initialTitle?: string;
   initialContent?: string;
   initialTags?: string[];
+  initialNoteType?: "note" | "snippet" | "guide" | "checklist";
+  initialLanguage?: string | null;
+  initialSourceUrl?: string | null;
   initialShareUuid?: string | null;
   initialPublished?: boolean;
   initialCommunity?: boolean;
 }
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
+type NoteType = "note" | "snippet" | "guide" | "checklist";
+
+const noteTypes: Array<{ value: NoteType; label: string; hint: string }> = [
+  { value: "note", label: "Note", hint: "long-form thought" },
+  { value: "snippet", label: "Snippet", hint: "copy-ready code" },
+  { value: "guide", label: "Guide", hint: "publishable walkthrough" },
+  { value: "checklist", label: "Checklist", hint: "repeatable process" },
+];
 
 function sameTags(left: string[], right: string[]) {
   return left.join("\u0000") === right.join("\u0000");
@@ -55,6 +67,9 @@ export default function NoteForm({
   initialTitle = "",
   initialContent = "",
   initialTags = [],
+  initialNoteType = "note",
+  initialLanguage = null,
+  initialSourceUrl = null,
   noteId,
   initialShareUuid = null,
   initialPublished = false,
@@ -65,6 +80,9 @@ export default function NoteForm({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [tags, setTags] = useState<string[]>(initialTags);
+  const [noteType, setNoteType] = useState<NoteType>(initialNoteType);
+  const [language, setLanguage] = useState(initialLanguage ?? "");
+  const [sourceUrl, setSourceUrl] = useState(initialSourceUrl ?? "");
   const [tagInput, setTagInput] = useState("");
   const [titleError, setTitleError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,12 +101,18 @@ export default function NoteForm({
     title: initialTitle,
     content: initialContent,
     tags: normalizeTags(initialTags),
+    noteType: initialNoteType,
+    language: initialLanguage ?? "",
+    sourceUrl: initialSourceUrl ?? "",
   });
 
   const normalizedTags = useMemo(() => normalizeTags(tags), [tags]);
   const hasDirtyChanges =
     title !== savedSnapshot.current.title ||
     content !== savedSnapshot.current.content ||
+    noteType !== savedSnapshot.current.noteType ||
+    language !== savedSnapshot.current.language ||
+    sourceUrl !== savedSnapshot.current.sourceUrl ||
     !sameTags(normalizedTags, savedSnapshot.current.tags);
 
   const wordCount = content.trim()
@@ -97,11 +121,21 @@ export default function NoteForm({
   const readTime = Math.max(1, Math.round(wordCount / 200));
 
   const markSaved = useCallback(
-    (nextTitle: string, nextContent: string, nextTags: string[]) => {
+    (
+      nextTitle: string,
+      nextContent: string,
+      nextTags: string[],
+      nextNoteType: NoteType,
+      nextLanguage: string,
+      nextSourceUrl: string,
+    ) => {
       savedSnapshot.current = {
         title: nextTitle,
         content: nextContent,
         tags: nextTags,
+        noteType: nextNoteType,
+        language: nextLanguage,
+        sourceUrl: nextSourceUrl,
       };
       setLastSavedAt(
         new Date().toLocaleTimeString([], {
@@ -120,6 +154,9 @@ export default function NoteForm({
     async ({ quiet = false }: { quiet?: boolean } = {}) => {
       const nextTitle = title.trim();
       const nextTags = normalizeTags(tags);
+      const nextLanguage =
+        noteType === "snippet" ? language.trim().toLowerCase() : "";
+      const nextSourceUrl = sourceUrl.trim();
 
       if (!nextTitle) {
         setTitleError("Title is required");
@@ -139,11 +176,17 @@ export default function NoteForm({
                 title: nextTitle,
                 content,
                 tags: nextTags,
+                note_type: noteType,
+                language: nextLanguage || null,
+                source_url: nextSourceUrl || null,
               })
             : api.patch<Note>(`/notes/${noteId}/update`, {
                 title: nextTitle,
                 content,
                 tags: nextTags,
+                note_type: noteType,
+                language: nextLanguage || null,
+                source_url: nextSourceUrl || null,
               });
 
         const saved = await request;
@@ -151,7 +194,14 @@ export default function NoteForm({
           gooeyToast.success(mode === "create" ? "Note created" : "Saved");
         }
 
-        markSaved(nextTitle, content, nextTags);
+        markSaved(
+          nextTitle,
+          content,
+          nextTags,
+          noteType,
+          nextLanguage,
+          nextSourceUrl,
+        );
         if (saved.share_uuid) setShareUuid(saved.share_uuid);
         setIsPublished(Boolean(saved.is_published));
         setIsCommunity(Boolean(saved.is_community));
@@ -172,7 +222,18 @@ export default function NoteForm({
         setLoading(false);
       }
     },
-    [content, markSaved, mode, noteId, router, tags, title],
+    [
+      content,
+      language,
+      markSaved,
+      mode,
+      noteId,
+      noteType,
+      router,
+      sourceUrl,
+      tags,
+      title,
+    ],
   );
 
   const triggerAutoSave = useCallback(() => {
@@ -280,7 +341,14 @@ export default function NoteForm({
         setContent(nextContent);
         setTags(restoredTags);
         setTagInput("");
-        markSaved(nextTitle, nextContent, restoredTags);
+        markSaved(
+          nextTitle,
+          nextContent,
+          restoredTags,
+          noteType,
+          language,
+          sourceUrl,
+        );
         setHistoryOpen(false);
         gooeyToast.success(`Restored v${version.version}`);
       } catch (err: unknown) {
@@ -292,7 +360,7 @@ export default function NoteForm({
         setRestoringVersion(false);
       }
     },
-    [markSaved, mode, noteId],
+    [language, markSaved, mode, noteId, noteType, sourceUrl],
   );
 
   useEffect(() => {
@@ -426,9 +494,35 @@ export default function NoteForm({
               <div className="space-y-1 pl-3 text-xs text-[var(--text-secondary)]">
                 <p>notes/</p>
                 <p className="truncate text-[var(--text-primary)]">
-                  └─ {title.trim() || "untitled"}.md
+                  └─ {title.trim() || "untitled"}
+                  {noteType === "snippet" ? ".snippet" : ".md"}
                 </p>
                 <p>metadata.json</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-xs text-[var(--text-secondary)]">
+              <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em]">
+                <Code2 size={13} className="text-[var(--accent)]" />
+                document type
+              </div>
+              <div className="grid gap-1">
+                {noteTypes.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setNoteType(item.value)}
+                    className={`rounded-lg border px-2 py-2 text-left transition-colors ${
+                      noteType === item.value
+                        ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]"
+                        : "border-[var(--border)] bg-[var(--bg-secondary)]/35 hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    <span className="block font-medium">{item.label}</span>
+                    <span className="text-[10px] text-[var(--text-secondary)]">
+                      {item.hint}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
             <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-xs text-[var(--text-secondary)]">
@@ -511,6 +605,44 @@ export default function NoteForm({
             </p>
             <div className="space-y-3 text-xs">
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <p className="text-[var(--text-secondary)]">type</p>
+                <p className="mt-1 capitalize text-[var(--accent)]">
+                  {noteType}
+                </p>
+              </div>
+              {noteType === "snippet" && (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                  <label
+                    className="text-[var(--text-secondary)]"
+                    htmlFor="note-language"
+                  >
+                    language
+                  </label>
+                  <input
+                    id="note-language"
+                    value={language}
+                    onChange={(event) => setLanguage(event.target.value)}
+                    placeholder="tsx, py, sql..."
+                    className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-2 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                  />
+                </div>
+              )}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <label
+                  className="text-[var(--text-secondary)]"
+                  htmlFor="source-url"
+                >
+                  source url
+                </label>
+                <input
+                  id="source-url"
+                  value={sourceUrl}
+                  onChange={(event) => setSourceUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-2 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                />
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                 <p className="text-[var(--text-secondary)]">status</p>
                 <p className="mt-1 text-[var(--accent)]">
                   {statusCopy(saveStatus, settings.autoSave)}
@@ -540,8 +672,8 @@ export default function NoteForm({
         <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-[11px] sm:px-6">
           <span>
             {wordCount > 0
-              ? `Markdown · ${wordCount} words · ${readTime} min`
-              : "Markdown · start typing"}
+              ? `${noteType} · ${wordCount} words · ${readTime} min`
+              : `${noteType} · start typing`}
           </span>
           <span>
             {lastSavedAt
