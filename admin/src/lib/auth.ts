@@ -4,8 +4,8 @@
  * This file manages the JWT token in browser cookies using js-cookie.
  * The token is set during login and read by:
  *   - api.ts → attaches it as Authorization header on every request
- *   - middleware.ts → reads it server-side to protect routes
- *     (middleware uses request.cookies, NOT this file, because
+ *   - proxy.ts reads it server-side to protect routes
+ *     (proxy uses request.cookies, NOT this file, because
  *      js-cookie only works in the browser)
  *
  * Cookie name: "auth_token"

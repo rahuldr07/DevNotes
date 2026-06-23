@@ -10,7 +10,7 @@
  * 4. Token is saved in a browser cookie (auth_token)
  * 5. User is redirected to /dashboard
  *
- * If the user is already logged in, middleware.ts redirects
+ * If the user is already logged in, proxy.ts redirects
  * them to /dashboard before this page even loads.
  *
  * 'use client' — Required because this page uses React hooks
@@ -228,7 +228,7 @@ export default function LoginPage() {
                   if (fieldErrors.password)
                     setFieldErrors((p) => ({ ...p, password: undefined }));
                 }}
-                placeholder="••••••••"
+                placeholder="password"
                 autoComplete="current-password"
                 style={{
                   backgroundColor: "transparent",
@@ -242,9 +242,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm transition-opacity hover:opacity-70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 style={{ color: "var(--sub-color)" }}
-                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>

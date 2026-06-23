@@ -189,10 +189,6 @@ export function NoteSearchPalette({
     if (open) setTimeout(() => inputRef.current?.focus(), 10);
   }, [open]);
 
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [mode, query]);
-
   return (
     <AnimatePresence>
       {open && (
@@ -222,7 +218,10 @@ export function NoteSearchPalette({
               <input
                 ref={inputRef}
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setSelectedIndex(0);
+                }}
                 placeholder={
                   mode === "local" ? "search loaded notes" : "search all notes"
                 }
@@ -233,7 +232,10 @@ export function NoteSearchPalette({
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setMode(item)}
+                    onClick={() => {
+                      setMode(item);
+                      setSelectedIndex(0);
+                    }}
                     className="rounded-md px-2 py-1 text-[11px] transition-colors hover:bg-[var(--border)]"
                     style={{
                       color:

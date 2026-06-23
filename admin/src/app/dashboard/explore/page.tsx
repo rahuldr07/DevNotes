@@ -86,6 +86,7 @@ function ExploreNote({
     if (note.share_uuid) router.push(`/s/${note.share_uuid}`);
   };
   const author = authorName(note);
+  const articleClass = note.share_uuid ? "cursor-pointer" : "cursor-default";
 
   const likeButton = (
     <button
@@ -115,14 +116,18 @@ function ExploreNote({
         ref={observeRef}
         role={note.share_uuid ? "link" : undefined}
         tabIndex={note.share_uuid ? 0 : -1}
-        onClick={openNote}
-        onKeyDown={(event) => {
-          if (note.share_uuid && (event.key === "Enter" || event.key === " ")) {
-            event.preventDefault();
-            openNote();
-          }
-        }}
-        className="group flex cursor-pointer items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+        onClick={note.share_uuid ? openNote : undefined}
+        onKeyDown={
+          note.share_uuid
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openNote();
+                }
+              }
+            : undefined
+        }
+        className={`group flex ${articleClass} items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]`}
       >
         <h2 className="min-w-0 max-w-[240px] flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
           {note.title || "untitled"}
@@ -160,14 +165,18 @@ function ExploreNote({
       ref={observeRef}
       role={note.share_uuid ? "link" : undefined}
       tabIndex={note.share_uuid ? 0 : -1}
-      onClick={openNote}
-      onKeyDown={(event) => {
-        if (note.share_uuid && (event.key === "Enter" || event.key === " ")) {
-          event.preventDefault();
-          openNote();
-        }
-      }}
-      className="group relative mb-4 break-inside-avoid cursor-pointer rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+      onClick={note.share_uuid ? openNote : undefined}
+      onKeyDown={
+        note.share_uuid
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openNote();
+              }
+            }
+          : undefined
+      }
+      className={`group relative mb-4 break-inside-avoid ${articleClass} rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]`}
     >
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">

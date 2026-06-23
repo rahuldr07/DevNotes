@@ -46,21 +46,36 @@ export default function EditNotePage() {
      * Fetches a single note by ID.
      * GET /api/notes/{id} → FastAPI returns the note object
      */
+    if (!noteId) {
+      setNote(null);
+      setError("");
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchNote = async () => {
       try {
         setLoading(true);
+        setError("");
         const response = await api.get<Note>(`/notes/${noteId}`);
-        setNote(response);
+        if (!cancelled) setNote(response);
       } catch (_err) {
-        setError("Failed to fetch note");
+        if (!cancelled) {
+          setNote(null);
+          setError("Failed to fetch note");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    if (noteId) {
-      fetchNote();
-    }
+    fetchNote();
+
+    return () => {
+      cancelled = true;
+    };
   }, [noteId]);
 
   if (loading) {

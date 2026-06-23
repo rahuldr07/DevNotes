@@ -161,7 +161,7 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSignUp} className="space-y-4" noValidate>
           {/* Row 1: Name + Email */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="name" style={labelStyle}>
                 Name
@@ -211,7 +211,7 @@ export default function SignUpPage() {
           </div>
 
           {/* Row 2: Password + Confirm */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="password" style={labelStyle}>
                 Password
@@ -233,9 +233,9 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm transition-opacity hover:opacity-70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   style={{ color: "var(--sub-color)" }}
-                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -259,7 +259,7 @@ export default function SignUpPage() {
                     setConfirmPassword(e.target.value);
                     clearField("confirmPassword");
                   }}
-                  placeholder="••••••••"
+                  placeholder="confirm password"
                   autoComplete="new-password"
                   style={inputStyle("confirmPassword")}
                   className="h-11 pr-11 focus-visible:border-[var(--accent)]"
@@ -267,9 +267,13 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm transition-opacity hover:opacity-70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   style={{ color: "var(--sub-color)" }}
-                  tabIndex={-1}
+                  aria-label={
+                    showConfirm
+                      ? "Hide confirmation password"
+                      : "Show confirmation password"
+                  }
                 >
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
