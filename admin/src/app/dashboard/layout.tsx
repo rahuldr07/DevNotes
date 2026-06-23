@@ -77,7 +77,8 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const token = getToken();
-    if (!token) {
+    const refreshToken = getRefreshToken();
+    if (!token && !refreshToken) {
       clearUser();
       router.replace("/auth/login");
       return;

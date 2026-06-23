@@ -13,7 +13,13 @@
  * This eliminates CORS issues and hides the backend URL from the browser.
  */
 import Cookies from "js-cookie";
-import { removeRefreshToken, removeToken } from "@/lib/auth";
+import {
+  getRefreshToken,
+  removeRefreshToken,
+  removeToken,
+  saveRefreshToken,
+  saveToken,
+} from "@/lib/auth";
 
 /**
  * Base URL for all API calls.
@@ -25,6 +31,14 @@ import { removeRefreshToken, removeToken } from "@/lib/auth";
  *   /api/auth/login → http://localhost:8000/auth/login
  */
 const API_BASE_URL = "/api";
+
+interface TokenResponse {
+  access_token: string;
+  refresh_token?: string;
+  token_type: string;
+}
+
+let refreshPromise: Promise<string | null> | null = null;
 
 /**
  * Shape of API errors thrown by the client.
@@ -38,6 +52,37 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
   }
+}
+
+function clearLocalAuth() {
+  removeToken();
+  removeRefreshToken();
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const tokens = (await response.json()) as TokenResponse;
+        saveToken(tokens.access_token, { remember: false });
+        saveRefreshToken(tokens.refresh_token);
+        return tokens.access_token;
+      })
+      .catch(() => null)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
 }
 
 /**
@@ -70,6 +115,7 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
+    allowRefresh = true,
   ): Promise<T> {
     // Read the JWT token from the browser cookie (set during login)
     // This is undefined if the user is not logged in
@@ -98,9 +144,18 @@ class ApiClient {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       const message = error.detail || "An error occurred";
-      if (response.status === 401) {
-        removeToken();
-        removeRefreshToken();
+      if (
+        response.status === 401 &&
+        allowRefresh &&
+        endpoint !== "/auth/refresh"
+      ) {
+        const refreshedToken = await refreshAccessToken();
+        if (refreshedToken) {
+          return this.request<T>(endpoint, options, false);
+        }
+        clearLocalAuth();
+      } else if (response.status === 401) {
+        clearLocalAuth();
       }
       throw new ApiError(message, response.status);
     }
