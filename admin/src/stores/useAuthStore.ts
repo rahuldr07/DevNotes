@@ -7,6 +7,12 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
+  username?: string | null;
+  bio?: string | null;
+  website_url?: string | null;
+  github_url?: string | null;
+  twitter_url?: string | null;
+  avatar_url?: string | null;
 }
 
 interface AuthState {

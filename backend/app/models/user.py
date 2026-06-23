@@ -27,6 +27,11 @@ class User(Base):
     # index=True = PostgreSQL creates a fast-lookup index on this column
     email = Column(String(255), unique=True, nullable=False, index=True)
     username = Column(String(30), unique=True, nullable=True, index=True)
+    bio = Column(Text, nullable=True)
+    website_url = Column(String(500), nullable=True)
+    github_url = Column(String(500), nullable=True)
+    twitter_url = Column(String(500), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
 
     # We NEVER store plain passwords. This holds the bcrypt hash.
     # Text = unlimited length (hashes are long strings)

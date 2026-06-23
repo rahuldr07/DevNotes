@@ -28,6 +28,11 @@ def test_public_profile_endpoint_returns_published_notes(monkeypatch):
         lambda db, username: {
             "username": username,
             "name": "Ada Lovelace",
+            "bio": "Mathematical notes and computing guides.",
+            "website_url": "https://ada.example",
+            "github_url": None,
+            "twitter_url": None,
+            "avatar_url": None,
             "created_at": datetime(2026, 1, 5, tzinfo=timezone.utc),
             "public_notes": [
                 {
@@ -36,6 +41,9 @@ def test_public_profile_endpoint_returns_published_notes(monkeypatch):
                     "content": "Public profile body",
                     "share_uuid": "share-uuid",
                     "tags": ["math"],
+                    "note_type": "guide",
+                    "language": None,
+                    "source_url": None,
                     "like_count": 2,
                     "view_count": 5,
                     "created_at": datetime(2026, 1, 6, tzinfo=timezone.utc),
@@ -53,5 +61,7 @@ def test_public_profile_endpoint_returns_published_notes(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["username"] == "ada-lovelace"
+    assert response.json()["bio"] == "Mathematical notes and computing guides."
     assert response.json()["public_notes"][0]["share_uuid"] == "share-uuid"
+    assert response.json()["public_notes"][0]["note_type"] == "guide"
     assert response.json()["public_notes"][0]["content"] == "Public profile body"

@@ -46,6 +46,11 @@ export interface NoteVersion {
 export interface AuthorProfile {
   username: string;
   name: string;
+  bio?: string | null;
+  website_url?: string | null;
+  github_url?: string | null;
+  twitter_url?: string | null;
+  avatar_url?: string | null;
   created_at: string;
   public_notes: Note[];
 }

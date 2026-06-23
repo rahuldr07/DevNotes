@@ -72,6 +72,14 @@ def create(
     return oUser
 
 
+def update_profile(db: Session, user: User, **fields) -> User:
+    for key, value in fields.items():
+        setattr(user, key, value)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def update_refresh_token(
     db: Session,
     user_id: int,

@@ -10,6 +10,7 @@ import {
   LogOut,
   Plus,
   Search,
+  Settings,
   Sparkles,
   UserCircle,
   Volume2,
@@ -55,6 +56,12 @@ const navItems = [
     icon: Plus,
     matcher: (pathname: string) =>
       pathname.startsWith("/dashboard/create_note"),
+  },
+  {
+    href: "/dashboard/settings",
+    label: "Settings",
+    icon: Settings,
+    matcher: (pathname: string) => pathname.startsWith("/dashboard/settings"),
   },
 ];
 

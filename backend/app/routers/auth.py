@@ -20,10 +20,11 @@ from app.schemas.user import (
     RefreshTokenRequest,
     TokenResponse,
     UserCreate,
+    UserProfileUpdate,
     UserResponse,
     UserLogin,
 )
-from app.services import auth_service
+from app.services import auth_service, profile_service
 
 # APIRouter groups related endpoints together.
 # prefix="/auth" → all routes here start with /auth
@@ -104,6 +105,19 @@ def login(request: Request, response: Response, credentials: UserLogin, db: Sess
 @router.get("/me", response_model=CurrentUserResponse, status_code=200)
 def get_me(user=Depends(get_current_user)):
    return user
+
+
+@router.patch("/profile", response_model=CurrentUserResponse, status_code=200)
+def update_profile(
+   payload: UserProfileUpdate,
+   user=Depends(get_current_user),
+   db: Session = Depends(get_db),
+):
+   return profile_service.update_my_profile(
+      db,
+      user,
+      **payload.model_dump(exclude_unset=True),
+   )
 
 
 @router.post("/refresh", response_model=TokenResponse, status_code=200)

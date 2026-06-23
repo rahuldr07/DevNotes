@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   Code2,
+  ExternalLink,
   Eye,
   FileText,
   Heart,
@@ -148,9 +149,32 @@ export default async function AuthorProfilePage({
                 {profile.name}
               </p>
               <p className="mt-5 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-                Public notes, technical guides, and reusable knowledge shared
-                from a DevNotes workspace.
+                {profile.bio ||
+                  "Public notes, technical guides, and reusable knowledge shared from a DevNotes workspace."}
               </p>
+              {(profile.website_url ||
+                profile.github_url ||
+                profile.twitter_url) && (
+                <div className="mt-5 flex flex-wrap gap-2 text-xs">
+                  {[
+                    ["Website", profile.website_url],
+                    ["GitHub", profile.github_url],
+                    ["Twitter", profile.twitter_url],
+                  ].map(([label, url]) =>
+                    url ? (
+                      <a
+                        key={label}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5 text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+                      >
+                        {label} <ExternalLink size={12} />
+                      </a>
+                    ) : null,
+                  )}
+                </div>
+              )}
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
                   <CalendarDays size={13} /> joined{" "}
