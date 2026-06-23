@@ -1,1205 +1,792 @@
-# DevNotes 1000x Product, UI, and Architecture Blueprint
+# DevNotes 1000x Product + UI Blueprint
 
-> A sharper plan for turning DevNotes into a premium developer knowledge platform: beautiful, fast, AI-native, social, collaborative, and monetizable.
-
----
-
-## 0. Executive Direction
-
-The first roadmap was feature-rich. This version is more opinionated.
-
-DevNotes should not look or feel like a generic notes app. It should feel like a **developer cockpit for thinking, writing, saving, publishing, and rediscovering knowledge**.
-
-### Core Product Promise
-
-```text
-Capture anything. Understand everything. Publish beautifully.
-```
-
-### The Product We Are Building
-
-DevNotes becomes:
-
-- A private knowledge base for developers.
-- A public developer writing/profile platform.
-- A searchable snippet/config/playbook library.
-- An AI assistant over personal and team knowledge.
-- A team workspace for engineering docs.
-- A polished, monetizable SaaS product.
-
-### The UI We Should Aim For
-
-Not generic Notion clone. Not plain blog CMS. Not random dashboard cards.
-
-The visual identity should be:
-
-```text
-Developer editorial cockpit
-  + calm dark workspace
-  + beautiful writing surface
-  + fast command-driven interactions
-  + public pages that feel like premium technical essays
-```
+> Execution blueprint for turning DevNotes into a premium developer knowledge cockpit. This is the implementation map we should follow from here.
 
 ---
 
-## 1. Product Positioning
+## 0. Product North Star
 
-## Current Position
+DevNotes should become a **developer knowledge cockpit**: a place where developers capture notes/snippets/docs, retrieve them instantly, publish them beautifully, and later ask AI across everything.
 
-DevNotes is currently a notes/blog-sharing app with private and public notes.
-
-## Better Position
-
-DevNotes should become a **knowledge OS for developers and technical teams**.
-
-### One-line pitch
-
-> DevNotes is an AI-powered knowledge workspace where developers save notes, snippets, configs, and guides, then search, reuse, and publish them beautifully.
-
-### Audience
-
-Primary:
-
-- Developers.
-- CS students.
-- Indie hackers.
-- Technical writers.
-- Small engineering teams.
-
-Secondary:
-
-- Educators.
-- Bootcamp students.
-- Open-source maintainers.
-- DevRel teams.
-
-### Why Users Would Care
-
-Users do not need another notes app. They need:
-
-- Faster capture.
-- Better retrieval.
-- Cleaner publishing.
-- AI understanding.
-- Developer-specific formatting.
-- Public credibility through profiles and writing.
-
----
-
-## 2. Product North Star
-
-The north star should not be “number of notes”. It should be **knowledge reused**.
-
-### North Star Metric
+### Core promise
 
 ```text
-Weekly Knowledge Reuse Events
+Capture fast. Reuse smarter. Publish beautifully.
 ```
 
-A reuse event can be:
+### Differentiation
 
-- Searching and opening an old note.
-- Copying a command/snippet.
-- Asking AI and opening a source note.
-- Sharing a public note.
+DevNotes is not another generic notes app. It should feel like:
+
+```text
+VS Code command speed
++ Obsidian knowledge depth
++ GitHub Gist snippet utility
++ Hashnode-style public identity
++ AI-native search over personal knowledge
+```
+
+### North star metric
+
+**Weekly Knowledge Reuse Events**
+
+A reuse event is:
+
+- Opening an old note from search.
+- Copying a snippet/code block.
 - Reusing a template.
-- Exporting a note into README/blog/docs.
-
-### Supporting Metrics
-
-- Time to first note.
-- Time to first public share.
-- Notes created per active user.
-- Searches per active user.
-- AI questions per active user.
-- Public note views.
-- Snippet copies.
-- Workspace active members.
-- Free-to-pro conversion.
+- Publishing a note.
+- Sharing a public link.
+- Asking AI and opening cited notes.
 
 ---
 
-## 3. Information Architecture
+## 1. Current Foundation Snapshot
 
-The app needs stronger structure before adding more features.
+### Already strong
 
-## Main Navigation
+- Next.js 16 frontend with App Router.
+- FastAPI backend.
+- PostgreSQL/Alembic setup.
+- JWT + refresh token sessions.
+- Notes CRUD.
+- Tags.
+- Public sharing.
+- Public profiles.
+- Explore feed.
+- Likes/views.
+- Version history.
+- Search palette.
+- Polished theme-driven visual system.
+- Auth refresh fallback now hardened.
+
+### Current product problem
+
+The foundation is good, but the product still feels like a polished notes dashboard. To become 1000x, it needs a stronger **workflow loop**:
 
 ```text
-Home / Dashboard
-Search
+Capture -> Organize -> Retrieve -> Reuse -> Publish -> Grow reputation
+```
+
+Everything we build next should strengthen that loop.
+
+---
+
+## 2. Design Language: Developer Editorial Cockpit
+
+### Visual personality
+
+- Dark, focused, editor-like.
+- Dense but readable.
+- Calm premium surfaces.
+- Fast command interactions.
+- Public pages should feel editorial, not dashboard-like.
+- Code blocks and snippets should feel first-class.
+
+### Keep
+
+- Code-editor-inspired auth/workspace style.
+- Theme picker concept.
+- Dashboard cockpit shell.
+- Command/search bar as central UX.
+
+### Improve
+
+- More purposeful information hierarchy.
+- Fewer decorative cards without action.
+- More “developer utility” in every screen.
+- Stronger empty states and quick capture.
+- More keyboard-first interactions.
+
+---
+
+## 3. Product Pillars
+
+## Pillar A: Capture Fast
+
+Goal: user can save something in seconds without choosing many fields.
+
+### Build
+
+- Quick capture bar on dashboard.
+- Intent detection: note, snippet, link, command, task.
+- Keyboard shortcut: `N` or `Ctrl/Cmd + K -> New`.
+- Save draft instantly.
+- Recent capture strip.
+
+### UI concept
+
+```text
+[ What do you want to remember? ____________________ ]
+  Enter saves quick note
+  /snippet starts snippet mode
+  /link saves URL
+  /todo saves task
+```
+
+### Validation
+
+- New user can create first note in under 15 seconds.
+- No modal required for basic capture.
+
+---
+
+## Pillar B: Reuse Smarter
+
+Goal: old knowledge should resurface quickly.
+
+### Build
+
+- Upgrade dashboard search into a global command palette.
+- Search modes: notes, snippets, tags, public, commands.
+- Result preview panel.
+- Keyboard navigation.
+- Copy snippet/code directly from result.
+- Recent searches.
+
+### UI concept
+
+```text
+Ctrl/Cmd + K
+  docker compose
+    Notes
+    Snippets
+    Commands
+    Ask AI later
+```
+
+### Validation
+
+- User can find and open a note without touching mouse.
+- Search result has enough preview to choose correctly.
+
+---
+
+## Pillar C: Developer Snippet Library
+
+Goal: become better than plain notes for code-heavy knowledge.
+
+### Build
+
+- Add `note_type`: note, snippet, guide, checklist.
+- Snippet cards with language, copy button, tags.
+- Code block copy buttons everywhere.
+- Snippet collection page.
+- Snippet quick capture.
+
+### Why this matters
+
+Developers do not only write prose. They save commands, configs, stack traces, SQL, Docker files, hooks, regex, and reusable patterns.
+
+### Validation
+
+- User can save and copy a snippet in under 10 seconds.
+- Public snippet pages look like premium gist pages.
+
+---
+
+## Pillar D: Publish Beautifully
+
+Goal: public notes and profiles become a developer portfolio.
+
+### Build
+
+- Better public note page typography.
+- Author card.
+- Related notes.
+- Reading time.
+- SEO metadata.
+- Open Graph image generation later.
+- Public profile hero with bio/socials/featured notes.
+- Follow system later.
+
+### UI direction
+
+Public pages should feel like a technical magazine, not a dashboard export.
+
+### Validation
+
+- A shared note looks credible enough to post on LinkedIn/Twitter/GitHub.
+- Public profile explains what the user knows in under 5 seconds.
+
+---
+
+## Pillar E: AI-Native Knowledge
+
+Goal: AI should be useful because it knows the user’s notes.
+
+### Build later, after search/snippets are strong
+
+- Embedding pipeline with pgvector.
+- Chunk notes.
+- Semantic search endpoint.
+- AI ask page with cited sources.
+- Suggested tags.
+- Summarize note.
+- Turn note into public guide.
+
+### Critical rule
+
+AI answers must cite source notes. No citations means low trust.
+
+### Validation
+
+- Every AI answer links back to notes.
+- User can save an AI answer as a note.
+
+---
+
+## 4. Main App Information Architecture
+
+### Near-term navigation
+
+```text
+Dashboard
 Notes
-Collections
 Snippets
-Templates
-AI Chat
 Explore
+Search / Command Palette
 Profile
 Settings
 ```
 
-## Personal Workspace
+### Later navigation
+
+```text
+Dashboard
+Notes
+Snippets
+Collections
+Templates
+AI
+Explore
+Profile
+Workspace
+Settings
+```
+
+### Route plan
 
 ```text
 /dashboard
-  /dashboard/recent
-  /dashboard/notes
-  /dashboard/collections
-  /dashboard/snippets
-  /dashboard/templates
-  /dashboard/ai
-  /dashboard/settings
-```
-
-## Public Surface
-
-```text
+/dashboard/create_note
+/dashboard/edit_note
+/dashboard/explore
+/dashboard/snippets        <- next major product route
+/dashboard/settings        <- needed soon
 /u/:username
-/u/:username/:slug
-/u/:username/collections/:slug
 /s/:share_uuid
-/explore
-/tags/:tag
-```
-
-## Team Surface Later
-
-```text
-/w/:workspace_slug
-/w/:workspace_slug/docs
-/w/:workspace_slug/collections
-/w/:workspace_slug/members
-/w/:workspace_slug/activity
-/w/:workspace_slug/settings
 ```
 
 ---
 
-## 4. UI Vision
+## 5. Screen-by-Screen UI Blueprint
 
-## Design Direction
+## 5.1 Dashboard Home
 
-### Name
+### Purpose
 
-**Developer Editorial Cockpit**
+Make user feel in control immediately.
 
-### Feel
+### Must contain
 
-- Calm, focused, keyboard-first.
-- Dark-first but not gloomy.
-- High contrast for code and writing.
-- Editorial typography for public pages.
-- Precise UI density for dashboards.
-- Delight through fast interactions, not loud effects.
-
-### Avoid
-
-- Generic SaaS gradient hero sections.
-- Plain white Notion clone.
-- Too many cards with no hierarchy.
-- Purple-blue AI dashboard cliché.
-- Random glassmorphism everywhere.
-
----
-
-## 5. Visual Design System
-
-## Theme Strategy
-
-Start with three strong themes instead of infinite random theming.
-
-### Theme 1: Terminal Ink
-
-Default developer theme.
-
-```text
-Background: near-black graphite
-Surface: deep charcoal
-Text: warm off-white
-Muted: zinc/stone gray
-Accent: phosphor green or amber
-Code: rich black panel with syntax colors
-```
-
-Good for:
-
-- Dashboard.
-- Editor.
-- Snippet library.
-
-### Theme 2: Paper Mode
-
-Public reading and long-form writing.
-
-```text
-Background: warm paper
-Text: ink black
-Muted: sepia gray
-Accent: deep blue or red oxide
-Code: soft ivory code blocks
-```
-
-Good for:
-
-- Public notes.
-- Blog-like pages.
-- Reading mode.
-
-### Theme 3: Blueprint
-
-Team/workspace docs.
-
-```text
-Background: navy-black
-Surface: blueprint blue panels
-Grid lines: subtle cyan
-Accent: electric cyan
-Text: cool white
-```
-
-Good for:
-
-- Architecture docs.
-- Team spaces.
-- Knowledge graph.
-
----
-
-## Typography
-
-Use a purposeful pairing.
-
-### Dashboard/UI
-
-- Compact, legible sans for controls.
-- Slightly technical feel.
-- Avoid overly generic defaults.
-
-### Editor/Public Pages
-
-- Strong editorial serif or humanist text face for reading.
-- Monospace for code with excellent ligature/readability.
-
-### Typography Scale
-
-```text
-Display: 48-72px
-Page title: 32-44px
-Section title: 22-28px
-Body: 16-18px
-Small UI: 12-14px
-Code: 13-15px
-```
-
----
-
-## Layout Principles
-
-- Sidebar for navigation.
-- Center writing canvas.
-- Right rail for metadata/AI/context.
-- Command palette for all actions.
-- Public pages use editorial article layouts.
-- Dashboard uses density and grouping, not random card grids.
-
-### App Shell Concept
-
-```text
-┌──────────────┬──────────────────────────────┬──────────────────┐
-│ Sidebar      │ Main Workspace               │ Context Rail     │
-│              │                              │                  │
-│ Notes        │ Editor / list / search       │ Tags             │
-│ Collections  │                              │ AI suggestions   │
-│ Snippets     │                              │ Related notes    │
-│ AI           │                              │ Version history  │
-└──────────────┴──────────────────────────────┴──────────────────┘
-```
-
----
-
-## Motion Principles
-
-Use motion to communicate speed and structure.
-
-Good motion:
-
-- Command palette opens instantly with subtle scale/fade.
-- Notes list items stagger in lightly.
-- Editor autosave indicator pulses softly.
-- Search results stream in.
-- AI answer reveals progressively.
-- Public page transitions are minimal.
-
-Avoid:
-
-- Slow bouncy animations.
-- Excessive hover transforms.
-- Motion that blocks writing.
-
----
-
-## 6. Critical Screens to Design First
-
-## Screen 1: Dashboard Home
-
-Purpose: make user feel in control immediately.
-
-### Sections
-
-- Quick capture input.
+- Quick capture.
 - Recent notes.
 - Pinned notes.
-- Recently copied snippets.
-- AI suggestions.
-- Continue writing.
+- Snippet shortcuts.
 - Public performance summary.
+- Search/command entry.
 
-### UX
+### Next UI upgrade
 
-User can start typing immediately.
+Replace the current big hero-only feel with a more useful cockpit:
 
 ```text
-[What do you want to remember? __________________]
+Top: command bar + create
+Hero: quick capture + stats
+Main left: recent/pinned notes
+Main right: snippets, activity, publish queue
 ```
 
-This should create a note, snippet, task, or draft based on intent.
+### Implementation slice
+
+1. Add QuickCapture component.
+2. Add PinnedNotes section from existing notes.
+3. Add RecentNotes section.
+4. Add “Publish queue” card for private notes that could be shared.
 
 ---
 
-## Screen 2: Notes Library
+## 5.2 Notes Library
 
-Purpose: organize and retrieve.
+### Purpose
 
-### Features
+Manage and retrieve notes.
 
-- Search bar.
-- Filter by tags/collections/status.
-- Sort by updated/views/created/title.
-- Grid/list/compact view.
-- Pin/favorite.
-- Bulk actions.
-- Keyboard navigation.
+### Must contain
 
-### Better UX Idea
-
-Use a split layout:
-
-```text
-Left: filters + collections
-Center: note list
-Right: preview
-```
-
-This is faster than opening every note.
-
----
-
-## Screen 3: Editor
-
-Purpose: writing should feel premium and distraction-free.
-
-### Layout
-
-```text
-Top: breadcrumb + save status + publish/share
-Main: writing surface
-Right rail: metadata, tags, AI, outline, versions
-Bottom/inline: slash command menu
-```
-
-### Features
-
-- Autosave.
-- Slash commands.
-- Markdown shortcuts.
-- Code blocks with copy button.
-- Callouts.
-- Tables.
-- Mermaid diagrams.
-- Version restore.
-- Publish controls.
-- AI rewrite/summarize/extract.
-
-### UX Detail
-
-The editor should have modes:
-
-- Write.
+- Search.
+- Sort.
+- Grid/list/compact.
+- Tags.
+- Pinned state.
 - Preview.
-- Focus.
-- Publish.
+- Bulk actions later.
 
----
+### Next UI upgrade
 
-## Screen 4: Global Command Palette
-
-Purpose: make DevNotes feel fast and powerful.
-
-### Commands
-
-- Create note.
-- Search notes.
-- Ask AI.
-- Jump to collection.
-- Copy snippet.
-- Publish note.
-- Toggle theme.
-- Open settings.
-
-### Example
+Add a split view option:
 
 ```text
-⌘K → "docker" → shows notes, snippets, commands, AI answer option
+Left: filters/tags
+Center: notes list
+Right: selected note preview
 ```
 
-This becomes the core power-user interface.
+### Implementation slice
+
+1. Keep current grid/list.
+2. Add compact view.
+3. Add right preview for selected note on desktop.
+4. Add empty states with suggested templates.
 
 ---
 
-## Screen 5: AI Ask Page / Panel
+## 5.3 Editor
 
-Purpose: let users talk to their knowledge.
+### Purpose
 
-### UI
+Writing should feel premium and powerful.
 
-- Chat input.
-- Source-linked answers.
-- Related notes.
-- Suggested follow-ups.
-- Save answer as note.
-- Convert answer to public guide.
+### Must contain
 
-### Critical Rule
+- Title input.
+- Rich editor.
+- Save status.
+- Tags.
+- Publish/share controls.
+- Version history.
+- Preview/focus mode.
 
-AI answers must cite source notes. Otherwise users will not trust it.
+### Next UI upgrade
+
+Make it feel more like a code editor/writing IDE:
+
+```text
+Top bar: breadcrumb, save state, publish/share
+Main: document canvas
+Right rail: tags, visibility, outline, versions
+Bottom: shortcuts/help
+```
+
+### Implementation slice
+
+1. Add autosave state UI.
+2. Add right metadata rail.
+3. Add mode switch: Write / Preview / Publish.
+4. Add code block copy button.
 
 ---
 
-## Screen 6: Public Profile
+## 5.4 Snippets
 
-Purpose: convert private knowledge into public credibility.
+### Purpose
 
-### Layout
+Make DevNotes uniquely valuable for developers.
 
-- Hero with avatar/name/bio/socials.
+### Must contain
+
+- Snippet type.
+- Language.
+- Copy button.
+- Tags.
+- Search.
+- Public/private visibility.
+
+### First version
+
+Use existing notes table with `note_type = snippet` and optional metadata.
+
+### Backend model direction
+
+```text
+notes
+  note_type: note | snippet | guide | checklist
+  language: nullable string
+  source_url: nullable string
+```
+
+### Implementation slice
+
+1. Add migration for note type/language/source_url.
+2. Add frontend type updates.
+3. Add snippet create mode.
+4. Add `/dashboard/snippets` page.
+5. Add copy event tracking later.
+
+---
+
+## 5.5 Explore
+
+### Purpose
+
+Discover public knowledge and motivate publishing.
+
+### Must contain
+
+- Trending/recent switch.
+- Search public notes.
+- Topic filters.
+- Like/save.
+- Author profile links.
+
+### Next UI upgrade
+
+Make Explore feel less like note cards and more like a developer discovery feed:
+
+```text
+Featured guide
+Trending snippets
+Fresh notes
+Top authors
+Topics
+```
+
+### Implementation slice
+
+1. Add topic/tag chips.
+2. Add featured/trending rail.
+3. Add save/bookmark later.
+
+---
+
+## 5.6 Public Profile
+
+### Purpose
+
+Show a developer’s knowledge identity.
+
+### Must contain
+
+- Avatar/name/username.
+- Bio.
+- Expertise tags.
 - Featured notes.
-- Collections.
-- Tags/expertise.
-- Recent writing.
-- Most liked/viewed.
-- Follow button.
+- Public notes.
+- Stats.
+- Social links later.
 
-### Visual Feel
+### Implementation slice
 
-More like a technical magazine author page than a dashboard.
+1. Add profile settings fields: username, bio, website, GitHub, Twitter.
+2. Add featured public note flag.
+3. Upgrade profile page hero.
 
 ---
 
-## Screen 7: Public Note Page
+## 5.7 Public Note Page
 
-Purpose: published notes must feel worth sharing.
+### Purpose
 
-### Layout
+Make shared notes beautiful and credible.
 
-- Strong title.
+### Must contain
+
+- Excellent typography.
 - Author card.
 - Reading time.
 - Tags.
-- Article content.
-- Table of contents.
-- Related notes.
-- Like/save/share.
+- Like/view counts.
 - Copy link.
+- Related notes.
 
-### SEO
+### Implementation slice
 
-- Dynamic metadata.
-- Open Graph images.
-- Clean slugs.
-- Canonical URLs.
-
----
-
-## Screen 8: Explore
-
-Purpose: growth loop.
-
-### Features
-
-- Trending notes.
-- Featured authors.
-- Tags.
-- Collections.
-- Search public knowledge.
-- Weekly picks.
-
-### Important
-
-Explore should launch only after public pages are polished. A weak explore page hurts perception.
+1. Add reading-time utility.
+2. Add related public notes by tags.
+3. Add public like button using share UUID.
+4. Add SEO metadata.
 
 ---
 
-## 7. Product Loops
+## 6. Backend Blueprint
 
-## Capture Loop
+## 6.1 Immediate backend upgrades
+
+### Snippet support
+
+Add fields:
 
 ```text
-User has idea → quick capture → auto-tag → appears in recent/related → reused later
+note_type enum/string default note
+language nullable
+source_url nullable
 ```
 
-Make capture nearly instant.
+### Profile support
 
-## Reuse Loop
+Add fields:
 
 ```text
-User searches → finds old note/snippet → copies/uses it → app records reuse → recommends related knowledge
+username unique
+bio nullable
+website_url nullable
+github_url nullable
+twitter_url nullable
+avatar_url nullable
 ```
 
-This is the core private value.
+### Public note support
 
-## Publish Loop
-
-```text
-Private note → AI polish → publish → views/likes → profile credibility → user publishes more
-```
-
-This is the growth loop.
-
-## Team Loop
+Add:
 
 ```text
-Team writes docs → members search/ask AI → fewer repeated questions → team invites more members
-```
-
-This is the SaaS loop.
-
----
-
-## 8. Better Feature Prioritization
-
-Do not build all features equally. Build in this order:
-
-## Tier 1: Foundation That Unlocks Everything
-
-- Auth hardening.
-- API proxy hardening.
-- Transaction safety.
-- Integration tests.
-- Root dev scripts.
-- Environment docs.
-
-## Tier 2: UX That Makes Product Feel Real
-
-- Dashboard redesign.
-- Editor polish.
-- Public note polish.
-- Public profile polish.
-- Command palette.
-- Search UX.
-
-## Tier 3: Differentiation
-
-- AI semantic search.
-- Ask your notes.
-- Snippet library.
-- Templates.
-- Publish from AI-polished draft.
-
-## Tier 4: SaaS Expansion
-
-- Workspaces.
-- Permissions.
-- Comments.
-- Mentions.
-- Activity feed.
-- Billing.
-
-## Tier 5: Moats
-
-- Browser extension.
-- VS Code extension.
-- Realtime collaboration.
-- Templates marketplace.
-- Public discover network.
-
----
-
-## 9. MVP That Could Actually Win
-
-A realistic high-quality v1 should not try to include teams, realtime, billing, marketplace, and AI all at once.
-
-## Winning MVP
-
-### Private
-
-- Fast note creation.
-- Excellent editor.
-- Tags/collections.
-- Strong search.
-- Snippet blocks.
-- Command palette.
-
-### Public
-
-- Beautiful profile.
-- Beautiful published notes.
-- SEO metadata.
-- Likes/views.
-- Clean share URLs.
-
-### AI
-
-- Summarize note.
-- Auto-tag note.
-- Ask across your notes with citations.
-
-This is enough to be compelling.
-
----
-
-## 10. Technical Architecture Direction
-
-## Frontend Architecture
-
-### Current Issue
-
-Many pages are client-heavy. That is okay for interactive screens, but public pages and some dashboard data can use server rendering better.
-
-### Direction
-
-- Public pages: server components, SEO-first.
-- Dashboard shell: server layout + client islands.
-- Editor: client component.
-- Command palette: client component.
-- Search: hybrid, server results + client interaction.
-
-### Better Folder Direction
-
-```text
-admin/src/
-  app/
-    (public)/
-    (auth)/
-    dashboard/
-  features/
-    auth/
-    notes/
-    editor/
-    search/
-    profile/
-    ai/
-  components/
-    ui/
-    layout/
-    marketing/
-  lib/
-    api/
-    auth/
-    config/
+featured boolean default false
+reading_time_minutes computed or stored
 ```
 
 ---
 
-## Backend Architecture
+## 6.2 Search V2
 
-Move toward feature modules.
+### Current
 
-```text
-backend/app/
-  core/
-    config.py
-    security.py
-    logging.py
-    errors.py
-  db/
-    session.py
-    transaction.py
-    models/
-  modules/
-    auth/
-    notes/
-    profiles/
-    search/
-    ai/
-    workspaces/
-```
+Keyword search exists.
 
-### Key Backend Improvements
+### Next
 
-- Repositories stop committing directly.
-- Services own transactions.
-- Add central permission policy layer.
-- Add session table.
-- Add integration tests using real Postgres.
-- Add migration tests.
-- Add structured logging.
+- Search by title/content/tags/type.
+- Public search.
+- Snippet-only search.
+- Better ranking.
+
+### Later
+
+- pgvector semantic search.
+- Hybrid ranking.
+- AI source citations.
 
 ---
 
-## 11. Data Model Evolution
+## 6.3 Events and Analytics
 
-## Near-Term Additions
+To optimize the product, track reuse.
 
-```text
-collections
-collection_notes
-sessions
-note_slugs
-note_embeddings
-ai_usage_events
-```
-
-## Mid-Term Additions
+### Add table later
 
 ```text
-workspaces
-workspace_members
-comments
-activity_events
-bookmarks
-follows
-templates
+knowledge_events
+  id
+  user_id
+  note_id nullable
+  event_type
+  metadata jsonb
+  created_at
 ```
 
-## Long-Term Additions
+### Events
 
-```text
-collaboration_documents
-collaboration_snapshots
-billing_customers
-subscriptions
-usage_limits
-integrations
-```
+- note_created
+- note_opened_from_search
+- snippet_copied
+- note_published
+- public_note_viewed
+- public_note_liked
+- ai_answer_saved
 
 ---
 
-## 12. AI Product Plan
+## 7. Implementation Order
 
-## AI Should Not Be a Gimmick
+## Phase 1: Make the core loop excellent
 
-Bad AI feature:
+### 1. Quick Capture Dashboard
 
-```text
-Random chatbot floating button.
-```
+- Add dashboard quick capture.
+- Create note instantly.
+- Toast success.
+- Refresh list.
 
-Good AI feature:
+**Validation:** create note from dashboard in one submit.
 
-```text
-AI is embedded into capture, search, writing, publishing, and reuse.
-```
+### 2. Snippet Foundation
 
-## AI Entry Points
+- Add note type/language fields.
+- Add snippet UI.
+- Add snippet list page.
+- Add copy buttons.
 
-### In editor
+**Validation:** create, list, copy snippet.
 
-- Improve writing.
-- Summarize.
-- Extract todos.
-- Generate title.
-- Generate tags.
-- Convert to blog.
+### 3. Editor Workbench Upgrade
 
-### In search
+- Right rail.
+- Save status.
+- Mode switch.
+- Better publish/share controls.
 
-- Semantic search.
-- Ask question.
-- Show source notes.
+**Validation:** edit/publish flow is obvious without hunting.
 
-### In dashboard
+### 4. Public Reading Polish
 
-- Suggested cleanup.
-- Related old notes.
-- Stale notes to update.
-- Drafts worth publishing.
+- Reading time.
+- Related notes.
+- Author card.
+- Better typography.
 
-### In public publishing
-
-- SEO title.
-- SEO description.
-- Social preview.
-- Related note suggestions.
+**Validation:** public note feels share-worthy.
 
 ---
 
-## 13. Monetization With UI Impact
+## Phase 2: Make discovery and profile valuable
 
-Plans should be visible through product affordances, not annoying popups.
+### 5. Profile Settings
 
-## Free
+- Username/bio/socials.
+- Avatar placeholder.
+- Profile preview.
 
-- Personal notes.
-- Limited AI.
-- Limited public notes.
-- Basic profile.
+### 6. Explore V2
 
-## Pro
+- Topic filters.
+- Trending sections.
+- Top authors.
 
-- Unlimited AI/search.
-- Advanced public profile.
-- Custom themes.
-- More version history.
-- Export options.
-- Custom domain later.
+### 7. Public Engagement
 
-## Team
+- Like from public page.
+- Save/bookmark public notes.
+- Follow users later.
 
-- Workspaces.
+---
+
+## Phase 3: Make it intelligent
+
+### 8. Search V2
+
+- Better filters.
+- Type-aware results.
+- Snippet copy from search.
+
+### 9. Semantic Search
+
+- pgvector.
+- Embedding jobs.
+- Chunking.
+
+### 10. AI Ask
+
+- Ask notes.
+- Source citations.
+- Save answer as note.
+
+---
+
+## Phase 4: Make it SaaS-ready
+
+### 11. Workspaces
+
+- Workspace model.
+- Members.
 - Roles.
-- Comments.
-- Audit logs.
-- Team AI.
-- Admin controls.
 
-## UI Surfaces for Monetization
+### 12. Import/Export
 
-- AI usage meter.
-- Profile customization locked previews.
-- Team workspace upgrade prompt.
-- Export advanced formats.
-- Custom domain settings.
+- Markdown import.
+- ZIP export.
+- Obsidian import later.
 
-Keep upgrade prompts contextual and respectful.
+### 13. Production hardening
 
----
-
-## 14. Detailed Phase Plan
-
-## Phase 1: Foundation Sprint
-
-### Goal
-
-Make the app safer, easier to run, and easier to extend.
-
-### Tasks
-
-- Harden `/api/*` proxy.
-- Preserve query strings, content types, status codes, and non-JSON responses.
-- Move auth to HttpOnly cookie direction.
-- Add session model.
-- Fix Pydantic v2 settings warning.
-- Add root scripts.
-- Add Docker Compose full-stack setup.
-- Add backend integration tests.
-- Refactor transaction boundaries.
-
-### Output
-
-A stable base for serious feature work.
+- Docker Compose.
+- CI.
+- Error logging.
+- Redis rate limit store.
+- Background workers.
 
 ---
 
-## Phase 2: UI Foundation Sprint
+## 8. Immediate Next Build Slice
 
-### Goal
+The best next slice is **Quick Capture + Snippet Foundation**.
 
-Make DevNotes look and feel like a real product.
+Why:
 
-### Tasks
+- It strengthens the core product loop.
+- It makes DevNotes more developer-specific.
+- It creates a reason to use DevNotes daily.
+- It is achievable without waiting for AI infrastructure.
 
-- Define design tokens.
-- Build app shell.
-- Redesign dashboard home.
-- Redesign notes library.
-- Polish editor layout.
-- Add command palette.
-- Add proper empty states.
-- Improve loading/skeleton states.
-- Review accessibility.
+### Slice A: Quick Capture
 
-### Output
-
-A demo-worthy private app experience.
-
----
-
-## Phase 3: Public Presence Sprint
-
-### Goal
-
-Make sharing feel premium.
-
-### Tasks
-
-- Redesign public profile.
-- Redesign public note page.
-- Add slugs.
-- Add SEO metadata.
-- Add OG image generation.
-- Add related notes.
-- Add public collections.
-
-### Output
-
-Users feel proud to share DevNotes links.
-
----
-
-## Phase 4: AI Search Sprint
-
-### Goal
-
-Create the first major differentiator.
-
-### Tasks
-
-- Add pgvector.
-- Add note chunking.
-- Add embedding worker.
-- Add semantic search.
-- Add ask-your-notes with citations.
-- Add AI actions in editor.
-
-### Output
-
-DevNotes becomes more useful than a normal notes app.
-
----
-
-## Phase 5: Snippets and Templates Sprint
-
-### Goal
-
-Own the developer use case.
-
-### Tasks
-
-- Add snippet note type or snippet blocks.
-- Add copy tracking.
-- Add template library.
-- Add user-created templates.
-- Add template-to-note flow.
-
-### Output
-
-DevNotes becomes useful daily for developers.
-
----
-
-## Phase 6: Workspace Sprint
-
-### Goal
-
-Prepare for SaaS.
-
-### Tasks
-
-- Add workspaces.
-- Add members.
-- Add roles.
-- Add permissions.
-- Add comments.
-- Add activity feed.
-
-### Output
-
-Small teams can use DevNotes.
-
----
-
-## Phase 7: Growth Sprint
-
-### Goal
-
-Create acquisition loops.
-
-### Tasks
-
-- Explore page.
-- Tags pages.
-- Follow users.
-- Bookmarks.
-- Featured collections.
-- Browser extension MVP.
-
-### Output
-
-Public content can drive user growth.
-
----
-
-## 15. UI Components To Build
-
-## Core Layout
-
-- AppShell.
-- Sidebar.
-- TopBar.
-- ContextRail.
-- CommandPalette.
-- Breadcrumbs.
-
-## Notes
-
-- NoteList.
-- NotePreviewCard.
-- NoteCompactRow.
-- NoteFilters.
-- TagPicker.
-- CollectionPicker.
-- PublishPanel.
-
-## Editor
-
-- EditorShell.
-- SlashCommandMenu.
-- CodeBlockToolbar.
-- AiActionMenu.
-- VersionTimeline.
-- OutlineRail.
-
-## Public
-
-- PublicProfileHeader.
-- PublicNoteArticle.
-- AuthorCard.
-- RelatedNotes.
-- SocialShareBar.
-- TableOfContents.
-
-## AI
-
-- AiAskPanel.
-- SourceCitationCard.
-- SuggestedPromptList.
-- AiUsageMeter.
-
-## Growth
-
-- TemplateCard.
-- ExploreNoteCard.
-- TagPageHeader.
-- FollowButton.
-
----
-
-## 16. UX Details That Will Make It Feel Premium
-
-Small details matter.
-
-### Capture
-
-- `N` creates new note.
-- `/` inside editor opens slash menu.
-- `Cmd/Ctrl + K` opens command palette.
-- Autosave always visible but subtle.
-
-### Search
-
-- Results grouped by notes, snippets, tags, collections, AI answer.
-- Keyboard navigation.
-- Preview on highlight.
-- Recent searches.
-
-### Editor
-
-- Code blocks have language label and copy button.
-- Empty editor has useful prompts.
-- Publish panel shows exact public URL.
-- AI suggestions never overwrite without confirmation.
-
-### Public Pages
-
-- Beautiful article width.
-- Sticky table of contents on desktop.
-- Share card looks good on social media.
-- Author profile is always one click away.
-
----
-
-## 17. Risks and How To Avoid Them
-
-## Risk: Building Too Many Features
-
-Avoid by shipping in focused phases.
-
-## Risk: Becoming Generic
-
-Avoid by committing to a strong developer/editorial design identity.
-
-## Risk: Weak AI Trust
-
-Avoid by citing source notes and showing confidence/context.
-
-## Risk: Bad Auth Foundation
-
-Avoid by fixing sessions and HttpOnly cookies before teams/billing.
-
-## Risk: Public Pages Not Good Enough
-
-Avoid by designing public pages like a publishing product, not just raw note rendering.
-
-## Risk: Team Features Too Early
-
-Avoid by first winning personal developer workflow.
-
----
-
-## 18. Best Immediate Next Steps
-
-If we start coding now, do this order:
-
-1. Harden API proxy.
-2. Fix Pydantic settings warning.
-3. Add root dev scripts and full-stack docs.
-4. Start app shell redesign.
-5. Build command palette.
-6. Redesign dashboard home.
-7. Redesign public note/profile pages.
-8. Then add AI semantic search.
-
-This balances foundation + visible progress.
-
----
-
-## 19. Proposed First Visual Milestone
-
-## Milestone: DevNotes Cockpit v1
-
-### Deliverables
-
-- New app shell.
-- Left sidebar.
-- Top command/search bar.
-- Right context rail.
-- Redesigned dashboard.
-- Redesigned notes list.
-- Improved editor shell.
-- Theme tokens.
-
-### Why This Milestone Matters
-
-It will make the project feel 10x more serious immediately, even before advanced backend features.
-
-### Visual Outcome
-
-DevNotes should feel like:
+Files likely involved:
 
 ```text
-A focused developer writing cockpit with beautiful publishing built in.
+admin/src/app/dashboard/page.tsx
+admin/src/components/QuickCapture.tsx
+admin/src/lib/note-api.ts
 ```
+
+Backend likely already supports note creation.
+
+### Slice B: Snippet Foundation
+
+Files likely involved:
+
+```text
+backend/app/models/note.py
+backend/alembic/versions/*
+backend/app/schemas/note.py
+backend/app/routers/notes.py
+admin/src/types/notes.ts
+admin/src/app/dashboard/snippets/page.tsx
+admin/src/components/SnippetCard.tsx
+```
+
+### Acceptance criteria
+
+- Dashboard has a fast capture input.
+- User can choose note vs snippet.
+- Snippet stores language.
+- Snippet list page exists.
+- Snippet card has copy button.
+- Lint/typecheck/build pass.
+- Backend tests pass.
+- Changes committed.
 
 ---
 
-## 20. Final Recommended Strategy
+## 9. Quality Bar
 
-Do not chase every SaaS feature immediately.
+Every feature must pass these questions:
 
-Build in this order:
+1. Does it make capture faster?
+2. Does it make retrieval better?
+3. Does it help reuse knowledge?
+4. Does it make public sharing more beautiful?
+5. Does it feel developer-native?
+6. Is it keyboard-friendly?
+7. Is it tested or validated?
+
+If no, do not build it yet.
+
+---
+
+## 10. Execution Rule
+
+From now on, implement in this order unless a critical bug appears:
 
 ```text
-1. Stable foundation
-2. Premium private UI
-3. Beautiful public sharing
-4. AI semantic search
-5. Snippets/templates
-6. Workspaces
-7. Realtime collaboration
-8. Growth + monetization
+1. Quick Capture
+2. Snippet Foundation
+3. Editor Workbench Upgrade
+4. Public Reading Polish
+5. Profile Settings
+6. Explore V2
+7. Search V2
+8. Semantic Search + AI
+9. Workspaces
+10. Production hardening
 ```
 
-The strongest version of DevNotes is not just a bigger notes app. It is a place where developers build a personal knowledge library, reuse it every day, and publish the best parts beautifully.
-
-That is the 1000x direction.
+This keeps the product moving from polished notes app to real developer knowledge platform.
