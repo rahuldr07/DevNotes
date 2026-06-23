@@ -126,6 +126,48 @@ def test_refresh_endpoint_returns_rotated_tokens(auth_client, monkeypatch):
     }
 
 
+def test_refresh_endpoint_accepts_httponly_cookie(auth_client, monkeypatch):
+    from app.services import auth_service
+
+    calls = {}
+    monkeypatch.setattr(
+        auth_service,
+        "refresh_access_token",
+        lambda db, refresh_token: calls.update({"refresh_token": refresh_token})
+        or {
+            "access_token": "cookie-access",
+            "refresh_token": "cookie-refresh-rotated",
+            "token_type": "bearer",
+        },
+        raising=False,
+    )
+
+    auth_client.cookies.set("devnotes_refresh_token", "cookie-refresh")
+    response = auth_client.post("/auth/refresh")
+
+    assert response.status_code == 200
+    assert calls == {"refresh_token": "cookie-refresh"}
+    assert response.json()["access_token"] == "cookie-access"
+
+
+def test_refresh_endpoint_rejects_missing_refresh_token(auth_client, monkeypatch):
+    from app.services import auth_service
+
+    monkeypatch.setattr(
+        auth_service,
+        "refresh_access_token",
+        lambda db, refresh_token: (_ for _ in ()).throw(
+            AssertionError("refresh should not be called")
+        ),
+        raising=False,
+    )
+
+    response = auth_client.post("/auth/refresh")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Refresh token missing"
+
+
 def test_logout_endpoint_clears_refresh_token(auth_client, monkeypatch):
     from app.services import auth_service
 
@@ -141,3 +183,38 @@ def test_logout_endpoint_clears_refresh_token(auth_client, monkeypatch):
 
     assert response.status_code == 204
     assert calls == {"refresh_token": "refresh"}
+
+
+def test_logout_endpoint_accepts_httponly_cookie(auth_client, monkeypatch):
+    from app.services import auth_service
+
+    calls = {}
+    monkeypatch.setattr(
+        auth_service,
+        "logout_refresh_token",
+        lambda db, refresh_token: calls.update({"refresh_token": refresh_token}),
+        raising=False,
+    )
+
+    auth_client.cookies.set("devnotes_refresh_token", "cookie-refresh")
+    response = auth_client.post("/auth/logout")
+
+    assert response.status_code == 204
+    assert calls == {"refresh_token": "cookie-refresh"}
+
+
+def test_logout_endpoint_succeeds_without_refresh_token(auth_client, monkeypatch):
+    from app.services import auth_service
+
+    monkeypatch.setattr(
+        auth_service,
+        "logout_refresh_token",
+        lambda db, refresh_token: (_ for _ in ()).throw(
+            AssertionError("logout should not be called")
+        ),
+        raising=False,
+    )
+
+    response = auth_client.post("/auth/logout")
+
+    assert response.status_code == 204

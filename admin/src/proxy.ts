@@ -2,6 +2,7 @@ import { decodeJwt } from "jose";
 import { type NextRequest, NextResponse } from "next/server";
 
 const TOKEN_COOKIE = "auth_token";
+const REFRESH_COOKIE = "devnotes_refresh_token";
 const PROTECTED_ROUTES = ["/dashboard"];
 const AUTH_ROUTES = ["/auth/login", "/auth/signup"];
 
@@ -23,16 +24,23 @@ function redirectWithClearedToken(request: NextRequest, pathname: string) {
   return response;
 }
 
+function nextWithClearedToken() {
+  const response = NextResponse.next();
+  response.cookies.delete(TOKEN_COOKIE);
+  return response;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(TOKEN_COOKIE)?.value;
+  const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
   const hasValidToken = isTokenUsable(token);
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     pathname.startsWith(route),
   );
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
-  if (isProtectedRoute && !hasValidToken) {
+  if (isProtectedRoute && !hasValidToken && !refreshToken) {
     return redirectWithClearedToken(request, "/auth/login");
   }
 
@@ -41,9 +49,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (token && !hasValidToken) {
-    const response = NextResponse.next();
-    response.cookies.delete(TOKEN_COOKIE);
-    return response;
+    return nextWithClearedToken();
   }
 
   return NextResponse.next();

@@ -65,6 +65,15 @@ def clear_auth_cookies(response: Response) -> None:
    response.delete_cookie(REFRESH_COOKIE, path="/")
 
 
+def _refresh_token_from_request(
+   request: Request,
+   payload: RefreshTokenRequest | None,
+) -> str | None:
+   if payload and payload.refresh_token:
+      return payload.refresh_token
+   return request.cookies.get(REFRESH_COOKIE)
+
+
 # ════════════════════════════════════════════
 #  POST /auth/register — Create a new user
 # ════════════════════════════════════════════
@@ -98,14 +107,21 @@ def get_me(user=Depends(get_current_user)):
 
 
 @router.post("/refresh", response_model=TokenResponse, status_code=200)
-def refresh_token(request: Request, response: Response, payload: RefreshTokenRequest, db: Session = Depends(get_db)):
-   tokens = auth_service.refresh_access_token(db, payload.refresh_token)
+def refresh_token(request: Request, response: Response, payload: RefreshTokenRequest | None = None, db: Session = Depends(get_db)):
+   refresh_token_value = _refresh_token_from_request(request, payload)
+   if not refresh_token_value:
+      clear_auth_cookies(response)
+      raise HTTPException(status_code=401, detail="Refresh token missing")
+
+   tokens = auth_service.refresh_access_token(db, refresh_token_value)
    set_auth_cookies(request, response, tokens)
    return tokens
 
 
 @router.post("/logout", status_code=204)
-def logout(response: Response, payload: RefreshTokenRequest, db: Session = Depends(get_db)):
-   auth_service.logout_refresh_token(db, payload.refresh_token)
+def logout(request: Request, response: Response, payload: RefreshTokenRequest | None = None, db: Session = Depends(get_db)):
+   refresh_token_value = _refresh_token_from_request(request, payload)
+   if refresh_token_value:
+      auth_service.logout_refresh_token(db, refresh_token_value)
    clear_auth_cookies(response)
    return None

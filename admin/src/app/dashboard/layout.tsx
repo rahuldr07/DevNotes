@@ -26,12 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ApiError, api } from "@/lib/api";
-import {
-  getRefreshToken,
-  getToken,
-  removeRefreshToken,
-  removeToken,
-} from "@/lib/auth";
+import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
 import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
 
 const navItems = [
@@ -76,13 +71,12 @@ export default function DashboardLayout({
   const clearUser = useAuthStore((state) => state.clearUser);
 
   useEffect(() => {
-    const token = getToken();
-    const refreshToken = getRefreshToken();
-    if (!token && !refreshToken) {
+    const redirectToLogin = () => {
       clearUser();
       router.replace("/auth/login");
-      return;
-    }
+    };
+
+    window.addEventListener("devnotes:auth-expired", redirectToLogin);
 
     api
       .get<AuthUser>("/auth/me")
@@ -93,11 +87,19 @@ export default function DashboardLayout({
           router.replace("/auth/login");
         }
       });
+
+    return () => {
+      window.removeEventListener("devnotes:auth-expired", redirectToLogin);
+    };
   }, [clearUser, router, setUser]);
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout", { refresh_token: getRefreshToken() });
+      const refreshToken = getRefreshToken();
+      await api.post(
+        "/auth/logout",
+        refreshToken ? { refresh_token: refreshToken } : undefined,
+      );
     } catch {
       // Clear local auth even if logout fails or the backend is offline.
     }

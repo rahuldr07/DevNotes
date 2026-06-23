@@ -57,17 +57,27 @@ export class ApiError extends Error {
 function clearLocalAuth() {
   removeToken();
   removeRefreshToken();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("devnotes:auth-expired"));
+  }
 }
 
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
-  if (!refreshToken) return null;
 
   if (!refreshPromise) {
+    const headers: HeadersInit = {};
+    let body: BodyInit | undefined;
+
+    if (refreshToken) {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify({ refresh_token: refreshToken });
+    }
+
     refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      headers,
+      body,
     })
       .then(async (response) => {
         if (!response.ok) return null;
@@ -179,7 +189,7 @@ class ApiClient {
   async post<T>(endpoint: string, body: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: "POST",
-      body: JSON.stringify(body),
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   }
 
