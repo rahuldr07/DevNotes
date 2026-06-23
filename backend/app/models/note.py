@@ -27,6 +27,9 @@ class Note(Base):
     title = Column(String(255), nullable=False, index=True)
     content = Column(Text, nullable=False)
     tags = Column(ARRAY(String), default=list, nullable=False)
+    note_type = Column(String(32), nullable=False, server_default="note", default="note", index=True)
+    language = Column(String(64), nullable=True)
+    source_url = Column(String(500), nullable=True)
     is_pinned = Column(Boolean, default=False, nullable=False)
     # Sharing features
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)

@@ -55,6 +55,9 @@ def my_notes(request: Request, response: Response, note: NoteCreate,user= Depend
         title=note.title,
         content=note.content,
         tags=note.tags,
+        note_type=note.note_type,
+        language=note.language,
+        source_url=note.source_url,
     )
 
 # ════════════════════════════════════════════
@@ -72,6 +75,9 @@ def update_note(id: int, note: NoteUpdate,user= Depends(get_current_user),db :Se
         title=note.title,
         content=note.content,
         tags=note.tags,
+        note_type=note.note_type,
+        language=note.language,
+        source_url=note.source_url,
         is_published=note.is_published,
         is_community=note.is_community,
         user_id=user.id,
@@ -96,6 +102,7 @@ def delete_note(id: int,user= Depends(get_current_user),db :Session = Depends(ge
 def get_my_notes(
     cursor: int | None = None,
     limit: int = 20,
+    note_type: str | None = None,
     user= Depends(get_current_user),
     db :Session = Depends(get_db),
 ):
@@ -104,6 +111,7 @@ def get_my_notes(
         user_id=user.id,
         cursor=cursor,
         limit=_clamp_limit(limit),
+        note_type=note_type,
     )
 
 # ════════════════════════════════════════════
@@ -133,6 +141,7 @@ def search_notes(
     q: str,
     cursor: int | None = None,
     limit: int = 20,
+    note_type: str | None = None,
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -142,6 +151,7 @@ def search_notes(
         query=q,
         cursor=cursor,
         limit=_clamp_limit(limit),
+        note_type=note_type,
     )
 
 

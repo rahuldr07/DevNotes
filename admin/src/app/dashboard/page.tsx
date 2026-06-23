@@ -26,6 +26,7 @@ import {
   useState,
 } from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
+import { QuickCapture } from "@/components/QuickCapture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -468,9 +469,9 @@ export default function DashboardPage() {
         hint: "shareable pages",
       },
       {
-        label: "pinned",
-        value: notes.filter((note) => note.is_pinned).length,
-        hint: "active priorities",
+        label: "snippets",
+        value: notes.filter((note) => note.note_type === "snippet").length,
+        hint: "copy-ready knowledge",
       },
       {
         label: "tags",
@@ -500,6 +501,11 @@ export default function DashboardPage() {
               private thinking, public writing, and AI-ready retrieval in one
               focused surface.
             </p>
+            <QuickCapture
+              onCreated={(note) => {
+                setNotes((prev) => [note, ...prev]);
+              }}
+            />
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <Link href="/dashboard/create_note">
                 <Button className="gap-2 rounded-2xl bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">

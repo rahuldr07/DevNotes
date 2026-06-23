@@ -23,9 +23,15 @@ def test_search_notes_uses_current_user_and_cursor_pagination(notes_client, monk
 
     calls = {}
 
-    def fake_search_notes(db, user_id, query, cursor=None, limit=20):
+    def fake_search_notes(db, user_id, query, cursor=None, limit=20, note_type=None):
         calls.update(
-            {"user_id": user_id, "query": query, "cursor": cursor, "limit": limit}
+            {
+                "user_id": user_id,
+                "query": query,
+                "cursor": cursor,
+                "limit": limit,
+                "note_type": note_type,
+            }
         )
         return {"data": [_note(12)], "next_cursor": None}
 
@@ -37,6 +43,12 @@ def test_search_notes_uses_current_user_and_cursor_pagination(notes_client, monk
     )
 
     assert response.status_code == 200
-    assert calls == {"user_id": 1, "query": "postgres", "cursor": 13, "limit": 100}
+    assert calls == {
+        "user_id": 1,
+        "query": "postgres",
+        "cursor": 13,
+        "limit": 100,
+        "note_type": None,
+    }
     assert response.json()["data"][0]["id"] == 12
     assert response.json()["next_cursor"] is None

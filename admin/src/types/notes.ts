@@ -3,6 +3,9 @@ export interface Note {
   title: string;
   content: string;
   tags: string[];
+  note_type?: "note" | "snippet" | "guide" | "checklist";
+  language?: string | null;
+  source_url?: string | null;
   is_pinned?: boolean;
   created_at: string;
   updated_at: string | null;
@@ -14,6 +17,15 @@ export interface Note {
   like_count?: number;
   view_count?: number;
   liked_by_me?: boolean;
+}
+
+export interface CreateNoteInput {
+  title: string;
+  content: string;
+  tags?: string[];
+  note_type?: "note" | "snippet" | "guide" | "checklist";
+  language?: string | null;
+  source_url?: string | null;
 }
 
 export interface PaginatedNotesResponse {

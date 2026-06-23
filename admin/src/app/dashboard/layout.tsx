@@ -2,6 +2,7 @@
 
 import {
   Bot,
+  Code2,
   Compass,
   Files,
   FileText,
@@ -35,6 +36,12 @@ const navItems = [
     label: "Notes",
     icon: FileText,
     matcher: (pathname: string) => pathname === "/dashboard",
+  },
+  {
+    href: "/dashboard/snippets",
+    label: "Snippets",
+    icon: Code2,
+    matcher: (pathname: string) => pathname.startsWith("/dashboard/snippets"),
   },
   {
     href: "/dashboard/explore",

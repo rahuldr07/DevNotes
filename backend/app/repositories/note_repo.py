@@ -24,6 +24,9 @@ def create(
     title: str,
     content: str,
     tags: list[str] | None = None,
+    note_type: str = "note",
+    language: str | None = None,
+    source_url: str | None = None,
 ) -> Note | None:
     """
     Creates a new note in the database.
@@ -33,7 +36,15 @@ def create(
     2. db.commit()  → Writes to the database
     3. db.refresh() → Reloads to get DB-generated fields (id, created_at)
     """
-    oNote = Note(user_id=user_id, title=title, content=content, tags=tags or [])
+    oNote = Note(
+        user_id=user_id,
+        title=title,
+        content=content,
+        tags=tags or [],
+        note_type=note_type,
+        language=language,
+        source_url=source_url,
+    )
     db.add(oNote)
     db.commit()
     db.refresh(oNote)
@@ -56,6 +67,9 @@ def update(
     title: str | None,
     content: str | None,
     tags: list[str] | None = None,
+    note_type: str | None = None,
+    language: str | None = None,
+    source_url: str | None = None,
     is_published: bool | None = None,
     is_community: bool | None = None,
     share_uuid: str | None = None,
@@ -75,6 +89,12 @@ def update(
             oNote.content = content
         if tags is not None:
             oNote.tags = tags
+        if note_type is not None:
+            oNote.note_type = note_type
+        if language is not None:
+            oNote.language = language or None
+        if source_url is not None:
+            oNote.source_url = source_url or None
         if is_published is not None:
             oNote.is_published = is_published
         if is_community is not None:
@@ -169,6 +189,7 @@ def get_my_notes(
     user_id: int,
     cursor: int | None = None,
     limit: int = 20,
+    note_type: str | None = None,
 ) -> list[Note]:
     """
     Fetches all notes belonging to a specific user.
@@ -177,6 +198,8 @@ def get_my_notes(
     only see their own notes (data isolation).
     """
     query = db.query(Note).filter(Note.user_id == user_id)
+    if note_type:
+        query = query.filter(Note.note_type == note_type)
     if cursor is not None:
         query = query.filter(Note.id < cursor)
     return query.order_by(Note.id.desc()).limit(limit).all()
@@ -188,11 +211,14 @@ def search_notes(
     search_query: str,
     cursor: int | None = None,
     limit: int = 20,
+    note_type: str | None = None,
 ) -> list[Note]:
     query = db.query(Note).filter(
         Note.user_id == user_id,
         Note.search_vector.op("@@")(func.plainto_tsquery("english", search_query)),
     )
+    if note_type:
+        query = query.filter(Note.note_type == note_type)
     if cursor is not None:
         query = query.filter(Note.id < cursor)
     return query.order_by(Note.id.desc()).limit(limit).all()
@@ -217,6 +243,9 @@ def _community_response(note: Note, author_name: str) -> dict:
         "title": note.title,
         "content": note.content,
         "tags": note.tags,
+        "note_type": getattr(note, "note_type", "note"),
+        "language": getattr(note, "language", None),
+        "source_url": getattr(note, "source_url", None),
         "is_pinned": note.is_pinned,
         "share_uuid": note.share_uuid,
         "is_published": note.is_published,
@@ -233,6 +262,9 @@ def _public_response(note: Note, like_count: int) -> dict:
         "title": note.title,
         "content": note.content,
         "tags": note.tags,
+        "note_type": getattr(note, "note_type", "note"),
+        "language": getattr(note, "language", None),
+        "source_url": getattr(note, "source_url", None),
         "share_uuid": note.share_uuid,
         "is_published": note.is_published,
         "is_community": note.is_community,
@@ -307,6 +339,9 @@ def get_public_notes_for_user(db: Session, user_id: int) -> list[dict]:
             "content": note.content,
             "share_uuid": note.share_uuid,
             "tags": note.tags,
+            "note_type": note.note_type,
+            "language": note.language,
+            "source_url": note.source_url,
             "like_count": count,
             "view_count": note.view_count or 0,
             "created_at": note.created_at,

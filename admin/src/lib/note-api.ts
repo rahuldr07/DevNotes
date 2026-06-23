@@ -1,5 +1,10 @@
 import { api } from "@/lib/api";
-import type { Note, NoteVersion, PaginatedNotesResponse } from "@/types/notes";
+import type {
+  CreateNoteInput,
+  Note,
+  NoteVersion,
+  PaginatedNotesResponse,
+} from "@/types/notes";
 
 function normalizePage(
   response: Note[] | PaginatedNotesResponse,
@@ -29,14 +34,37 @@ function withPagination(
 export async function getUserNotesPage({
   limit = 20,
   cursor = null,
+  noteType,
+}: {
+  limit?: number;
+  cursor?: number | null;
+  noteType?: string;
+} = {}) {
+  const endpoint = withPagination("/notes/notes", limit, cursor);
+  const response = await api.get<Note[] | PaginatedNotesResponse>(
+    noteType
+      ? `${endpoint}&note_type=${encodeURIComponent(noteType)}`
+      : endpoint,
+  );
+  return normalizePage(response);
+}
+
+export async function createNote(input: CreateNoteInput) {
+  return api.post<Note>("/notes/create", {
+    tags: [],
+    note_type: "note",
+    ...input,
+  });
+}
+
+export async function getSnippetNotesPage({
+  limit = 20,
+  cursor = null,
 }: {
   limit?: number;
   cursor?: number | null;
 } = {}) {
-  const response = await api.get<Note[] | PaginatedNotesResponse>(
-    withPagination("/notes/notes", limit, cursor),
-  );
-  return normalizePage(response);
+  return getUserNotesPage({ limit, cursor, noteType: "snippet" });
 }
 
 export async function getCommunityNotesPage({
@@ -52,9 +80,15 @@ export async function getCommunityNotesPage({
   return normalizePage(response);
 }
 
-export async function searchNotes(query: string, signal?: AbortSignal) {
+export async function searchNotes(
+  query: string,
+  signal?: AbortSignal,
+  noteType?: string,
+) {
+  const params = new URLSearchParams({ q: query });
+  if (noteType) params.set("note_type", noteType);
   const response = await api.get<Note[] | PaginatedNotesResponse>(
-    `/notes/search?q=${encodeURIComponent(query)}`,
+    `/notes/search?${params.toString()}`,
     { signal },
   );
   return normalizePage(response);

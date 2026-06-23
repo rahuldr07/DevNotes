@@ -39,8 +39,8 @@ def test_my_notes_returns_paginated_envelope(notes_client, monkeypatch):
 
     calls = {}
 
-    def fake_get_my_notes(db, user_id, cursor=None, limit=20):
-        calls.update({"user_id": user_id, "cursor": cursor, "limit": limit})
+    def fake_get_my_notes(db, user_id, cursor=None, limit=20, note_type=None):
+        calls.update({"user_id": user_id, "cursor": cursor, "limit": limit, "note_type": note_type})
         return {"data": [_note(9), _note(8)], "next_cursor": 8}
 
     monkeypatch.setattr(note_service, "get_my_notes", fake_get_my_notes)
@@ -51,7 +51,7 @@ def test_my_notes_returns_paginated_envelope(notes_client, monkeypatch):
     )
 
     assert response.status_code == 200
-    assert calls == {"user_id": 1, "cursor": 10, "limit": 100}
+    assert calls == {"user_id": 1, "cursor": 10, "limit": 100, "note_type": None}
     assert response.json()["next_cursor"] == 8
     assert [note["id"] for note in response.json()["data"]] == [9, 8]
 

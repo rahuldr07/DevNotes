@@ -33,6 +33,9 @@ def create_note(
     title: str,
     content: str,
     tags: list[str] | None = None,
+    note_type: str = "note",
+    language: str | None = None,
+    source_url: str | None = None,
 ) -> Note | None:
     """
     Creates a new note for the specified user.
@@ -58,6 +61,9 @@ def create_note(
         title=title,
         content=content,
         tags=normalized_tags,
+        note_type=note_type,
+        language=language.strip().lower() if language else None,
+        source_url=source_url.strip() if source_url else None,
     )
     return new_note
 
@@ -68,6 +74,9 @@ def update_note(
     title: str | None,
     content: str | None,
     tags: list[str] | None = None,
+    note_type: str | None = None,
+    language: str | None = None,
+    source_url: str | None = None,
     is_published: bool | None = None,
     is_community: bool | None = None,
 ) -> Note | None:
@@ -121,6 +130,9 @@ def update_note(
                         title=title,
                         content=content,
                         tags=normalized_tags,
+                        note_type=note_type,
+                        language=language.strip().lower() if language else language,
+                        source_url=source_url.strip() if source_url else source_url,
                         is_published=is_published,
                         is_community=is_community,
                         share_uuid=share_uuid,
@@ -206,6 +218,7 @@ def get_my_notes(
     user_id: int,
     cursor: int | None = None,
     limit: int = 20,
+    note_type: str | None = None,
 ) -> dict:
     """
     Retrieves all notes for the specified user.
@@ -226,6 +239,7 @@ def get_my_notes(
         user_id=user_id,
         cursor=cursor,
         limit=limit + 1,
+        note_type=note_type,
     )
     return _paginate(notes, limit)
 
@@ -278,6 +292,7 @@ def search_notes(
     query: str,
     cursor: int | None = None,
     limit: int = 20,
+    note_type: str | None = None,
 ) -> dict:
     if not query.strip():
         return {"data": [], "next_cursor": None}
@@ -287,6 +302,7 @@ def search_notes(
         search_query=query,
         cursor=cursor,
         limit=limit + 1,
+        note_type=note_type,
     )
     return _paginate(notes, limit)
 
