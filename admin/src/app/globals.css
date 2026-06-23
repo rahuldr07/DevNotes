@@ -446,6 +446,29 @@ html {
 .rich-editor-root {
   width: 100%;
   min-height: 60vh;
+  position: relative;
+  border-radius: 1rem;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--border-color) 42%, transparent) 0 1px,
+      transparent 1px 100%
+    )
+    0 0 / 3.25rem 100% no-repeat,
+    var(--bg-color);
+}
+
+.rich-editor-root::before {
+  content: "";
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  left: 1.55rem;
+  width: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--main-color) 35%, transparent);
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 /* ── Placeholder ── */
@@ -465,6 +488,8 @@ html {
   caret-color: var(--main-color);
   line-height: 1.8;
   font-size: 1rem;
+  min-height: 58vh;
+  padding: 1rem 1rem 2rem 4.25rem;
 }
 
 .tiptap h1 {
@@ -528,9 +553,9 @@ html {
 
 /* ── Code block (lowlight) ── */
 .tiptap pre {
-  background: var(--sub-alt-color);
+  background: color-mix(in srgb, var(--bg-color) 82%, black);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 1.1rem 1.4rem;
   margin: 1.2rem 0;
   overflow-x: auto;
@@ -616,8 +641,8 @@ html {
   align-items: center;
   gap: 2px;
   padding: 5px 7px;
-  border-radius: 10px;
-  background: var(--sub-alt-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sub-alt-color) 86%, black);
   border: 1px solid var(--border-color);
   box-shadow: none;
   backdrop-filter: none;
@@ -676,8 +701,8 @@ html {
   align-items: center;
   gap: 4px;
   padding: 5px 8px;
-  border-radius: 10px;
-  background: var(--sub-alt-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sub-alt-color) 86%, black);
   border: 1px solid var(--border-color);
   box-shadow: none;
 }
@@ -794,12 +819,29 @@ html {
 }
 .tiptap-code-block-wrapper pre {
   margin: 0;
-  border-radius: 10px;
-  background: var(--sub-alt-color);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--border-color) 35%, transparent) 0 2.75rem,
+      transparent 2.75rem
+    ), color-mix(in srgb, var(--bg-color) 84%, black);
   border: 1px solid var(--border-color);
-  padding: 1.1rem 1.4rem;
+  padding: 1.1rem 1.4rem 1.1rem 3.6rem;
   padding-top: 2rem;
   overflow-x: auto;
+}
+
+.tiptap-code-block-wrapper pre::before {
+  content: "";
+  position: absolute;
+  left: 1.1rem;
+  top: 2rem;
+  bottom: 1rem;
+  width: 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--main-color) 32%, transparent);
+  pointer-events: none;
 }
 .tiptap-code-lang-pill {
   position: absolute;

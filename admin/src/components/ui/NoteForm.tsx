@@ -13,9 +13,9 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SharePopover } from "@/components/SharePopover";
-import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { useSettings } from "@/hooks/useSettings";
 import { api } from "@/lib/api";
 import { normalizeTag, normalizeTags, stripMarkdown } from "@/lib/notes";
@@ -339,25 +339,27 @@ export default function NoteForm({
         }}
       >
         <div
-          className="sticky top-14 z-30 -mx-4 mb-8 bg-[var(--bg)] px-4 py-3 sm:-mx-6 sm:px-6"
+          className="sticky top-[61px] z-30 -mx-4 mb-0 border-b border-[var(--border)] bg-[var(--bg)]/90 px-4 py-0 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <div className="mx-auto flex max-w-[1000px] items-center justify-between gap-3">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 onClick={attemptBack}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                 aria-label="Back to notes"
               >
                 <ArrowLeft size={16} />
               </button>
-              <div className="hidden min-w-0 text-xs text-[var(--text-secondary)] sm:block">
-                {mode === "create"
-                  ? "new note"
-                  : hasDirtyChanges
-                    ? "unsaved"
-                    : "editing"}
+              <div className="flex h-10 min-w-0 items-center gap-2 border-x border-[var(--border)] bg-[var(--bg-secondary)]/45 px-4 text-xs text-[var(--text-secondary)]">
+                <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+                <span className="truncate text-[var(--text-primary)]">
+                  {title.trim() || "untitled"}.md
+                </span>
+                {hasDirtyChanges && (
+                  <span className="text-[var(--accent)]">●</span>
+                )}
               </div>
             </div>
 
@@ -367,7 +369,7 @@ export default function NoteForm({
                   <button
                     type="button"
                     onClick={() => setHistoryOpen(true)}
-                    className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                     aria-label="Version history"
                     title="Version history"
                   >
@@ -398,7 +400,7 @@ export default function NoteForm({
               <Button
                 type="submit"
                 disabled={loading}
-                className="gap-2 bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+                className="gap-2 rounded-xl bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]"
               >
                 {loading ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -411,75 +413,135 @@ export default function NoteForm({
           </div>
         </div>
 
-        <div className="mx-auto max-w-[1000px]">
-          <input
-            type="text"
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              if (titleError) setTitleError("");
-            }}
-            placeholder="untitled"
-            className="mb-3 w-full border-none bg-transparent text-3xl font-medium tracking-normal text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0 sm:text-4xl"
-            aria-invalid={Boolean(titleError)}
-          />
-          {titleError && (
-            <p className="mb-4 text-xs text-[var(--error)]">{titleError}</p>
-          )}
+        <div className="mx-auto grid max-w-7xl gap-0 overflow-hidden rounded-b-[1.5rem] border-x border-b border-[var(--border)] bg-[var(--bg)]/70 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
+          <aside className="hidden border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 lg:block">
+            <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+              note explorer
+            </p>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+              <div className="mb-2 flex items-center gap-2 text-xs text-[var(--accent)]">
+                <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+                workspace
+              </div>
+              <div className="space-y-1 pl-3 text-xs text-[var(--text-secondary)]">
+                <p>notes/</p>
+                <p className="truncate text-[var(--text-primary)]">
+                  └─ {title.trim() || "untitled"}.md
+                </p>
+                <p>metadata.json</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-xs text-[var(--text-secondary)]">
+              <p className="mb-2 text-[10px] uppercase tracking-[0.18em]">
+                shortcuts
+              </p>
+              <p>Ctrl/Cmd + S save</p>
+              <p>Ctrl/Cmd + Shift + P publish</p>
+              <p>Esc back to library</p>
+            </div>
+          </aside>
 
-          <div
-            className="mb-8 flex flex-wrap items-center gap-2 pb-4"
-            style={{ borderBottom: "1px solid var(--border)" }}
-          >
-            {tags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() =>
-                  setTags((prev) => prev.filter((item) => item !== tag))
-                }
-                className="text-xs text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
-                title="Remove tag"
-              >
-                #{tag} x
-              </button>
-            ))}
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(event) => setTagInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === ",") {
-                  event.preventDefault();
-                  addTag();
-                }
-                if (event.key === "Backspace" && !tagInput && tags.length > 0) {
-                  setTags((prev) => prev.slice(0, -1));
-                }
-              }}
-              onBlur={addTag}
-              placeholder={tags.length ? "add tag" : "add tags"}
-              className="min-w-24 flex-1 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0"
-            />
-          </div>
+          <section className="min-w-0 bg-[var(--bg)]">
+            <div className="border-b border-[var(--border)] bg-[var(--bg-secondary)]/30 px-5 py-5 sm:px-7">
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  if (titleError) setTitleError("");
+                }}
+                placeholder="untitled"
+                className="w-full border-none bg-transparent text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0 sm:text-5xl"
+                aria-invalid={Boolean(titleError)}
+              />
+              {titleError && (
+                <p className="mt-3 text-xs text-[var(--error)]">{titleError}</p>
+              )}
 
-          <RichEditor
-            initialContent={content}
-            onChange={setContent}
-            placeholder="start writing..."
-          />
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setTags((prev) => prev.filter((item) => item !== tag))
+                    }
+                    className="rounded-full border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]/50"
+                    title="Remove tag"
+                  >
+                    #{tag} ×
+                  </button>
+                ))}
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(event) => setTagInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === ",") {
+                      event.preventDefault();
+                      addTag();
+                    }
+                    if (
+                      event.key === "Backspace" &&
+                      !tagInput &&
+                      tags.length > 0
+                    ) {
+                      setTags((prev) => prev.slice(0, -1));
+                    }
+                  }}
+                  onBlur={addTag}
+                  placeholder={tags.length ? "add tag" : "add tags"}
+                  className="min-w-28 flex-1 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0"
+                />
+              </div>
+            </div>
+
+            <div className="px-5 py-6 sm:px-7 lg:px-10">
+              <RichEditor
+                initialContent={content}
+                onChange={setContent}
+                placeholder="// start writing your note, snippet, runbook, or guide..."
+              />
+            </div>
+          </section>
+
+          <aside className="hidden border-l border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 xl:block">
+            <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+              inspector
+            </p>
+            <div className="space-y-3 text-xs">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <p className="text-[var(--text-secondary)]">status</p>
+                <p className="mt-1 text-[var(--accent)]">
+                  {statusCopy(saveStatus, settings.autoSave)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <p className="text-[var(--text-secondary)]">document</p>
+                <p className="mt-1">{wordCount} words</p>
+                <p>{readTime} min read</p>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <p className="text-[var(--text-secondary)]">visibility</p>
+                <p className="mt-1">
+                  {isPublished ? "published" : "private"}
+                  {isCommunity ? " · community" : ""}
+                </p>
+              </div>
+            </div>
+          </aside>
         </div>
       </form>
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--bg)]"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--accent)] text-[var(--bg)]"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        <div className="mx-auto flex h-11 max-w-[1000px] items-center justify-between px-4 text-xs text-[var(--text-secondary)] sm:px-6">
+        <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-[11px] sm:px-6">
           <span>
             {wordCount > 0
-              ? `${wordCount} words / ${readTime} min`
-              : "start typing"}
+              ? `Markdown · ${wordCount} words · ${readTime} min`
+              : "Markdown · start typing"}
           </span>
           <span>
             {lastSavedAt

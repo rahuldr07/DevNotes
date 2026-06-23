@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  Bot,
   Compass,
+  Files,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -47,6 +49,13 @@ const navItems = [
     matcher: (pathname: string) =>
       pathname.startsWith("/dashboard/create_note"),
   },
+];
+
+const activityItems = [
+  { label: "Explorer", icon: Files, active: true },
+  { label: "Search", icon: Search, active: false },
+  { label: "AI", icon: Bot, active: false },
+  { label: "Runbook", icon: LayoutDashboard, active: false },
 ];
 
 export default function DashboardLayout({
@@ -100,7 +109,36 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="relative grid min-h-screen lg:grid-cols-[17rem_minmax(0,1fr)]">
+      <div className="relative grid min-h-screen lg:grid-cols-[3.5rem_17rem_minmax(0,1fr)]">
+        <aside className="hidden border-r border-[var(--border)] bg-[var(--bg-secondary)]/75 py-3 backdrop-blur-xl lg:flex lg:flex-col lg:items-center">
+          <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--bg)] shadow-lg shadow-black/10">
+            <LayoutDashboard size={17} />
+          </div>
+          <nav className="flex flex-1 flex-col items-center gap-2">
+            {activityItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                    item.active
+                      ? "bg-[var(--bg)] text-[var(--accent)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg)]/70 hover:text-[var(--text-primary)]"
+                  }`}
+                  title={item.label}
+                  aria-label={item.label}
+                >
+                  {item.active && (
+                    <span className="absolute -left-2 h-5 w-1 rounded-r-full bg-[var(--accent)]" />
+                  )}
+                  <Icon size={18} />
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
         <aside className="hidden border-r border-[var(--border)] bg-[var(--bg)]/80 p-4 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
@@ -119,7 +157,12 @@ export default function DashboardLayout({
             </div>
           </Link>
 
-          <nav className="space-y-1">
+          <div className="mb-3 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+            <span>Explorer</span>
+            <span className="text-[var(--accent)]">main</span>
+          </div>
+
+          <nav className="space-y-1 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.matcher(pathname);
@@ -140,7 +183,7 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-4">
+          <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-4">
             <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
               <Sparkles size={14} />
               next up
@@ -151,7 +194,7 @@ export default function DashboardLayout({
             </p>
           </div>
 
-          <div className="mt-auto space-y-3 rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-4">
+          <div className="mt-auto space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={18} />
@@ -213,7 +256,7 @@ export default function DashboardLayout({
         </aside>
 
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/82 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+          <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/82 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex items-center justify-between gap-4">
               <Link
                 href="/dashboard"
@@ -234,7 +277,7 @@ export default function DashboardLayout({
                     new KeyboardEvent("keydown", { key: "/" }),
                   )
                 }
-                className="hidden min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-4 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
+                className="hidden min-w-0 flex-1 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-4 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
               >
                 <Search size={15} />
                 <span className="min-w-0 flex-1 truncate">
@@ -289,9 +332,15 @@ export default function DashboardLayout({
             </nav>
           </header>
 
-          <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-7xl">{children}</div>
           </main>
+
+          <div className="hidden h-7 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
+            <span className="text-[var(--accent)]">● master</span>
+            <span>DevNotes Workbench · TypeScript · FastAPI · PostgreSQL</span>
+            <span>UTF-8 · LF</span>
+          </div>
         </div>
       </div>
     </div>
