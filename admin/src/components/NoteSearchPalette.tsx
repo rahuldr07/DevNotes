@@ -49,7 +49,10 @@ interface PaletteCommand {
 
 type PaletteItem =
   | { type: "command"; command: PaletteCommand }
-  | { type: "note"; result: SearchResult };
+  | { type: "note"; result: SearchResult }
+  | { type: "recent"; query: string };
+
+const RECENT_SEARCHES_KEY = "devnotes-recent-searches";
 
 const COMMANDS: PaletteCommand[] = [
   {
@@ -174,6 +177,7 @@ export function NoteSearchPalette({
   const [mode, setMode] = useState<SearchMode>("local");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [fullResults, setFullResults] = useState<Note[]>([]);
   const [fullLoading, setFullLoading] = useState(false);
   const [fullError, setFullError] = useState("");
@@ -249,28 +253,52 @@ export function NoteSearchPalette({
   }, [mode, query]);
   const paletteItems: PaletteItem[] = useMemo(
     () => [
+      ...(mode === "local" && !query.trim()
+        ? recentSearches.map((recentQuery) => ({
+            type: "recent" as const,
+            query: recentQuery,
+          }))
+        : []),
       ...commandResults.map((command) => ({
         type: "command" as const,
         command,
       })),
       ...results.map((result) => ({ type: "note" as const, result })),
     ],
-    [commandResults, results],
+    [commandResults, mode, query, recentSearches, results],
   );
   const showIndexLoading =
     mode === "local" && indexLoading && notes.length === 0;
+
+  const rememberSearch = useCallback((value: string) => {
+    const cleaned = value.trim();
+    if (cleaned.length < 2) return;
+    setRecentSearches((prev) => {
+      const next = [cleaned, ...prev.filter((item) => item !== cleaned)].slice(
+        0,
+        6,
+      );
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const executeItem = useCallback(
     (item: PaletteItem | undefined) => {
       if (!item) return;
       if (item.type === "command") {
         router.push(item.command.href);
+      } else if (item.type === "recent") {
+        setQuery(item.query);
+        setSelectedIndex(0);
+        return;
       } else {
+        rememberSearch(query);
         router.push(`/dashboard/edit_note?id=${item.result.item.id}`);
       }
       onClose();
     },
-    [onClose, router],
+    [onClose, query, rememberSearch, router],
   );
 
   useEffect(() => {
@@ -281,6 +309,19 @@ export function NoteSearchPalette({
       setFullResults([]);
       setFullError("");
       return;
+    }
+
+    try {
+      const parsed = JSON.parse(
+        localStorage.getItem(RECENT_SEARCHES_KEY) ?? "[]",
+      );
+      if (Array.isArray(parsed)) {
+        setRecentSearches(
+          parsed.filter((item): item is string => typeof item === "string"),
+        );
+      }
+    } catch {
+      setRecentSearches([]);
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -432,6 +473,44 @@ export function NoteSearchPalette({
                 </div>
               ) : (
                 paletteItems.map((item, index) => {
+                  if (item.type === "recent") {
+                    const isSelected = selectedIndex === index;
+                    return (
+                      <button
+                        key={`recent-${item.query}`}
+                        type="button"
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        onClick={() => executeItem(item)}
+                        className="group mb-2 w-full rounded-3xl border px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                        style={{
+                          backgroundColor: isSelected
+                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
+                            : "transparent",
+                          borderColor: isSelected
+                            ? "var(--accent)"
+                            : "var(--border)",
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
+                            <Search size={16} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                              {item.query}
+                            </span>
+                            <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
+                              Recent search. Press enter to run it again.
+                            </span>
+                          </span>
+                          <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                            recent
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  }
+
                   if (item.type === "command") {
                     const Icon = item.command.icon;
                     const isSelected = selectedIndex === index;
