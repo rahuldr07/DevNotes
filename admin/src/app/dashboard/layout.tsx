@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { useSound } from "@/components/SoundProvider";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,9 @@ import {
 } from "@/components/ui/tooltip";
 import { ApiError, api } from "@/lib/api";
 import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
+import { getUserNotesPage } from "@/lib/note-api";
 import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
+import type { Note } from "@/types/notes";
 
 const navItems = [
   {
@@ -83,6 +86,13 @@ export default function DashboardLayout({
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const clearUser = useAuthStore((state) => state.clearUser);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchNotes, setSearchNotes] = useState<Note[]>([]);
+  const [searchHydrated, setSearchHydrated] = useState(false);
+
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+  }, []);
 
   useEffect(() => {
     const redirectToLogin = () => {
@@ -106,6 +116,53 @@ export default function DashboardLayout({
       window.removeEventListener("devnotes:auth-expired", redirectToLogin);
     };
   }, [clearUser, router, setUser]);
+
+  useEffect(() => {
+    if (!searchOpen || searchHydrated) return;
+
+    let cancelled = false;
+    getUserNotesPage({ limit: 80 })
+      .then((page) => {
+        if (!cancelled) {
+          setSearchNotes(page.items);
+          setSearchHydrated(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSearchHydrated(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchHydrated, searchOpen]);
+
+  useEffect(() => {
+    const onGlobalShortcut = (event: KeyboardEvent) => {
+      const target = event.target;
+      const inInput =
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openSearch();
+      } else if (!inInput && event.key === "/") {
+        event.preventDefault();
+        openSearch();
+      }
+    };
+
+    const onOpenSearch = () => openSearch();
+    window.addEventListener("keydown", onGlobalShortcut);
+    window.addEventListener("devnotes:open-search", onOpenSearch);
+    return () => {
+      window.removeEventListener("keydown", onGlobalShortcut);
+      window.removeEventListener("devnotes:open-search", onOpenSearch);
+    };
+  }, [openSearch]);
 
   const handleLogout = async () => {
     try {
@@ -152,6 +209,7 @@ export default function DashboardLayout({
                 <button
                   key={item.label}
                   type="button"
+                  onClick={item.label === "Search" ? openSearch : undefined}
                   className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
                     item.active
                       ? "bg-[var(--bg)] text-[var(--accent)]"
@@ -303,17 +361,16 @@ export default function DashboardLayout({
 
               <button
                 type="button"
-                onClick={() =>
-                  window.dispatchEvent(
-                    new KeyboardEvent("keydown", { key: "/" }),
-                  )
-                }
+                onClick={openSearch}
                 className="hidden min-w-0 flex-1 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-4 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
               >
                 <Search size={15} />
                 <span className="min-w-0 flex-1 truncate">
-                  Search notes, snippets, tags, or ask AI soon...
+                  Search notes, snippets, tags, or deep search...
                 </span>
+                <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                  ⌘K
+                </kbd>
                 <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   /
                 </kbd>
@@ -374,6 +431,12 @@ export default function DashboardLayout({
           </div>
         </div>
       </div>
+      <NoteSearchPalette
+        open={searchOpen}
+        notes={searchNotes}
+        indexLoading={searchOpen && !searchHydrated}
+        onClose={() => setSearchOpen(false)}
+      />
     </div>
   );
 }

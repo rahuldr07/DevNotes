@@ -100,10 +100,12 @@ function buildSnippet(content: string, query: string, fallbackLength = 130) {
 export function NoteSearchPalette({
   open,
   notes,
+  indexLoading = false,
   onClose,
 }: {
   open: boolean;
   notes: Note[];
+  indexLoading?: boolean;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -172,6 +174,8 @@ export function NoteSearchPalette({
 
   const results: SearchResult[] =
     mode === "local" ? localResults : fullResults.map((item) => ({ item }));
+  const showIndexLoading =
+    mode === "local" && indexLoading && notes.length === 0;
 
   useEffect(() => {
     if (!open) {
@@ -289,13 +293,19 @@ export function NoteSearchPalette({
               <span className="inline-flex items-center gap-1.5">
                 <Sparkles size={12} className="text-[var(--accent)]" />
                 {mode === "local"
-                  ? "instant Fuse retrieval across loaded notes"
+                  ? indexLoading
+                    ? "indexing your latest workspace notes"
+                    : "instant Fuse retrieval across loaded notes"
                   : "server-backed full-text retrieval with contextual snippets"}
               </span>
             </div>
 
             <div className="max-h-[62vh] overflow-y-auto p-3">
-              {mode === "full" && !query.trim() ? (
+              {showIndexLoading ? (
+                <div className="rounded-3xl border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                  loading workspace index...
+                </div>
+              ) : mode === "full" && !query.trim() ? (
                 <div className="rounded-3xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   type to deep search every note in your vault
                 </div>

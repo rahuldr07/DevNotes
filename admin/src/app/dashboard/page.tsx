@@ -25,7 +25,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -281,7 +280,6 @@ export default function DashboardPage() {
   const [sort, setSort] = useState<SortKey>("newest");
   const [view, setView] = useState<ViewMode>("grid");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -355,29 +353,9 @@ export default function DashboardPage() {
     [fetchNextPage, loading, loadingMore, nextCursor],
   );
 
-  useEffect(() => {
-    const onGlobalShortcut = (event: KeyboardEvent) => {
-      const target = event.target;
-      const inInput =
-        target instanceof HTMLElement &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
-
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setSearchOpen(true);
-      } else if (!inInput && event.key === "/") {
-        event.preventDefault();
-        setSearchOpen(true);
-      } else if (event.key === "Escape") {
-        setSearchOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", onGlobalShortcut);
-    return () => window.removeEventListener("keydown", onGlobalShortcut);
-  }, []);
+  const openWorkspaceSearch = () => {
+    window.dispatchEvent(new Event("devnotes:open-search"));
+  };
 
   const handleDelete = async (id: number) => {
     const note = notes.find((item) => item.id === id);
@@ -516,7 +494,7 @@ export default function DashboardPage() {
               <Button
                 variant="ghost"
                 className="gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                onClick={() => setSearchOpen(true)}
+                onClick={openWorkspaceSearch}
               >
                 <Search size={15} />
                 search workspace
@@ -570,7 +548,7 @@ export default function DashboardPage() {
             <Button
               variant="ghost"
               className="gap-2 rounded-2xl px-3 text-xs text-[var(--text-secondary)]"
-              onClick={() => setSearchOpen(true)}
+              onClick={openWorkspaceSearch}
             >
               <Search size={14} />
               search
@@ -771,11 +749,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <NoteSearchPalette
-        open={searchOpen}
-        notes={notes}
-        onClose={() => setSearchOpen(false)}
-      />
       <ConfirmDialog />
     </>
   );
