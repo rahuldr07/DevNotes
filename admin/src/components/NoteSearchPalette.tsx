@@ -7,14 +7,25 @@ import {
   Calendar,
   Check,
   Clipboard,
+  Code2,
   Command,
+  Compass,
   Database,
+  FilePlus2,
   Hash,
   Search,
+  Settings,
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { searchNotes as searchNotesApi } from "@/lib/note-api";
 import { stripMarkdown } from "@/lib/notes";
 import type { Note } from "@/types/notes";
@@ -26,6 +37,54 @@ interface SearchResult {
   score?: number;
   matches?: readonly FuseResultMatch[];
 }
+
+interface PaletteCommand {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  keywords: string[];
+  icon: typeof FilePlus2;
+}
+
+type PaletteItem =
+  | { type: "command"; command: PaletteCommand }
+  | { type: "note"; result: SearchResult };
+
+const COMMANDS: PaletteCommand[] = [
+  {
+    id: "new-note",
+    title: "Create new note",
+    description: "Open the editor workbench for a fresh note.",
+    href: "/dashboard/create_note",
+    keywords: ["new", "create", "note", "write"],
+    icon: FilePlus2,
+  },
+  {
+    id: "snippets",
+    title: "Open snippet vault",
+    description: "Browse copy-ready commands, configs, and code patterns.",
+    href: "/dashboard/snippets",
+    keywords: ["snippet", "code", "copy", "vault"],
+    icon: Code2,
+  },
+  {
+    id: "explore",
+    title: "Explore community notes",
+    description: "Discover public notes, guides, and reusable knowledge.",
+    href: "/dashboard/explore",
+    keywords: ["explore", "community", "public", "discover"],
+    icon: Compass,
+  },
+  {
+    id: "settings",
+    title: "Edit public profile",
+    description: "Tune your identity, bio, links, and publishing profile.",
+    href: "/dashboard/settings",
+    keywords: ["settings", "profile", "identity", "bio"],
+    icon: Settings,
+  },
+];
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-US", {
@@ -177,8 +236,42 @@ export function NoteSearchPalette({
 
   const results: SearchResult[] =
     mode === "local" ? localResults : fullResults.map((item) => ({ item }));
+  const commandResults = useMemo(() => {
+    if (mode !== "local") return [];
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return COMMANDS;
+    return COMMANDS.filter((command) => {
+      const haystack = [command.title, command.description, ...command.keywords]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(trimmed);
+    });
+  }, [mode, query]);
+  const paletteItems: PaletteItem[] = useMemo(
+    () => [
+      ...commandResults.map((command) => ({
+        type: "command" as const,
+        command,
+      })),
+      ...results.map((result) => ({ type: "note" as const, result })),
+    ],
+    [commandResults, results],
+  );
   const showIndexLoading =
     mode === "local" && indexLoading && notes.length === 0;
+
+  const executeItem = useCallback(
+    (item: PaletteItem | undefined) => {
+      if (!item) return;
+      if (item.type === "command") {
+        router.push(item.command.href);
+      } else {
+        router.push(`/dashboard/edit_note?id=${item.result.item.id}`);
+      }
+      onClose();
+    },
+    [onClose, router],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -197,23 +290,22 @@ export function NoteSearchPalette({
       } else if (event.key === "ArrowDown") {
         event.preventDefault();
         setSelectedIndex((prev) =>
-          Math.min(prev + 1, Math.max(0, results.length - 1)),
+          Math.min(prev + 1, Math.max(0, paletteItems.length - 1)),
         );
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
         setSelectedIndex((prev) => Math.max(prev - 1, 0));
       } else if (event.key === "Enter") {
-        const selected = results[selectedIndex];
+        const selected = paletteItems[selectedIndex];
         if (!selected) return;
         event.preventDefault();
-        router.push(`/dashboard/edit_note?id=${selected.item.id}`);
-        onClose();
+        executeItem(selected);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose, results, router, selectedIndex]);
+  }, [executeItem, open, onClose, paletteItems, selectedIndex]);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 10);
@@ -334,12 +426,52 @@ export function NoteSearchPalette({
                 <div className="rounded-3xl border border-[var(--error)] px-4 py-10 text-center text-sm text-[var(--error)]">
                   {fullError}
                 </div>
-              ) : results.length === 0 ? (
+              ) : paletteItems.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
-                  no matching notes yet
+                  no matching commands or notes yet
                 </div>
               ) : (
-                results.map((result, index) => {
+                paletteItems.map((item, index) => {
+                  if (item.type === "command") {
+                    const Icon = item.command.icon;
+                    const isSelected = selectedIndex === index;
+                    return (
+                      <button
+                        key={item.command.id}
+                        type="button"
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        onClick={() => executeItem(item)}
+                        className="group mb-2 w-full rounded-3xl border px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+                        style={{
+                          backgroundColor: isSelected
+                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
+                            : "transparent",
+                          borderColor: isSelected
+                            ? "var(--accent)"
+                            : "var(--border)",
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
+                            <Icon size={16} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                              {item.command.title}
+                            </span>
+                            <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
+                              {item.command.description}
+                            </span>
+                          </span>
+                          <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                            command
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  }
+
+                  const result = item.result;
                   const note = result.item;
                   const titleMatch = result.matches?.find(
                     (match) => match.key === "title",
