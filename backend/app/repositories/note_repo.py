@@ -9,13 +9,60 @@ Pattern:  Router → Service (business logic) → Repository (THIS FILE) → Dat
 The repository does NOT check ownership or authorization.
 That's the service layer's job (note_service.py).
 """
-from sqlalchemy import func
+import re
+
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
 
 from app.models.note import Note
 from app.models.note_like import NoteLike
 from app.models.note_version import NoteVersion
 from app.models.user import User
+
+
+def _search_terms(search_query: str) -> list[str]:
+    """Extract normalized terms used by fallback retrieval and tests."""
+    return [term for term in re.findall(r"[\w#+.-]+", search_query.lower()) if term]
+
+
+def _fallback_search_score(note: Note, terms: list[str]) -> int:
+    """Small lexical ranker for SQLite/dev and as a semantic-search stepping stone.
+
+    Title and tags are weighted above body matches because they represent explicit
+    intent. Phrase matches receive an additional boost so searches like
+    "docker compose" rank exact notes above scattered token hits.
+    """
+    if not terms:
+        return 0
+
+    title = (note.title or "").lower()
+    content = (note.content or "").lower()
+    tags = [tag.lower() for tag in (note.tags or [])]
+    phrase = " ".join(terms)
+    score = 0
+
+    if phrase and phrase in title:
+        score += 24
+    if phrase and phrase in content:
+        score += 8
+
+    for term in terms:
+        if term in title:
+            score += 12
+            if title.startswith(term):
+                score += 4
+        if any(term == tag or term in tag for tag in tags):
+            score += 18
+        if term in content:
+            score += 3
+            score += min(content.count(term), 5)
+        if term == getattr(note, "note_type", ""):
+            score += 4
+        language = getattr(note, "language", None)
+        if language and term == language.lower():
+            score += 4
+
+    return score
 
 
 def create(
@@ -213,15 +260,39 @@ def search_notes(
     limit: int = 20,
     note_type: str | None = None,
 ) -> list[Note]:
-    query = db.query(Note).filter(
-        Note.user_id == user_id,
-        Note.search_vector.op("@@")(func.plainto_tsquery("english", search_query)),
-    )
+    terms = _search_terms(search_query)
+    if not terms:
+        return []
+
+    base_query = db.query(Note).filter(Note.user_id == user_id)
     if note_type:
-        query = query.filter(Note.note_type == note_type)
+        base_query = base_query.filter(Note.note_type == note_type)
     if cursor is not None:
-        query = query.filter(Note.id < cursor)
-    return query.order_by(Note.id.desc()).limit(limit).all()
+        base_query = base_query.filter(Note.id < cursor)
+
+    if db.bind and db.bind.dialect.name == "postgresql":
+        ts_query = func.websearch_to_tsquery("english", search_query)
+        rank = func.ts_rank(Note.search_vector, ts_query)
+        return (
+            base_query.filter(Note.search_vector.op("@@")(ts_query))
+            .order_by(desc(rank), Note.id.desc())
+            .limit(limit)
+            .all()
+        )
+
+    ilike_filters = []
+    for term in terms:
+        pattern = f"%{term}%"
+        ilike_filters.extend([Note.title.ilike(pattern), Note.content.ilike(pattern)])
+
+    candidates = base_query.filter(or_(*ilike_filters)).limit(max(limit * 4, 40)).all()
+    ranked = [
+        (score, note)
+        for note in candidates
+        if (score := _fallback_search_score(note, terms)) > 0
+    ]
+    ranked.sort(key=lambda item: (item[0], item[1].id), reverse=True)
+    return [note for _, note in ranked[:limit]]
 
 def toggle_pin(db: Session, note_id: int) -> Note:
     """Flips is_pinned on a note and returns the updated note."""

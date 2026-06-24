@@ -295,19 +295,19 @@ export function NoteSearchPalette({
                 {mode === "local"
                   ? indexLoading
                     ? "indexing your latest workspace notes"
-                    : "instant Fuse retrieval across loaded notes"
-                  : "server-backed full-text retrieval with contextual snippets"}
+                    : "AI-ready workspace retrieval across loaded notes"
+                  : "ranked full-text retrieval across your complete vault"}
               </span>
             </div>
 
             <div className="max-h-[62vh] overflow-y-auto p-3">
               {showIndexLoading ? (
                 <div className="rounded-3xl border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
-                  loading workspace index...
+                  loading retrieval index...
                 </div>
               ) : mode === "full" && !query.trim() ? (
                 <div className="rounded-3xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
-                  type to deep search every note in your vault
+                  type to search every note in your vault with ranked retrieval
                 </div>
               ) : fullLoading ? (
                 <div className="rounded-3xl border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
