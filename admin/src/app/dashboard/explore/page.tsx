@@ -2,11 +2,15 @@
 
 import {
   AlertCircle,
+  BookOpen,
+  Code2,
   Eye,
+  Flame,
   Heart,
   LayoutGrid,
   List,
   Search,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +27,7 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCommunityNotesPage, likeNote } from "@/lib/note-api";
 import { stripMarkdown } from "@/lib/notes";
+import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
 
 type SortKey = "trending" | "recent";
@@ -87,6 +92,8 @@ function ExploreNote({
   };
   const author = authorName(note);
   const articleClass = note.share_uuid ? "cursor-pointer" : "cursor-default";
+  const kind = noteKindLabel(note.note_type);
+  const minutes = readingTimeMinutes(note.content);
 
   const likeButton = (
     <button
@@ -132,6 +139,9 @@ function ExploreNote({
         <h2 className="min-w-0 max-w-[240px] flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
           {note.title || "untitled"}
         </h2>
+        <span className="hidden shrink-0 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] capitalize text-[var(--text-secondary)] lg:inline">
+          {kind}
+        </span>
         <p className="hidden min-w-0 flex-[2] truncate text-xs text-[var(--text-secondary)] md:block">
           {preview || "empty note"}
         </p>
@@ -180,6 +190,17 @@ function ExploreNote({
     >
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 capitalize">
+              {kind}
+            </span>
+            <span>{minutes} min</span>
+            {note.language && (
+              <span className="inline-flex items-center gap-1">
+                <Code2 size={11} /> {note.language}
+              </span>
+            )}
+          </div>
           <h2 className="line-clamp-2 text-base font-medium leading-snug text-[var(--text-primary)]">
             {note.title || "untitled"}
           </h2>
@@ -237,6 +258,7 @@ export default function ExplorePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("trending");
   const [view, setView] = useState<ViewMode>("grid");
   const [error, setError] = useState("");
@@ -340,8 +362,11 @@ export default function ExplorePage() {
 
   const visibleNotes = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const topicFiltered = selectedTopic
+      ? notes.filter((note) => note.tags.includes(selectedTopic))
+      : notes;
     const filtered = query
-      ? notes.filter((note) => {
+      ? topicFiltered.filter((note) => {
           return (
             note.title.toLowerCase().includes(query) ||
             stripMarkdown(note.content).toLowerCase().includes(query) ||
@@ -349,7 +374,7 @@ export default function ExplorePage() {
             authorName(note).toLowerCase().includes(query)
           );
         })
-      : notes;
+      : topicFiltered;
 
     return [...filtered].sort((left, right) => {
       if (sort === "trending") {
@@ -361,76 +386,218 @@ export default function ExplorePage() {
         new Date(left.created_at).getTime()
       );
     });
-  }, [notes, search, sort]);
+  }, [notes, search, selectedTopic, sort]);
+
+  const topicCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    notes.forEach((note) => {
+      note.tags.forEach((tag) => {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      });
+    });
+    return [...counts.entries()]
+      .sort(
+        (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+      )
+      .slice(0, 10);
+  }, [notes]);
+
+  const featuredNote = useMemo(
+    () =>
+      [...notes].sort(
+        (left, right) => metricValue(right) - metricValue(left),
+      )[0],
+    [notes],
+  );
+
+  const exploreStats = useMemo(
+    () => [
+      { label: "public notes", value: notes.length },
+      { label: "topics", value: topicCounts.length },
+      {
+        label: "views",
+        value: notes.reduce((sum, note) => sum + (note.view_count ?? 0), 0),
+      },
+      {
+        label: "likes",
+        value: notes.reduce((sum, note) => sum + (note.like_count ?? 0), 0),
+      },
+    ],
+    [notes, topicCounts.length],
+  );
 
   return (
     <>
-      <div className="mb-8 flex flex-col gap-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-medium tracking-normal text-[var(--text-primary)]">
-              explore
-            </h1>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              public notes from the community
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex h-8 items-center gap-2 rounded-md px-2 text-xs text-[var(--text-secondary)] transition-colors focus-within:bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary)]">
-              <Search size={14} />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="search"
-                className="w-36 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
-              />
+      <section className="mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(135deg,var(--bg-secondary),var(--bg-primary)_62%,rgba(255,255,255,0.03))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1 text-xs text-[var(--text-secondary)]">
+              <Sparkles size={14} className="text-[var(--accent)]" />
+              Community discovery cockpit
             </div>
-            <div className="flex items-center gap-1">
-              {(["trending", "recent"] as SortKey[]).map((key) => (
+            <div>
+              <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-[var(--text-primary)] md:text-6xl">
+                Explore reusable knowledge from builders.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">
+                Browse public notes, snippets, guides, and checklists filtered
+                by topic, momentum, and author signals.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedTopic(null)}
+                className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                style={{
+                  borderColor: selectedTopic
+                    ? "var(--border)"
+                    : "var(--accent)",
+                  color: selectedTopic
+                    ? "var(--text-secondary)"
+                    : "var(--accent)",
+                }}
+              >
+                all topics
+              </button>
+              {topicCounts.map(([topic, count]) => (
                 <button
-                  key={key}
+                  key={topic}
                   type="button"
-                  onClick={() => setSort(key)}
-                  className="rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-[var(--bg-secondary)]"
+                  onClick={() => setSelectedTopic(topic)}
+                  className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   style={{
+                    borderColor:
+                      selectedTopic === topic
+                        ? "var(--accent)"
+                        : "var(--border)",
                     color:
-                      sort === key ? "var(--accent)" : "var(--text-secondary)",
+                      selectedTopic === topic
+                        ? "var(--accent)"
+                        : "var(--text-secondary)",
                   }}
                 >
-                  {key}
+                  #{topic} <span className="opacity-60">{count}</span>
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-1">
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 self-end">
+            {exploreStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)] p-4"
+              >
+                <div className="font-mono text-3xl font-semibold text-[var(--text-primary)]">
+                  {stat.value}
+                </div>
+                <div className="mt-2 text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex items-center gap-2 px-2 text-xs text-[var(--text-secondary)]">
+          <Flame size={15} className="text-[var(--accent)]" />
+          {selectedTopic ? `Topic: #${selectedTopic}` : "Trending now"}
+          <span className="rounded-full bg-[var(--bg-primary)] px-2 py-0.5">
+            {visibleNotes.length} shown
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
+            <Search size={14} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="search notes, tags, authors"
+              className="w-48 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+            />
+          </div>
+          <div className="flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+            {(["trending", "recent"] as SortKey[]).map((key) => (
               <button
+                key={key}
                 type="button"
-                onClick={() => setView("grid")}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
+                onClick={() => setSort(key)}
+                className="rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
                   color:
-                    view === "grid" ? "var(--accent)" : "var(--text-secondary)",
+                    sort === key ? "var(--accent)" : "var(--text-secondary)",
                 }}
-                aria-label="Grid view"
               >
-                <LayoutGrid size={15} />
+                {key}
               </button>
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
-                style={{
-                  color:
-                    view === "list" ? "var(--accent)" : "var(--text-secondary)",
-                }}
-                aria-label="List view"
-              >
-                <List size={15} />
-              </button>
-            </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+            <button
+              type="button"
+              onClick={() => setView("grid")}
+              className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
+              style={{
+                color:
+                  view === "grid" ? "var(--accent)" : "var(--text-secondary)",
+              }}
+              aria-label="Grid view"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("list")}
+              className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
+              style={{
+                color:
+                  view === "list" ? "var(--accent)" : "var(--text-secondary)",
+              }}
+              aria-label="List view"
+            >
+              <List size={15} />
+            </button>
           </div>
         </div>
       </div>
+
+      {!loading && featuredNote && (
+        <Link
+          href={featuredNote.share_uuid ? `/s/${featuredNote.share_uuid}` : "#"}
+          className="mb-6 grid gap-4 rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-secondary)] p-5 transition-colors hover:border-[var(--accent)] lg:grid-cols-[auto_1fr_auto] lg:items-center"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-[var(--accent-foreground)]">
+            <BookOpen size={20} />
+          </div>
+          <div>
+            <div className="mb-1 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+              featured read
+              <span>•</span>
+              <span>{noteKindLabel(featuredNote.note_type)}</span>
+              <span>•</span>
+              <span>{readingTimeMinutes(featuredNote.content)} min</span>
+            </div>
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+              {featuredNote.title || "untitled"}
+            </h2>
+            <p className="mt-1 line-clamp-1 text-sm text-[var(--text-secondary)]">
+              {stripMarkdown(featuredNote.content) || "empty note"}
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
+            <span className="inline-flex items-center gap-1">
+              <Heart size={14} /> {featuredNote.like_count ?? 0}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Eye size={14} /> {featuredNote.view_count ?? 0}
+            </span>
+          </div>
+        </Link>
+      )}
 
       {error && (
         <Alert
