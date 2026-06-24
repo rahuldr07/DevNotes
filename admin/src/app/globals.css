@@ -941,7 +941,7 @@ html {
 .tiptap-code-lang-pill {
   position: absolute;
   top: 8px;
-  right: 10px;
+  right: 5.2rem;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.68rem;
   font-weight: 500;
@@ -954,4 +954,33 @@ html {
   border-radius: 5px;
   pointer-events: none;
   z-index: 1;
+}
+
+.tiptap-code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  background: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
+  color: var(--text-secondary);
+  padding: 2px 7px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  line-height: 1.25rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.tiptap-code-copy-btn:hover {
+  border-color: color-mix(in srgb, var(--main-color) 42%, transparent);
+  color: var(--main-color);
+  background: color-mix(in srgb, var(--main-color) 10%, transparent);
 }

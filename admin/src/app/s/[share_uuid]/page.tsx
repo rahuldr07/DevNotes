@@ -11,6 +11,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CopyContentButton } from "@/components/CopyContentButton";
 import { ReadOnlyEditor } from "@/components/ReadOnlyEditor";
 import { backendFetch } from "@/lib/backend";
 import { stripMarkdown } from "@/lib/notes";
@@ -249,6 +250,13 @@ export default async function PublicNotePage({
               essays with source credibility, author profiles, and AI-ready
               discovery.
             </p>
+            <CopyContentButton
+              content={note.content}
+              label={
+                note.note_type === "snippet" ? "copy snippet" : "copy note"
+              }
+              className="mt-4 w-full gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            />
           </div>
         </aside>
       </main>

@@ -5,6 +5,8 @@ import type { FuseResultMatch } from "fuse.js";
 import Fuse from "fuse.js";
 import {
   Calendar,
+  Check,
+  Clipboard,
   Command,
   Database,
   Hash,
@@ -12,7 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { searchNotes as searchNotesApi } from "@/lib/note-api";
 import { stripMarkdown } from "@/lib/notes";
 import type { Note } from "@/types/notes";
@@ -112,6 +114,7 @@ export function NoteSearchPalette({
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<SearchMode>("local");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const [fullResults, setFullResults] = useState<Note[]>([]);
   const [fullLoading, setFullLoading] = useState(false);
   const [fullError, setFullError] = useState("");
@@ -215,6 +218,20 @@ export function NoteSearchPalette({
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 10);
   }, [open]);
+
+  const copySnippet = async (
+    note: Note,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(note.content);
+      setCopiedId(note.id);
+      window.setTimeout(() => setCopiedId(null), 1500);
+    } catch {
+      setCopiedId(null);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -336,10 +353,19 @@ export function NoteSearchPalette({
                     mode === "full" ? titleTermIndices(note.title, query) : [];
 
                   return (
-                    <button
+                    // biome-ignore lint/a11y/useSemanticElements: Result row contains a nested copy button, so it cannot be a native button.
+                    <div
                       key={note.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onMouseEnter={() => setSelectedIndex(index)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          router.push(`/dashboard/edit_note?id=${note.id}`);
+                          onClose();
+                        }
+                      }}
                       onClick={() => {
                         router.push(`/dashboard/edit_note?id=${note.id}`);
                         onClose();
@@ -362,7 +388,21 @@ export function NoteSearchPalette({
                               ? highlightText(note.title, titleMatch.indices)
                               : note.title || "untitled"}
                         </div>
-                        <div className="flex shrink-0 items-center gap-1 text-[11px] text-[var(--text-secondary)]">
+                        <div className="flex shrink-0 items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                          {note.note_type === "snippet" && (
+                            <button
+                              type="button"
+                              onClick={(event) => copySnippet(note, event)}
+                              className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2 py-1 transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                            >
+                              {copiedId === note.id ? (
+                                <Check size={11} />
+                              ) : (
+                                <Clipboard size={11} />
+                              )}
+                              {copiedId === note.id ? "copied" : "copy"}
+                            </button>
+                          )}
                           <Calendar size={11} />
                           {formatDate(note.updated_at ?? note.created_at)}
                         </div>
@@ -385,7 +425,7 @@ export function NoteSearchPalette({
                           ))}
                         </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })
               )}

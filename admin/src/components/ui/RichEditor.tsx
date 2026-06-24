@@ -35,6 +35,7 @@ import {
   Bold,
   Check,
   CheckSquare,
+  Clipboard,
   Code,
   FileCode,
   Heading1,
@@ -91,11 +92,35 @@ const LANG_NAMES: Record<string, string> = {
 function CodeBlockView({ node }: ReactNodeViewProps) {
   const lang = (node.attrs.language as string | null) || "plaintext";
   const label = LANG_NAMES[lang] || lang;
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = async () => {
+    const text = node.textContent;
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
     <NodeViewWrapper className="tiptap-code-block-wrapper">
       <span className="tiptap-code-lang-pill" contentEditable={false}>
         {label}
       </span>
+      <button
+        type="button"
+        className="tiptap-code-copy-btn"
+        contentEditable={false}
+        onClick={copyCode}
+        aria-label="Copy code block"
+      >
+        {copied ? <Check size={12} /> : <Clipboard size={12} />}
+        {copied ? "copied" : "copy"}
+      </button>
       <pre>
         <NodeViewContent />
       </pre>
