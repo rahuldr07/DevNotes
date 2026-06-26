@@ -124,6 +124,5 @@ def health_db():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return {"database": "healthy"}
-    except Exception as e:
-        return {"database": "unhealthy", "error": str(e)}
-
+    except Exception:
+        return {"database": "unhealthy"}

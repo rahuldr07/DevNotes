@@ -30,6 +30,9 @@ def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
@@ -66,15 +69,15 @@ def get_current_user(
         # Extract user ID from the "sub" (subject) claim
         user_id = payload.get("sub")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token: missing subject")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # Look up the user in the database
         user = user_repo.get_by_id(db, user_id=int(user_id))
         if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
         return user
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e)) from e
+        raise HTTPException(status_code=401, detail="Invalid credentials") from e

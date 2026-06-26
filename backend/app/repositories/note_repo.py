@@ -144,8 +144,10 @@ def update(
             oNote.source_url = source_url or None
         if is_published is not None:
             oNote.is_published = is_published
+            if is_published is False:
+                oNote.is_community = False
         if is_community is not None:
-            oNote.is_community = is_community
+            oNote.is_community = is_community and oNote.is_published
         if share_uuid is not None:
             oNote.share_uuid = share_uuid
         db.commit()
@@ -351,13 +353,13 @@ def get_community_notes(
     cursor: int | None = None,
     limit: int = 20,
 ) -> list[dict]:
-    """Fetches all community notes (is_community=True)."""
+    """Fetches published community notes only."""
     like_count = func.count(NoteLike.id).label("like_count")
     query = (
         db.query(Note, User.name)
         .join(User, Note.user_id == User.id)
         .outerjoin(NoteLike, NoteLike.note_id == Note.id)
-        .filter(Note.is_community == True)
+        .filter(Note.is_community == True, Note.is_published == True)
         .group_by(Note.id, User.name)
         .add_columns(like_count)
     )

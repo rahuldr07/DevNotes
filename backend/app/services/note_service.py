@@ -261,8 +261,8 @@ def get_note(db: Session, user_id: int, note_id: int) -> Note | None:
     """
     note = note_repo.get_by_note_id(db, note_id=note_id)
     if note:
-        # Allow access if owner OR if note is in community
-        if note.user_id == user_id or note.is_community:
+        # Allow access if owner OR if note is safely visible in the community feed.
+        if note.user_id == user_id or (note.is_community and note.is_published):
             return note
         else:
             raise HTTPException(status_code=403, detail="Note does not belong to the user")
@@ -347,6 +347,8 @@ def get_community_notes(
 def toggle_like(db: Session, user_id: int, note_id: int) -> dict:
     note = note_repo.get_by_note_id(db, note_id=note_id)
     if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    if not note.is_published or not note.is_community:
         raise HTTPException(status_code=404, detail="Note not found")
 
     existing_like = note_repo.get_like(db, note_id=note_id, user_id=user_id)

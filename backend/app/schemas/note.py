@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from urllib.parse import urlparse
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -26,6 +28,25 @@ def _validate_note_type(value: str | None) -> str | None:
     return cleaned
 
 
+def _normalize_language(value: str | None) -> str | None:
+    if value is None:
+        return value
+    cleaned = value.strip().lower()
+    return cleaned or None
+
+
+def _validate_source_url(value: str | None) -> str | None:
+    if value is None:
+        return value
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    parsed = urlparse(cleaned)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("Source URL must be a valid http(s) URL")
+    return cleaned
+
+
 class NoteCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     content: str = Field(..., max_length=100000)
@@ -43,6 +64,16 @@ class NoteCreate(BaseModel):
     @classmethod
     def note_type_must_be_known(cls, value: str) -> str:
         return _validate_note_type(value) or "note"
+
+    @field_validator("language")
+    @classmethod
+    def language_must_be_normalized(cls, value: str | None) -> str | None:
+        return _normalize_language(value)
+
+    @field_validator("source_url")
+    @classmethod
+    def source_url_must_be_http_url(cls, value: str | None) -> str | None:
+        return _validate_source_url(value)
 
 
 class NoteResponse(BaseModel):
@@ -176,3 +207,13 @@ class NoteUpdate(BaseModel):
     @classmethod
     def note_type_must_be_known(cls, value: str | None) -> str | None:
         return _validate_note_type(value)
+
+    @field_validator("language")
+    @classmethod
+    def language_must_be_normalized(cls, value: str | None) -> str | None:
+        return _normalize_language(value)
+
+    @field_validator("source_url")
+    @classmethod
+    def source_url_must_be_http_url(cls, value: str | None) -> str | None:
+        return _validate_source_url(value)
