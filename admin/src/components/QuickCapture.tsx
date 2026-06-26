@@ -4,6 +4,7 @@ import { Code2, FileText, Loader2, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { normalizeErrorMessage } from "@/lib/errors";
 import { createNote } from "@/lib/note-api";
 import type { Note } from "@/types/notes";
 
@@ -60,8 +61,11 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
         { description: "Saved to your DevNotes cockpit." },
       );
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Capture failed";
-      gooeyToast.error(message);
+      const message = normalizeErrorMessage(error, "Capture failed");
+      gooeyToast.error("Capture failed", {
+        description: message,
+        action: { label: "retry", onClick: submit },
+      });
     } finally {
       setSaving(false);
     }

@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { saveRefreshToken, saveToken } from "@/lib/auth";
+import { normalizeErrorMessage } from "@/lib/errors";
 import { getCurrentUserAfterAuth } from "@/lib/session";
 import { useAuthStore } from "@/stores/useAuthStore";
 import {
@@ -141,10 +142,10 @@ export default function LoginPage() {
         setUser(user);
         router.push("/dashboard");
       } catch (err: unknown) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Invalid credentials. Please try again.";
+        const message = normalizeErrorMessage(
+          err,
+          "Invalid credentials. Please try again.",
+        );
         setServerError(message);
       } finally {
         setLoading(false);

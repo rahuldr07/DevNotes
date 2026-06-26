@@ -20,6 +20,11 @@ import {
   saveRefreshToken,
   saveToken,
 } from "@/lib/auth";
+import {
+  type ApiErrorDetail,
+  formatValidationDetails,
+  friendlyStatusMessage,
+} from "@/lib/errors";
 
 /**
  * Base URL for all API calls.
@@ -46,12 +51,56 @@ let refreshPromise: Promise<string | null> | null = null;
  */
 export class ApiError extends Error {
   status: number;
+  details?: ApiErrorDetail[];
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, details?: ApiErrorDetail[]) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.details = details;
   }
+}
+
+async function parseErrorResponse(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  const payload = contentType.includes("application/json")
+    ? await response.json().catch(() => null)
+    : await response.text().catch(() => "");
+
+  if (payload && typeof payload === "object") {
+    const detail = (payload as { detail?: unknown; error?: unknown }).detail;
+    const errors = (payload as { errors?: unknown }).errors;
+    const error = (payload as { error?: unknown }).error;
+
+    if (Array.isArray(detail)) {
+      return {
+        message: formatValidationDetails(detail as ApiErrorDetail[]),
+        details: detail as ApiErrorDetail[],
+      };
+    }
+
+    if (Array.isArray(errors)) {
+      const description = formatValidationDetails(errors as ApiErrorDetail[]);
+      return {
+        message: typeof detail === "string" ? detail : description,
+        details: errors as ApiErrorDetail[],
+      };
+    }
+
+    if (typeof detail === "string" && detail.trim()) {
+      return { message: detail };
+    }
+
+    if (typeof error === "string" && error.trim()) {
+      return { message: error };
+    }
+  }
+
+  if (typeof payload === "string" && payload.trim()) {
+    return { message: payload.slice(0, 220) };
+  }
+
+  return { message: friendlyStatusMessage(response.status) };
 }
 
 function clearLocalAuth() {
@@ -147,13 +196,17 @@ class ApiClient {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+    }).catch(() => {
+      throw new ApiError(
+        "Cannot reach DevNotes API. Check that the backend server is running.",
+        0,
+      );
     });
 
     // If the response is not OK (status 400, 401, 404, 500, etc.)
     // parse the error body and throw it so the calling component can catch it
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const message = error.detail || "An error occurred";
+      const { message, details } = await parseErrorResponse(response);
       if (
         response.status === 401 &&
         allowRefresh &&
@@ -167,7 +220,7 @@ class ApiClient {
       } else if (response.status === 401) {
         clearLocalAuth();
       }
-      throw new ApiError(message, response.status);
+      throw new ApiError(message, response.status, details);
     }
 
     // Handle 204 No Content — returned by DELETE endpoints

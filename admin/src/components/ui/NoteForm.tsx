@@ -19,6 +19,7 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { useSettings } from "@/hooks/useSettings";
 import { api } from "@/lib/api";
+import { normalizeErrorMessage } from "@/lib/errors";
 import { normalizeTag, normalizeTags, stripMarkdown } from "@/lib/notes";
 import type { Note, NoteVersion } from "@/types/notes";
 
@@ -213,10 +214,16 @@ export default function NoteForm({
         return saved;
       } catch (err: unknown) {
         setSaveStatus("error");
-        if (quiet) {
-          const message = err instanceof Error ? err.message : "Save failed";
-          gooeyToast.error(message);
-        }
+        const message = normalizeErrorMessage(err, "Save failed");
+        gooeyToast.error(quiet ? "Autosave failed" : "Save failed", {
+          description: message,
+          action: {
+            label: "retry",
+            onClick: () => {
+              saveNote({ quiet });
+            },
+          },
+        });
         return null;
       } finally {
         setLoading(false);

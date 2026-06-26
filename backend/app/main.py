@@ -18,7 +18,10 @@ Architecture:
     → repositories/ (database queries) → models/ (ORM) → PostgreSQL
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 
 from app.database import engine
@@ -45,22 +48,45 @@ async def lifespan(app: FastAPI):
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        print(f"✅ Connected to Aurora PostgreSQL at {settings.DB_HOST}")
+        print(f"Connected to PostgreSQL at {settings.DB_HOST}")
     except Exception as e:
-        print(f"❌ Database connection failed: {e}")
-        print("   Check: VPC/Security Groups, credentials, endpoint URL")
+        print(f"Database connection failed: {e}")
+        print("   Check: local PostgreSQL service, credentials, endpoint URL")
         raise
 
     yield  # ← App runs here, handles all requests
 
     # ── SHUTDOWN ──
     engine.dispose()
-    print("🔌 Connection pool closed.")
+    print("Connection pool closed.")
 
 
 # ── Create the app ──
 app = FastAPI(title="DevNotes API", lifespan=lifespan)
 configure_rate_limiting(app)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Validation failed",
+            "errors": exc.errors(),
+            "hint": "Check the marked fields and try again.",
+        },
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_exception_handler(request: Request, exc: SQLAlchemyError):
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": "Database temporarily unavailable",
+            "hint": "Retry in a moment. If it keeps failing, check the backend database connection.",
+        },
+    )
 
 # ── CORS Middleware ──
 # Allows the Next.js frontend (localhost:3000) to call this API.
