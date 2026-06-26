@@ -2,12 +2,21 @@
 
 import {
   ArrowLeft,
+  BookOpen,
   Check,
   Clock3,
   Code2,
+  FileCode,
+  Globe2,
+  Hash,
   History,
+  Link2,
   Loader2,
   Save,
+  ShieldCheck,
+  Sparkles,
+  Tags,
+  Type,
   X,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -61,6 +70,28 @@ function statusCopy(status: SaveStatus, autoSave: boolean) {
   if (status === "error") return "save failed";
   if (!autoSave) return "manual save";
   return "autosave ready";
+}
+
+function countCodeBlocks(markdown: string) {
+  return markdown.match(/```/g)?.length
+    ? Math.floor((markdown.match(/```/g)?.length ?? 0) / 2)
+    : 0;
+}
+
+function extractOutline(markdown: string) {
+  return markdown
+    .split("\n")
+    .map((line) => line.match(/^(#{1,3})\s+(.+)$/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .slice(0, 6)
+    .map((match) => ({ level: match[1].length, title: match[2].trim() }));
+}
+
+function getReadinessLabel(score: number) {
+  if (score >= 85) return "ship ready";
+  if (score >= 60) return "almost ready";
+  if (score >= 35) return "needs shape";
+  return "rough draft";
 }
 
 export default function NoteForm({
@@ -120,6 +151,20 @@ export default function NoteForm({
     ? stripMarkdown(content).split(/\s+/).filter(Boolean).length
     : 0;
   const readTime = Math.max(1, Math.round(wordCount / 200));
+  const characterCount = stripMarkdown(content).length;
+  const lineCount = Math.max(1, content.split("\n").length);
+  const codeBlockCount = countCodeBlocks(content);
+  const outline = useMemo(() => extractOutline(content), [content]);
+  const readinessScore = Math.min(
+    100,
+    (title.trim() ? 20 : 0) +
+      (wordCount >= 80 ? 25 : Math.floor(wordCount / 4)) +
+      (normalizedTags.length > 0 ? 20 : 0) +
+      (outline.length > 0 ? 15 : 0) +
+      (noteType === "snippet" && language.trim() ? 10 : 0) +
+      (sourceUrl.trim() ? 10 : 0),
+  );
+  const readinessLabel = getReadinessLabel(readinessScore);
 
   const markSaved = useCallback(
     (
@@ -406,18 +451,16 @@ export default function NoteForm({
   }, [tagInput]);
 
   return (
-    <div className="min-h-[calc(100vh-9rem)]">
+    <div className="relative min-h-[calc(100vh-9rem)]">
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_35%_0%,color-mix(in_srgb,var(--accent)_10%,transparent),transparent_34%),radial-gradient(circle_at_80%_20%,color-mix(in_srgb,var(--accent)_6%,transparent),transparent_28%)]" />
       <form
         onSubmit={(event) => {
           event.preventDefault();
           saveNote();
         }}
       >
-        <div
-          className="sticky top-[61px] z-30 -mx-4 mb-0 border-b border-[var(--border)] bg-[var(--bg)]/90 px-4 py-0 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+        <div className="sticky top-[61px] z-30 -mx-4 mb-4 border-b border-[var(--border)] bg-[var(--bg)]/92 px-4 py-2 shadow-xl shadow-black/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="mx-auto flex max-w-[92rem] items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
@@ -427,7 +470,7 @@ export default function NoteForm({
               >
                 <ArrowLeft size={16} />
               </button>
-              <div className="flex h-10 min-w-0 items-center gap-2 border-x border-[var(--border)] bg-[var(--bg-secondary)]/45 px-4 text-xs text-[var(--text-secondary)]">
+              <div className="flex h-10 min-w-0 items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-4 text-xs text-[var(--text-secondary)] shadow-sm shadow-black/5">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
                 <span className="truncate text-[var(--text-primary)]">
                   {title.trim() || "untitled"}.md
@@ -436,6 +479,9 @@ export default function NoteForm({
                   <span className="text-[var(--accent)]">●</span>
                 )}
               </div>
+              <span className="hidden rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] md:inline-flex">
+                {mode === "create" ? "new file" : "editor workbench"}
+              </span>
             </div>
 
             <div className="flex items-center gap-1">
@@ -475,7 +521,7 @@ export default function NoteForm({
               <Button
                 type="submit"
                 disabled={loading}
-                className="gap-2 rounded-xl bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+                className="gap-2 rounded-2xl bg-[var(--accent)] px-4 text-xs text-[var(--bg)] shadow-lg shadow-black/10 hover:bg-[var(--accent-hover)]"
               >
                 {loading ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -488,8 +534,8 @@ export default function NoteForm({
           </div>
         </div>
 
-        <div className="mx-auto grid max-w-7xl gap-0 overflow-hidden rounded-b-[1.5rem] border-x border-b border-[var(--border)] bg-[var(--bg)]/70 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
-          <aside className="hidden border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 lg:block">
+        <div className="mx-auto grid max-w-[92rem] gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_19rem]">
+          <aside className="hidden self-start overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-2xl shadow-black/5 backdrop-blur-xl lg:block">
             <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
               note explorer
             </p>
@@ -542,8 +588,24 @@ export default function NoteForm({
             </div>
           </aside>
 
-          <section className="min-w-0 bg-[var(--bg)]">
-            <div className="border-b border-[var(--border)] bg-[var(--bg-secondary)]/30 px-5 py-5 sm:px-7">
+          <section className="min-w-0 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/78 shadow-2xl shadow-black/5 backdrop-blur-xl">
+            <div className="relative border-b border-[var(--border)] bg-[var(--bg-secondary)]/38 px-5 py-6 sm:px-7">
+              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
+              <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                  <FileCode size={12} className="text-[var(--accent)]" />
+                  {noteType}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                  <ShieldCheck size={12} className="text-[var(--accent)]" />
+                  {readinessLabel} · {readinessScore}%
+                </span>
+                {isPublished && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-[var(--accent)]">
+                    <Globe2 size={12} /> public
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 value={title}
@@ -559,7 +621,31 @@ export default function NoteForm({
                 <p className="mt-3 text-xs text-[var(--error)]">{titleError}</p>
               )}
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-5 grid gap-4 lg:hidden">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {noteTypes.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setNoteType(item.value)}
+                      className={`rounded-2xl border px-3 py-2 text-left transition-all ${
+                        noteType === item.value
+                          ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]"
+                          : "border-[var(--border)] bg-[var(--bg)]/50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      <span className="block text-xs font-semibold">
+                        {item.label}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-secondary)]">
+                        {item.hint}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/45 p-2">
                 {tags.map((tag) => (
                   <button
                     key={tag}
@@ -603,26 +689,107 @@ export default function NoteForm({
                 onChange={setContent}
                 placeholder="// start writing your note, snippet, runbook, or guide..."
               />
+              <div className="mt-5 grid gap-3 rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 xl:hidden">
+                <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+                  <Tags size={13} className="text-[var(--accent)]" /> metadata
+                </p>
+                {noteType === "snippet" && (
+                  <label className="grid gap-2 text-xs text-[var(--text-secondary)]">
+                    language
+                    <input
+                      value={language}
+                      onChange={(event) => setLanguage(event.target.value)}
+                      placeholder="tsx, py, sql..."
+                      className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    />
+                  </label>
+                )}
+                <label className="grid gap-2 text-xs text-[var(--text-secondary)]">
+                  source url
+                  <input
+                    value={sourceUrl}
+                    onChange={(event) => setSourceUrl(event.target.value)}
+                    placeholder="https://..."
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                  />
+                </label>
+              </div>
             </div>
           </section>
 
-          <aside className="hidden border-l border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 xl:block">
+          <aside className="hidden self-start overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-2xl shadow-black/5 backdrop-blur-xl xl:block">
             <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
               inspector
             </p>
-            <div className="space-y-3 text-xs">
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <p className="text-[var(--text-secondary)]">type</p>
-                <p className="mt-1 capitalize text-[var(--accent)]">
-                  {noteType}
+            <div className="space-y-3 text-xs text-[var(--text-secondary)]">
+              <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                    <Sparkles size={13} className="text-[var(--accent)]" />{" "}
+                    readiness
+                  </span>
+                  <span className="font-semibold text-[var(--accent)]">
+                    {readinessScore}%
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-secondary)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--accent)] transition-all"
+                    style={{ width: `${readinessScore}%` }}
+                  />
+                </div>
+                <p className="mt-3 font-semibold capitalize text-[var(--text-primary)]">
+                  {readinessLabel}
+                </p>
+                <p className="mt-1 leading-5">
+                  Add title, tags, structure, source, and language metadata to
+                  make this easier to reuse and publish.
                 </p>
               </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  {
+                    label: "words",
+                    value: wordCount,
+                    icon: <Type size={13} />,
+                  },
+                  {
+                    label: "read",
+                    value: `${readTime}m`,
+                    icon: <BookOpen size={13} />,
+                  },
+                  {
+                    label: "lines",
+                    value: lineCount,
+                    icon: <FileCode size={13} />,
+                  },
+                  {
+                    label: "code",
+                    value: codeBlockCount,
+                    icon: <Code2 size={13} />,
+                  },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3"
+                  >
+                    <div className="mb-2 text-[var(--accent)]">{stat.icon}</div>
+                    <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                      {stat.value}
+                    </p>
+                    <p className="uppercase tracking-[0.14em]">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+
               {noteType === "snippet" && (
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                   <label
-                    className="text-[var(--text-secondary)]"
+                    className="inline-flex items-center gap-2 text-[var(--text-secondary)]"
                     htmlFor="note-language"
                   >
+                    <Code2 size={13} className="text-[var(--accent)]" />
                     language
                   </label>
                   <input
@@ -634,11 +801,12 @@ export default function NoteForm({
                   />
                 </div>
               )}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                 <label
-                  className="text-[var(--text-secondary)]"
+                  className="inline-flex items-center gap-2 text-[var(--text-secondary)]"
                   htmlFor="source-url"
                 >
+                  <Link2 size={13} className="text-[var(--accent)]" />
                   source url
                 </label>
                 <input
@@ -649,22 +817,41 @@ export default function NoteForm({
                   className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-2 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 />
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <p className="text-[var(--text-secondary)]">status</p>
-                <p className="mt-1 text-[var(--accent)]">
-                  {statusCopy(saveStatus, settings.autoSave)}
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <p className="mb-3 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                  <Hash size={13} className="text-[var(--accent)]" /> outline
                 </p>
+                {outline.length > 0 ? (
+                  <div className="space-y-2">
+                    {outline.map((item, index) => (
+                      <p
+                        key={`${item.title}-${index}`}
+                        className="truncate text-[var(--text-primary)]"
+                        style={{ paddingLeft: `${(item.level - 1) * 10}px` }}
+                      >
+                        {"#".repeat(item.level)} {item.title}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="leading-5">
+                    Add headings to create a navigable outline.
+                  </p>
+                )}
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <p className="text-[var(--text-secondary)]">document</p>
-                <p className="mt-1">{wordCount} words</p>
-                <p>{readTime} min read</p>
-              </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <p className="text-[var(--text-secondary)]">visibility</p>
-                <p className="mt-1">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <p className="mb-2 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                  <Globe2 size={13} className="text-[var(--accent)]" />{" "}
+                  visibility
+                </p>
+                <p className="text-[var(--text-primary)]">
                   {isPublished ? "published" : "private"}
-                  {isCommunity ? " · community" : ""}
+                  {isCommunity ? " · explore" : ""}
+                </p>
+                <p className="mt-2 leading-5">
+                  {mode === "edit"
+                    ? "Use Share to publish, copy the link, or add it to Explore."
+                    : "Save first, then publish from the editor toolbar."}
                 </p>
               </div>
             </div>
@@ -676,10 +863,10 @@ export default function NoteForm({
         className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--accent)] text-[var(--bg)]"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-[11px] sm:px-6">
+        <div className="mx-auto flex h-8 max-w-[92rem] items-center justify-between px-4 text-[11px] sm:px-6">
           <span>
             {wordCount > 0
-              ? `${noteType} · ${wordCount} words · ${readTime} min`
+              ? `${noteType} · ${wordCount} words · ${characterCount} chars · ${readTime} min`
               : `${noteType} · start typing`}
           </span>
           <span>
