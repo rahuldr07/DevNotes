@@ -2,9 +2,13 @@
 
 import {
   AlertCircle,
+  ArrowRight,
   BookOpen,
+  Clock3,
+  Code2,
   Edit3,
   FileText,
+  Globe2,
   LayoutGrid,
   List,
   Pin,
@@ -271,6 +275,86 @@ function NoteCard({
   );
 }
 
+function notePreview(note: Note, length = 92) {
+  const plain = stripMarkdown(note.content).trim();
+  if (!plain) return "empty note";
+  return plain.length > length ? `${plain.slice(0, length)}...` : plain;
+}
+
+function CockpitNoteRow({
+  note,
+  eyebrow,
+  icon,
+}: {
+  note: Note;
+  eyebrow: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={`/dashboard/edit_note?id=${note.id}`}
+      className="group flex gap-3 rounded-2xl border border-transparent p-3 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:bg-[var(--bg)]/70"
+    >
+      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 text-[var(--accent)]">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+          {eyebrow}
+          <ArrowRight
+            size={12}
+            className="opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100"
+          />
+        </span>
+        <span className="mt-1 block truncate text-sm font-semibold text-[var(--text-primary)]">
+          {note.title || "untitled"}
+        </span>
+        <span className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
+          {notePreview(note)}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function CockpitPanel({
+  title,
+  subtitle,
+  actionHref,
+  actionLabel,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  actionHref?: string;
+  actionLabel?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-xl shadow-black/5 backdrop-blur-xl">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-primary)]">
+            {title}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            {subtitle}
+          </p>
+        </div>
+        {actionHref && actionLabel && (
+          <Link
+            href={actionHref}
+            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)] transition-colors hover:bg-[var(--bg)]"
+          >
+            {actionLabel}
+          </Link>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -460,6 +544,29 @@ export default function DashboardPage() {
     [availableTags.length, notes],
   );
 
+  const cockpitInsights = useMemo(() => {
+    const byUpdated = [...notes].sort(
+      (a, b) =>
+        new Date(b.updated_at ?? b.created_at).getTime() -
+        new Date(a.updated_at ?? a.created_at).getTime(),
+    );
+    const publishCandidates = byUpdated.filter(
+      (note) =>
+        !note.is_published &&
+        (stripMarkdown(note.content).length > 240 || note.tags.length >= 2),
+    );
+    const snippets = byUpdated.filter((note) => note.note_type === "snippet");
+
+    return {
+      pinned: byUpdated.filter((note) => note.is_pinned).slice(0, 3),
+      recent: byUpdated.slice(0, 3),
+      publishCandidates: publishCandidates.slice(0, 3),
+      snippets: snippets.slice(0, 3),
+      privateCount: notes.filter((note) => !note.is_published).length,
+      guideCount: notes.filter((note) => note.note_type === "guide").length,
+    };
+  }, [notes]);
+
   return (
     <>
       <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-8">
@@ -526,6 +633,130 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {!loading && notes.length > 0 && (
+        <section className="mb-8 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+          <CockpitPanel
+            title="today's cockpit"
+            subtitle="Jump back into active knowledge, pin important context, or turn polished notes into public reading."
+            actionHref="/dashboard/create_note"
+            actionLabel="capture"
+          >
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+                <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+                  {cockpitInsights.privateCount}
+                </p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  private drafts
+                </p>
+                <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+                  Keep rough thinking private until it becomes a reusable guide
+                  or publishable page.
+                </p>
+              </div>
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+                <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+                  {cockpitInsights.publishCandidates.length}
+                </p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  publish-ready
+                </p>
+                <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+                  Long or well-tagged private notes are surfaced as candidates
+                  for public publishing.
+                </p>
+              </div>
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+                <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+                  {cockpitInsights.guideCount}
+                </p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  guides
+                </p>
+                <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+                  Structure deeper explanations as guides so search, profiles,
+                  and discovery feel intentional.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {cockpitInsights.recent.slice(0, 2).map((note) => (
+                <CockpitNoteRow
+                  key={`recent-${note.id}`}
+                  note={note}
+                  eyebrow="recently touched"
+                  icon={<Clock3 size={15} />}
+                />
+              ))}
+            </div>
+          </CockpitPanel>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <CockpitPanel
+              title="priority pins"
+              subtitle="Pinned notes stay closest to your writing surface."
+            >
+              <div className="space-y-1">
+                {cockpitInsights.pinned.length > 0 ? (
+                  cockpitInsights.pinned.map((note) => (
+                    <CockpitNoteRow
+                      key={`pin-${note.id}`}
+                      note={note}
+                      eyebrow="pinned context"
+                      icon={<Pin size={15} />}
+                    />
+                  ))
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-xs leading-5 text-[var(--text-secondary)]">
+                    Pin notes from the library to build your active cockpit.
+                  </p>
+                )}
+              </div>
+            </CockpitPanel>
+
+            <CockpitPanel
+              title="reuse queue"
+              subtitle="Snippets and publish candidates that are ready to travel."
+              actionHref="/dashboard/snippets"
+              actionLabel="snippets"
+            >
+              <div className="space-y-1">
+                {[
+                  ...cockpitInsights.snippets,
+                  ...cockpitInsights.publishCandidates,
+                ]
+                  .slice(0, 3)
+                  .map((note) => (
+                    <CockpitNoteRow
+                      key={`reuse-${note.id}`}
+                      note={note}
+                      eyebrow={
+                        note.note_type === "snippet"
+                          ? "snippet"
+                          : "publish candidate"
+                      }
+                      icon={
+                        note.note_type === "snippet" ? (
+                          <Code2 size={15} />
+                        ) : (
+                          <Globe2 size={15} />
+                        )
+                      }
+                    />
+                  ))}
+                {cockpitInsights.snippets.length === 0 &&
+                  cockpitInsights.publishCandidates.length === 0 && (
+                    <p className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-xs leading-5 text-[var(--text-secondary)]">
+                      Add a snippet or tag a longer note to make the reuse queue
+                      useful.
+                    </p>
+                  )}
+              </div>
+            </CockpitPanel>
+          </div>
+        </section>
+      )}
 
       <div className="mb-6 flex flex-col gap-5 rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
