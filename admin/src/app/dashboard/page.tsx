@@ -7,6 +7,7 @@ import {
   Clock3,
   Code2,
   Edit3,
+  Eye,
   FileText,
   Globe2,
   LayoutGrid,
@@ -17,6 +18,7 @@ import {
   RefreshCw,
   Search,
   Sparkles,
+  Tags,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -45,14 +47,51 @@ import { getUserNotesPage } from "@/lib/note-api";
 import { stripMarkdown } from "@/lib/notes";
 import type { Note } from "@/types/notes";
 
-type SortKey = "newest" | "oldest" | "title";
+type SortKey = "updated" | "newest" | "oldest" | "reading" | "title";
 type ViewMode = "grid" | "list";
+type LibraryFilter =
+  | "all"
+  | "pinned"
+  | "private"
+  | "public"
+  | "snippets"
+  | "drafts";
 
 function formatDate(note: Note) {
   return new Date(note.updated_at ?? note.created_at).toLocaleDateString(
     "en-US",
     { month: "short", day: "numeric", year: "numeric" },
   );
+}
+
+function getNoteTimestamp(note: Note, field: "created" | "updated") {
+  const value =
+    field === "updated"
+      ? (note.updated_at ?? note.created_at)
+      : note.created_at;
+  return new Date(value).getTime();
+}
+
+function getReadingMinutes(note: Note) {
+  const words = stripMarkdown(note.content).split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 220));
+}
+
+function getNoteKind(note: Note) {
+  return note.note_type ?? "note";
+}
+
+function noteMatchesLibraryFilter(note: Note, filter: LibraryFilter) {
+  if (filter === "all") return true;
+  if (filter === "pinned") return Boolean(note.is_pinned);
+  if (filter === "private") return !note.is_published;
+  if (filter === "public") return Boolean(note.is_published);
+  if (filter === "snippets") return note.note_type === "snippet";
+  if (filter === "drafts") {
+    const plainLength = stripMarkdown(note.content).length;
+    return !note.is_published && (plainLength < 240 || note.tags.length === 0);
+  }
+  return true;
 }
 
 function appendUniqueNotes(current: Note[], incoming: Note[]) {
@@ -159,12 +198,14 @@ function NoteCard({
   view,
   onDelete,
   onPin,
+  onSelect,
   observeRef,
 }: {
   note: Note;
   view: ViewMode;
   onDelete: (id: number) => void;
   onPin: (id: number) => void;
+  onSelect?: (id: number) => void;
   observeRef?: Ref<HTMLElement>;
 }) {
   const router = useRouter();
@@ -186,9 +227,14 @@ function NoteCard({
     },
     onContextMenu: (event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault();
+      onSelect?.(note.id);
       setShowActions(true);
     },
-    onMouseEnter: () => setShowActions(true),
+    onMouseEnter: () => {
+      onSelect?.(note.id);
+      setShowActions(true);
+    },
+    onFocus: () => onSelect?.(note.id),
     onMouseLeave: () => setShowActions(false),
   };
 
@@ -355,15 +401,106 @@ function CockpitPanel({
   );
 }
 
+function SelectedNotePreview({ note }: { note: Note | null }) {
+  if (!note) {
+    return (
+      <aside className="sticky top-24 hidden self-start rounded-[1.75rem] border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
+        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] text-[var(--accent)]">
+          <Eye size={18} />
+        </div>
+        <p className="font-semibold text-[var(--text-primary)]">preview rail</p>
+        <p className="mt-2 leading-6">
+          Select a note from the library to inspect metadata, tags, reading
+          time, and publish status before opening the editor.
+        </p>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="sticky top-24 hidden self-start overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-2xl shadow-black/5 backdrop-blur-xl xl:block">
+      <div className="border-b border-[var(--border)] p-5">
+        <div className="mb-3 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+          <span className="inline-flex items-center gap-2">
+            <Eye size={13} className="text-[var(--accent)]" /> selected note
+          </span>
+          <span>{getNoteKind(note)}</span>
+        </div>
+        <h3 className="line-clamp-3 text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+          {note.title || "untitled"}
+        </h3>
+        <p className="mt-3 line-clamp-5 text-sm leading-6 text-[var(--text-secondary)]">
+          {notePreview(note, 320)}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-5 text-xs">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+          <p className="text-[var(--text-secondary)]">reading</p>
+          <p className="mt-1 font-semibold text-[var(--text-primary)]">
+            {getReadingMinutes(note)} min
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+          <p className="text-[var(--text-secondary)]">visibility</p>
+          <p className="mt-1 font-semibold text-[var(--text-primary)]">
+            {note.is_published ? "public" : "private"}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+          <p className="text-[var(--text-secondary)]">updated</p>
+          <p className="mt-1 font-semibold text-[var(--text-primary)]">
+            {formatDate(note)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+          <p className="text-[var(--text-secondary)]">tags</p>
+          <p className="mt-1 font-semibold text-[var(--text-primary)]">
+            {note.tags.length}
+          </p>
+        </div>
+      </div>
+
+      {note.tags.length > 0 && (
+        <div className="border-t border-[var(--border)] px-5 py-4">
+          <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+            <Tags size={12} className="text-[var(--accent)]" /> retrieval tags
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {note.tags.slice(0, 8).map((tag) => (
+              <span
+                key={`${note.id}-preview-${tag}`}
+                className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-1 text-[11px] text-[var(--accent)]"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="border-t border-[var(--border)] p-5">
+        <Link href={`/dashboard/edit_note?id=${note.id}`}>
+          <Button className="w-full justify-center gap-2 rounded-2xl bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+            open editor <ArrowRight size={14} />
+          </Button>
+        </Link>
+      </div>
+    </aside>
+  );
+}
+
 export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [sort, setSort] = useState<SortKey>("newest");
+  const [sort, setSort] = useState<SortKey>("updated");
   const [view, setView] = useState<ViewMode>("grid");
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -486,15 +623,17 @@ export default function DashboardPage() {
 
   const sortedNotes = useMemo(() => {
     const sorted = [...notes].sort((a, b) => {
+      if (sort === "updated") {
+        return getNoteTimestamp(b, "updated") - getNoteTimestamp(a, "updated");
+      }
       if (sort === "newest") {
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
+        return getNoteTimestamp(b, "created") - getNoteTimestamp(a, "created");
       }
       if (sort === "oldest") {
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        return getNoteTimestamp(a, "created") - getNoteTimestamp(b, "created");
+      }
+      if (sort === "reading") {
+        return getReadingMinutes(b) - getReadingMinutes(a);
       }
       return (a.title || "").localeCompare(b.title || "");
     });
@@ -504,9 +643,19 @@ export default function DashboardPage() {
       ...sorted.filter((note) => !note.is_pinned),
     ];
 
-    if (!selectedTag) return pinnedFirst;
-    return pinnedFirst.filter((note) => note.tags.includes(selectedTag));
-  }, [notes, selectedTag, sort]);
+    return pinnedFirst.filter(
+      (note) =>
+        noteMatchesLibraryFilter(note, libraryFilter) &&
+        (!selectedTag || note.tags.includes(selectedTag)),
+    );
+  }, [libraryFilter, notes, selectedTag, sort]);
+
+  const selectedNote = useMemo(() => {
+    if (sortedNotes.length === 0) return null;
+    return (
+      sortedNotes.find((note) => note.id === selectedNoteId) ?? sortedNotes[0]
+    );
+  }, [selectedNoteId, sortedNotes]);
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>();
@@ -517,6 +666,39 @@ export default function DashboardPage() {
     });
     return Array.from(tags).sort((a, b) => a.localeCompare(b));
   }, [notes]);
+
+  const libraryFilters = useMemo(
+    () => [
+      { key: "all" as const, label: "all", count: notes.length },
+      {
+        key: "pinned" as const,
+        label: "pinned",
+        count: notes.filter((note) => note.is_pinned).length,
+      },
+      {
+        key: "private" as const,
+        label: "private",
+        count: notes.filter((note) => !note.is_published).length,
+      },
+      {
+        key: "public" as const,
+        label: "public",
+        count: notes.filter((note) => note.is_published).length,
+      },
+      {
+        key: "snippets" as const,
+        label: "snippets",
+        count: notes.filter((note) => note.note_type === "snippet").length,
+      },
+      {
+        key: "drafts" as const,
+        label: "drafts",
+        count: notes.filter((note) => noteMatchesLibraryFilter(note, "drafts"))
+          .length,
+      },
+    ],
+    [notes],
+  );
 
   const cockpitStats = useMemo(
     () => [
@@ -793,8 +975,10 @@ export default function DashboardPage() {
               className="h-9 rounded-2xl border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
               aria-label="Sort notes"
             >
-              <option value="newest">newest</option>
+              <option value="updated">updated</option>
+              <option value="newest">created</option>
               <option value="oldest">oldest</option>
+              <option value="reading">reading</option>
               <option value="title">a-z</option>
             </select>
             <div className="flex items-center gap-1">
@@ -831,6 +1015,41 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {!loading && notes.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {libraryFilters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => {
+                  setLibraryFilter(filter.key);
+                  setSelectedNoteId(null);
+                }}
+                className="group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-all hover:-translate-y-0.5 hover:text-[var(--accent)]"
+                style={{
+                  color:
+                    libraryFilter === filter.key
+                      ? "var(--accent)"
+                      : "var(--text-secondary)",
+                  borderColor:
+                    libraryFilter === filter.key
+                      ? "var(--accent)"
+                      : "var(--border)",
+                  backgroundColor:
+                    libraryFilter === filter.key
+                      ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                      : "transparent",
+                }}
+              >
+                <span>{filter.label}</span>
+                <span className="rounded-full bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                  {filter.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {!loading && availableTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -935,38 +1154,49 @@ export default function DashboardPage() {
       {!loading && notes.length > 0 && sortedNotes.length === 0 && !error && (
         <div className="py-16 text-center">
           <p className="text-base font-medium text-[var(--text-primary)]">
-            no notes for #{selectedTag}
+            no notes match this library view
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
+            Try another status filter or clear the tag filter to widen the
+            cockpit surface.
           </p>
           <Button
             variant="ghost"
-            onClick={() => setSelectedTag(null)}
+            onClick={() => {
+              setSelectedTag(null);
+              setLibraryFilter("all");
+            }}
             className="mt-3 text-[var(--accent)]"
           >
-            clear filter
+            clear filters
           </Button>
         </div>
       )}
 
       {!loading && sortedNotes.length > 0 && (
-        <div
-          className={
-            view === "grid"
-              ? "columns-1 gap-4 md:columns-2 lg:columns-3"
-              : "space-y-1"
-          }
-        >
-          {sortedNotes.map((note, index) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              view={view}
-              onDelete={handleDelete}
-              onPin={handlePin}
-              observeRef={
-                index === sortedNotes.length - 1 ? lastNoteRef : undefined
-              }
-            />
-          ))}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div
+            className={
+              view === "grid"
+                ? "columns-1 gap-4 md:columns-2 2xl:columns-3"
+                : "space-y-1"
+            }
+          >
+            {sortedNotes.map((note, index) => (
+              <NoteCard
+                key={note.id}
+                note={note}
+                view={view}
+                onDelete={handleDelete}
+                onPin={handlePin}
+                onSelect={setSelectedNoteId}
+                observeRef={
+                  index === sortedNotes.length - 1 ? lastNoteRef : undefined
+                }
+              />
+            ))}
+          </div>
+          <SelectedNotePreview note={selectedNote} />
         </div>
       )}
 
