@@ -534,60 +534,7 @@ export default function NoteForm({
           </div>
         </div>
 
-        <div className="mx-auto grid max-w-[92rem] gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)_19rem]">
-          <aside className="hidden self-start overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-2xl shadow-black/5 backdrop-blur-xl lg:block">
-            <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              note explorer
-            </p>
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-              <div className="mb-2 flex items-center gap-2 text-xs text-[var(--accent)]">
-                <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-                workspace
-              </div>
-              <div className="space-y-1 pl-3 text-xs text-[var(--text-secondary)]">
-                <p>notes/</p>
-                <p className="truncate text-[var(--text-primary)]">
-                  └─ {title.trim() || "untitled"}
-                  {noteType === "snippet" ? ".snippet" : ".md"}
-                </p>
-                <p>metadata.json</p>
-              </div>
-            </div>
-            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-xs text-[var(--text-secondary)]">
-              <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em]">
-                <Code2 size={13} className="text-[var(--accent)]" />
-                document type
-              </div>
-              <div className="grid gap-1">
-                {noteTypes.map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setNoteType(item.value)}
-                    className={`rounded-lg border px-2 py-2 text-left transition-colors ${
-                      noteType === item.value
-                        ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]"
-                        : "border-[var(--border)] bg-[var(--bg-secondary)]/35 hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    <span className="block font-medium">{item.label}</span>
-                    <span className="text-[10px] text-[var(--text-secondary)]">
-                      {item.hint}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-3 text-xs text-[var(--text-secondary)]">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.18em]">
-                shortcuts
-              </p>
-              <p>Ctrl/Cmd + S save</p>
-              <p>Ctrl/Cmd + Shift + P publish</p>
-              <p>Esc back to library</p>
-            </div>
-          </aside>
-
+        <div className="mx-auto grid max-w-[92rem] gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
           <section className="min-w-0 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/78 shadow-2xl shadow-black/5 backdrop-blur-xl">
             <div className="relative border-b border-[var(--border)] bg-[var(--bg-secondary)]/38 px-5 py-6 sm:px-7">
               <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
@@ -621,7 +568,7 @@ export default function NoteForm({
                 <p className="mt-3 text-xs text-[var(--error)]">{titleError}</p>
               )}
 
-              <div className="mt-5 grid gap-4 lg:hidden">
+              <div className="mt-5 grid gap-4">
                 <div className="grid gap-2 sm:grid-cols-2">
                   {noteTypes.map((item) => (
                     <button
