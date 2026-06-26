@@ -393,6 +393,56 @@ def get_public_note_response(db: Session, note: Note) -> dict:
     return _public_response(note, get_like_count(db, note.id))
 
 
+def get_related_public_notes(
+    db: Session,
+    note: Note,
+    limit: int = 3,
+) -> list[dict]:
+    """Returns public notes related by author and tags.
+
+    Same-author notes are most useful for public reading continuity. Shared tags
+    rank above generic recency so articles feel intentionally connected.
+    """
+    candidates = (
+        db.query(Note)
+        .filter(
+            Note.id != note.id,
+            Note.is_published == True,
+            Note.share_uuid.isnot(None),
+        )
+        .order_by(Note.id.desc())
+        .limit(80)
+        .all()
+    )
+    source_tags = set(note.tags or [])
+
+    def score(candidate: Note) -> tuple[int, int]:
+        tag_overlap = len(source_tags.intersection(candidate.tags or []))
+        same_author = 1 if candidate.user_id == note.user_id else 0
+        same_type = 1 if candidate.note_type == note.note_type else 0
+        return (same_author * 20 + tag_overlap * 8 + same_type * 2, candidate.id)
+
+    ranked = sorted(candidates, key=score, reverse=True)[:limit]
+    return [
+        {
+            "title": candidate.title,
+            "content": candidate.content,
+            "tags": candidate.tags,
+            "note_type": candidate.note_type,
+            "language": candidate.language,
+            "source_url": candidate.source_url,
+            "share_uuid": candidate.share_uuid,
+            "is_published": candidate.is_published,
+            "is_community": candidate.is_community,
+            "like_count": get_like_count(db, candidate.id),
+            "view_count": candidate.view_count or 0,
+            "created_at": candidate.created_at,
+            "updated_at": candidate.updated_at,
+        }
+        for candidate in ranked
+    ]
+
+
 def get_public_notes_for_user(db: Session, user_id: int) -> list[dict]:
     like_count = func.count(NoteLike.id).label("like_count")
     rows = (

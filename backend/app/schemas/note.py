@@ -103,6 +103,24 @@ class PublicNoteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RelatedPublicNoteResponse(BaseModel):
+    title: str
+    content: str
+    tags: list[str] = Field(default_factory=list)
+    note_type: str = "note"
+    language: str | None = None
+    source_url: str | None = None
+    share_uuid: str
+    is_published: bool = False
+    is_community: bool = False
+    like_count: int = 0
+    view_count: int = 0
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PaginatedNoteResponse(BaseModel):
     data: list[NoteResponse]
     next_cursor: int | None = None

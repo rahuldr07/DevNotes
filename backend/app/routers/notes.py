@@ -29,6 +29,7 @@ from app.schemas.note import (
     NoteResponse,
     NoteUpdate,
     PublicNoteResponse,
+    RelatedPublicNoteResponse,
 )
 from app.services import note_service
 
@@ -206,3 +207,20 @@ def pin_note(id: int, user=Depends(get_current_user), db: Session = Depends(get_
 @router.get("/public/{share_uuid}", response_model=PublicNoteResponse, status_code=200)
 def get_public_note(share_uuid: str, db: Session = Depends(get_db)):
     return note_service.get_public_note(db, share_uuid=share_uuid)
+
+
+@router.get(
+    "/public/{share_uuid}/related",
+    response_model=list[RelatedPublicNoteResponse],
+    status_code=200,
+)
+def get_related_public_notes(
+    share_uuid: str,
+    limit: int = 3,
+    db: Session = Depends(get_db),
+):
+    return note_service.get_related_public_notes(
+        db,
+        share_uuid=share_uuid,
+        limit=_clamp_limit(limit),
+    )

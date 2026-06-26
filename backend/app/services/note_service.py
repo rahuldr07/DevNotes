@@ -318,6 +318,13 @@ def get_public_note(db: Session, share_uuid: str) -> Note:
     note.view_count = (note.view_count or 0) + 1
     return note_repo.get_public_note_response(db, note)
 
+
+def get_related_public_notes(db: Session, share_uuid: str, limit: int = 3) -> list[dict]:
+    note = note_repo.get_by_share_uuid(db, share_uuid=share_uuid)
+    if not note or not note.is_published:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return note_repo.get_related_public_notes(db, note=note, limit=limit)
+
 def get_community_notes(
     db: Session,
     cursor: int | None = None,

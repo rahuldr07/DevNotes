@@ -4,6 +4,7 @@ import {
   ExternalLink,
   Eye,
   Heart,
+  Library,
   Share2,
   Sparkles,
   UserCircle,
@@ -28,6 +29,22 @@ async function getPublicNote(shareUuid: string): Promise<Note | null> {
     return await res.json();
   } catch {
     return null;
+  }
+}
+
+async function getRelatedNotes(shareUuid: string): Promise<Note[]> {
+  try {
+    const res = await backendFetch(
+      `/notes/public/${shareUuid}/related?limit=3`,
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
   }
 }
 
@@ -71,7 +88,10 @@ export default async function PublicNotePage({
   params: Promise<{ share_uuid: string }>;
 }) {
   const { share_uuid } = await params;
-  const note = await getPublicNote(share_uuid);
+  const [note, relatedNotes] = await Promise.all([
+    getPublicNote(share_uuid),
+    getRelatedNotes(share_uuid),
+  ]);
 
   if (!note) notFound();
 
@@ -178,6 +198,55 @@ export default async function PublicNotePage({
           <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/70 p-4 backdrop-blur-xl sm:p-7 lg:p-9">
             <ReadOnlyEditor content={note.content} />
           </section>
+
+          {relatedNotes.length > 0 && (
+            <section className="mt-8 rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl sm:p-6">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+                    <Library size={14} /> related reading
+                  </div>
+                  <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                    Continue through connected public notes and snippets.
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                {relatedNotes.map((related) => (
+                  <Link
+                    key={related.share_uuid}
+                    href={`/s/${related.share_uuid}`}
+                    className="group rounded-3xl border border-[var(--border)] bg-[var(--bg)]/60 p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/60 hover:shadow-xl hover:shadow-black/10"
+                  >
+                    <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                      <span>{noteKindLabel(related.note_type)}</span>
+                      <span>•</span>
+                      <span>{readingTimeMinutes(related.content)} min</span>
+                    </div>
+                    <h2 className="line-clamp-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)]">
+                      {related.title || "untitled"}
+                    </h2>
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
+                      {stripMarkdown(related.content) ||
+                        "Read this related note."}
+                    </p>
+                    {related.tags.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {related.tags.slice(0, 2).map((tag) => (
+                          <span
+                            key={`${related.share_uuid}-${tag}`}
+                            className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--accent)]"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </article>
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
