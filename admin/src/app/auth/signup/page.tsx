@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { saveRefreshToken, saveToken } from "@/lib/auth";
+import { normalizeErrorMessage } from "@/lib/errors";
 import { getCurrentUserAfterAuth } from "@/lib/session";
 import { useAuthStore } from "@/stores/useAuthStore";
 
@@ -112,10 +113,10 @@ export default function SignUpPage() {
         setUser(user);
         router.push("/dashboard");
       } catch (err: unknown) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Signup failed. Please try again.";
+        const message = normalizeErrorMessage(
+          err,
+          "Signup failed. Please try again.",
+        );
         setServerError(message);
       } finally {
         setLoading(false);

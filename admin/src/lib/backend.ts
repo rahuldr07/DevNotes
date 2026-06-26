@@ -28,6 +28,14 @@
  */
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 
+function normalizeHeaders(headers?: HeadersInit) {
+  const normalized = new Headers(headers);
+  if (!normalized.has("content-type")) {
+    normalized.set("content-type", "application/json");
+  }
+  return normalized;
+}
+
 /**
  * Forwards an HTTP request to the FastAPI backend.
  *
@@ -55,11 +63,6 @@ export async function backendFetch(
 ): Promise<Response> {
   return fetch(`${BACKEND_URL}${endpoint}`, {
     ...options,
-    headers: {
-      // Default to JSON — FastAPI expects this
-      "Content-Type": "application/json",
-      // Caller's headers (e.g., Authorization) override/merge with defaults
-      ...options.headers,
-    },
+    headers: normalizeHeaders(options.headers),
   });
 }

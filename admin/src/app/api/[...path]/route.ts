@@ -15,10 +15,29 @@ const HOP_BY_HOP_HEADERS = new Set([
 
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ACCESS_COOKIE = "auth_token";
+const REFRESH_COOKIE = "devnotes_refresh_token";
+
+interface TokenPayload {
+  access_token?: string;
+  refresh_token?: string;
+  token_type?: string;
+}
 
 function buildBackendEndpoint(request: NextRequest, path: string[]) {
   const endpoint = `/${path.map(encodeURIComponent).join("/")}`;
   return `${endpoint}${request.nextUrl.search}`;
+}
+
+function readCookieFromHeader(request: NextRequest, name: string) {
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) return undefined;
+
+  const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
+  const prefix = `${name}=`;
+  const match = cookies.find((cookie) => cookie.startsWith(prefix));
+  if (!match) return undefined;
+
+  return decodeURIComponent(match.slice(prefix.length));
 }
 
 function buildForwardHeaders(request: NextRequest) {
@@ -41,7 +60,9 @@ function buildForwardHeaders(request: NextRequest) {
   }
 
   if (!headers.has("authorization")) {
-    const token = request.cookies.get(ACCESS_COOKIE)?.value;
+    const token =
+      request.cookies.get(ACCESS_COOKIE)?.value ??
+      readCookieFromHeader(request, ACCESS_COOKIE);
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
     }
@@ -62,6 +83,50 @@ function buildResponseHeaders(response: Response) {
   });
 
   return headers;
+}
+
+function isTokenEndpoint(endpoint: string) {
+  const path = endpoint.split("?")[0];
+  return path === "/auth/login" || path === "/auth/refresh";
+}
+
+function isLogoutEndpoint(endpoint: string) {
+  return endpoint.split("?")[0] === "/auth/logout";
+}
+
+function cookieSecure(request: NextRequest) {
+  return request.nextUrl.protocol === "https:";
+}
+
+function applyAuthCookies(
+  request: NextRequest,
+  response: NextResponse,
+  tokens: TokenPayload,
+) {
+  if (tokens.access_token) {
+    response.cookies.set(ACCESS_COOKIE, tokens.access_token, {
+      httpOnly: false,
+      secure: cookieSecure(request),
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 30,
+    });
+  }
+
+  if (tokens.refresh_token) {
+    response.cookies.set(REFRESH_COOKIE, tokens.refresh_token, {
+      httpOnly: true,
+      secure: cookieSecure(request),
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  }
+}
+
+function clearAuthCookies(response: NextResponse) {
+  response.cookies.delete(ACCESS_COOKIE);
+  response.cookies.delete(REFRESH_COOKIE);
 }
 
 async function handler(
@@ -87,10 +152,33 @@ async function handler(
     const responseHeaders = buildResponseHeaders(response);
 
     if (response.status === 204 || response.status === 304) {
-      return new NextResponse(null, {
+      const nextResponse = new NextResponse(null, {
         status: response.status,
         headers: responseHeaders,
       });
+      if (isLogoutEndpoint(endpoint)) clearAuthCookies(nextResponse);
+      return nextResponse;
+    }
+
+    if (response.ok && isTokenEndpoint(endpoint)) {
+      const body = await response.text();
+      const nextResponse = new NextResponse(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+
+      try {
+        applyAuthCookies(
+          request,
+          nextResponse,
+          JSON.parse(body) as TokenPayload,
+        );
+      } catch {
+        // Keep the original token response intact even if cookie hydration fails.
+      }
+
+      return nextResponse;
     }
 
     return new NextResponse(response.body, {
