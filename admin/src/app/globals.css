@@ -57,6 +57,35 @@ html {
     color 0.18s ease;
 }
 
+body {
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+}
+
+h1,
+h2,
+h3,
+.uppercase,
+.font-display {
+  font-family:
+    var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: -0.055em;
+}
+
+code,
+pre,
+kbd,
+samp,
+.editor-font,
+.workbench-label {
+  font-family:
+    var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 /* ─── Auth page background animations ───────────────────────────────────── */
 @keyframes auth-orb-float {
   0%,
