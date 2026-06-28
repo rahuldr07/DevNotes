@@ -804,26 +804,30 @@ export default function NoteForm({
             </div>
           </aside>
         </div>
-      </form>
 
-      <div
-        className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--accent)] text-[var(--bg)]"
-        style={{ borderTop: "1px solid var(--border)" }}
-      >
-        <div className="mx-auto flex h-8 max-w-[92rem] items-center justify-between px-4 text-[11px] sm:px-6">
+        <div className="mx-auto mt-4 flex max-w-[92rem] flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-4 py-3 text-xs text-[var(--text-secondary)] shadow-lg shadow-black/5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
           <span>
             {wordCount > 0
               ? `${noteType} · ${wordCount} words · ${characterCount} chars · ${readTime} min`
               : `${noteType} · start typing`}
           </span>
-          <span>
+          <span className="inline-flex items-center gap-2">
+            {saveStatus === "saving" ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : saveStatus === "saved" ? (
+              <Check size={12} className="text-[var(--success)]" />
+            ) : saveStatus === "error" ? (
+              <X size={12} className="text-[var(--error)]" />
+            ) : (
+              <Clock3 size={12} />
+            )}
             {lastSavedAt
               ? `saved ${lastSavedAt}`
               : statusCopy(saveStatus, settings.autoSave)}
           </span>
         </div>
-      </div>
-      <div className="h-14" />
+      </form>
+
       {mode === "edit" && noteId && (
         <VersionHistoryDrawer
           open={historyOpen}

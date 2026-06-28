@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  Bot,
   Code2,
   Compass,
-  Files,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -66,13 +64,6 @@ const navItems = [
     icon: Settings,
     matcher: (pathname: string) => pathname.startsWith("/dashboard/settings"),
   },
-];
-
-const activityItems = [
-  { label: "Explorer", icon: Files, active: true },
-  { label: "Search", icon: Search, active: false },
-  { label: "AI", icon: Bot, active: false },
-  { label: "Runbook", icon: LayoutDashboard, active: false },
 ];
 
 export default function DashboardLayout({
@@ -197,37 +188,7 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="relative grid min-h-screen lg:grid-cols-[3.5rem_17rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[var(--border)] bg-[var(--bg-secondary)]/75 py-3 backdrop-blur-xl lg:flex lg:flex-col lg:items-center">
-          <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--bg)] shadow-lg shadow-black/10">
-            <LayoutDashboard size={17} />
-          </div>
-          <nav className="flex flex-1 flex-col items-center gap-2">
-            {activityItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.label === "Search" ? openSearch : undefined}
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
-                    item.active
-                      ? "bg-[var(--bg)] text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg)]/70 hover:text-[var(--text-primary)]"
-                  }`}
-                  title={item.label}
-                  aria-label={item.label}
-                >
-                  {item.active && (
-                    <span className="absolute -left-2 h-5 w-1 rounded-r-full bg-[var(--accent)]" />
-                  )}
-                  <Icon size={18} />
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
-
+      <div className="relative grid min-h-screen lg:grid-cols-[17rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-[var(--border)] bg-[var(--bg)]/80 p-4 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
@@ -278,8 +239,8 @@ export default function DashboardLayout({
               next up
             </div>
             <p className="text-sm leading-6 text-[var(--text-primary)]">
-              AI semantic search, snippets, and beautiful public publishing are
-              staged after this Cockpit foundation.
+              Snippets, Explore publishing, and profiles are live. Next focus:
+              faster search, AI retrieval, and cleaner review workflows.
             </p>
           </div>
 
