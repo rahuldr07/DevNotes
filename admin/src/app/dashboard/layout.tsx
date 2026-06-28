@@ -197,21 +197,21 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="relative grid h-screen min-h-0 lg:grid-cols-[17rem_minmax(0,1fr)]">
-        <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/80 p-4 backdrop-blur-xl lg:flex lg:flex-col">
+      <div className="relative grid h-screen min-h-0 lg:grid-cols-[15.5rem_minmax(0,1fr)]">
+        <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/72 p-3 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
-            className="group mb-6 flex items-center gap-3"
+            className="group mb-5 flex items-center gap-3"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-lg shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-[0.22em] text-[var(--text-primary)] uppercase">
+              <p className="type-logo text-sm text-[var(--text-primary)]">
                 DevNotes
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
-                knowledge workspace
+                notes cockpit
               </p>
             </div>
           </Link>
@@ -242,18 +242,34 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="mt-5 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
-              <Sparkles size={14} />
-              next up
+          <div className="relative mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3">
+            <div className="mb-3 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+              <span className="inline-flex items-center gap-2 text-[var(--accent)]">
+                <Sparkles size={13} /> Focus
+              </span>
+              <span>live</span>
             </div>
-            <p className="text-xs leading-5 text-[var(--text-primary)]">
-              Snippets, Explore publishing, and profiles are live. Next focus:
-              faster search, faster retrieval, and cleaner review workflows.
-            </p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { id: "a", height: 18 },
+                { id: "b", height: 28 },
+                { id: "c", height: 14 },
+                { id: "d", height: 34 },
+                { id: "e", height: 22 },
+                { id: "f", height: 30 },
+                { id: "g", height: 16 },
+                { id: "h", height: 26 },
+              ].map((bar) => (
+                <span
+                  key={bar.id}
+                  className="rounded-full bg-[var(--accent)]/55"
+                  style={{ height: bar.height }}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="mt-auto space-y-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3">
+          <div className="mt-auto space-y-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-3">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={16} />
@@ -315,7 +331,7 @@ export default function DashboardLayout({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-col">
-          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/86 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-8">
+          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/82 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-7">
             <div className="flex items-center justify-between gap-4">
               <Link
                 href="/dashboard"
@@ -336,7 +352,7 @@ export default function DashboardLayout({
               >
                 <Search size={15} />
                 <span className="min-w-0 flex-1 truncate">
-                  Search notes, snippets, tags, or deep search...
+                  Search workspace
                 </span>
                 <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   ⌘K
@@ -392,9 +408,9 @@ export default function DashboardLayout({
 
           <main
             ref={mainRef}
-            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-6"
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-7 lg:py-6"
           >
-            <div className="mx-auto max-w-7xl">{children}</div>
+            <div className="mx-auto max-w-6xl">{children}</div>
           </main>
 
           <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">

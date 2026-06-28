@@ -245,9 +245,9 @@ export default function SnippetsPage() {
   );
 
   return (
-    <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
           <div>
             <p className="type-eyebrow mb-3 text-[var(--accent)]">Snippets</p>
             <h1 className="type-hero max-w-3xl text-[var(--text-primary)]">
@@ -257,11 +257,11 @@ export default function SnippetsPage() {
               Save reusable code blocks and commands for fast recall.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/35 p-2">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="border-l border-[var(--border)] bg-[var(--bg)]/35 p-4"
+                className="rounded-xl border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)]">
                   {loading ? "—" : stat.value}
@@ -302,7 +302,7 @@ export default function SnippetsPage() {
         />
       </section>
 
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl">
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -321,7 +321,7 @@ export default function SnippetsPage() {
           <button
             type="button"
             onClick={() => setSelectedLanguage(ALL_LANGUAGES)}
-            className="rounded-md border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
+            className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
             style={{
               color:
                 selectedLanguage === ALL_LANGUAGES

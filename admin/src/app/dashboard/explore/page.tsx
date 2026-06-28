@@ -522,8 +522,8 @@ export default function ExplorePage() {
 
   return (
     <>
-      <section className="mb-8 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 shadow-sm shadow-black/5">
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+      <section className="mb-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
           <div className="space-y-6">
             <div>
               <p className="type-eyebrow mb-3 text-[var(--accent)]">Explore</p>
@@ -584,11 +584,11 @@ export default function ExplorePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 self-end">
+          <div className="grid grid-cols-2 gap-2 self-end rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)]/35 p-2">
             {exploreStats.map((stat) => (
               <div
                 key={stat.label}
-                className="border-l border-[var(--border)] bg-[var(--bg-primary)]/35 p-4"
+                className="rounded-xl border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
               >
                 <div className="type-number text-3xl text-[var(--text-primary)]">
                   {stat.value}
@@ -602,7 +602,7 @@ export default function ExplorePage() {
         </div>
       </section>
 
-      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex items-center gap-2 px-2 text-xs text-[var(--text-secondary)]">
           <Flame size={15} className="text-[var(--accent)]" />
           {selectedTopic ? `Topic: #${selectedTopic}` : "Trending now"}

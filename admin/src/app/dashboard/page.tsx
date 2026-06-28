@@ -750,19 +750,21 @@ export default function DashboardPage() {
 
   return (
     <>
-      <section className="relative mb-8 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]">
+      <section className="relative mb-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
+        <div className="pointer-events-none absolute right-4 top-4 h-20 w-20 rounded-full border border-[var(--accent)]/20" />
+        <div className="pointer-events-none absolute right-10 top-10 h-2 w-2 rounded-full bg-[var(--accent)]/70" />
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
           <div className="min-w-0">
             <p className="type-eyebrow mb-3 text-[var(--accent)]">Workspace</p>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-              Your notes, snippets, and publishing flow in one quiet cockpit.
+            <p className="mt-3 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
+              Notes, snippets, publishing.
             </p>
             <QuickCapture
               onCreated={(note) => {
                 setNotes((prev) => [note, ...prev]);
               }}
             />
-            <div className="mt-6 flex flex-wrap items-center gap-2">
+            <div className="mt-5 flex flex-wrap items-center gap-2">
               <Link href="/dashboard/create_note">
                 <Button className="gap-2 rounded-lg bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                   <Plus size={15} />
@@ -783,16 +785,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 self-start">
+          <div className="grid grid-cols-2 gap-2 self-start rounded-2xl border border-[var(--border)] bg-[var(--bg)]/35 p-2">
             {workspaceStats.map((stat) => (
               <div
                 key={stat.label}
-                className="border-l border-[var(--border)] bg-[var(--bg)]/35 p-4 transition-colors hover:border-[var(--accent)]/50"
+                className="rounded-xl border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3 transition-colors hover:border-[var(--accent)]/50"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
                   {loading ? "—" : stat.value}
                 </p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   {stat.label}
                 </p>
                 <p className="mt-2 text-xs text-[var(--text-secondary)]">
@@ -808,12 +810,12 @@ export default function DashboardPage() {
         <section className="mb-8 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
           <WorkspacePanel
             title="today's workspace"
-            subtitle="Jump back into active knowledge, pin important context, or turn polished notes into public reading."
+            subtitle="Active context and publish cues."
             actionHref="/dashboard/create_note"
             actionLabel="capture"
           >
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.privateCount}
                 </p>
@@ -824,7 +826,7 @@ export default function DashboardPage() {
                   <div className="h-full w-3/4 rounded-full bg-[var(--accent)]/70" />
                 </div>
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.publishCandidates.length}
                 </p>
@@ -844,7 +846,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.guideCount}
                 </p>
@@ -943,7 +945,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <div className="mb-6 flex flex-col gap-5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -1029,7 +1031,7 @@ export default function DashboardPage() {
                   setLibraryFilter(filter.key);
                   setSelectedNoteId(null);
                 }}
-                className="group inline-flex items-center gap-2 rounded-md border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
+                className="group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
                 style={{
                   color:
                     libraryFilter === filter.key
@@ -1076,7 +1078,7 @@ export default function DashboardPage() {
                 key={tag}
                 type="button"
                 onClick={() => setSelectedTag(tag)}
-                className="rounded-md border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
+                className="rounded-full border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
                 style={{
                   color:
                     selectedTag === tag
