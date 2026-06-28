@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { useSound } from "@/components/SoundProvider";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
@@ -80,10 +80,19 @@ export default function DashboardLayout({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchNotes, setSearchNotes] = useState<Note[]>([]);
   const [searchHydrated, setSearchHydrated] = useState(false);
+  const mainRef = useRef<HTMLElement | null>(null);
 
   const openSearch = useCallback(() => {
     setSearchOpen(true);
   }, []);
+
+  useEffect(() => {
+    const route = pathname;
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    return () => {
+      void route;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const redirectToLogin = () => {
@@ -172,7 +181,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <div className="h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute left-[-12rem] top-[-10rem] h-80 w-80 rounded-full bg-[var(--accent)]/10 blur-3xl" />
         <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-96 rounded-full bg-[var(--main-color)]/10 blur-3xl" />
@@ -188,11 +197,11 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="relative grid min-h-screen lg:grid-cols-[17rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[var(--border)] bg-[var(--bg)]/80 p-4 backdrop-blur-xl lg:flex lg:flex-col">
+      <div className="relative grid h-screen min-h-0 lg:grid-cols-[17rem_minmax(0,1fr)]">
+        <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/80 p-4 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
-            className="group mb-8 flex items-center gap-3"
+            className="group mb-6 flex items-center gap-3"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-lg shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
@@ -233,21 +242,21 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-4">
-            <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
               <Sparkles size={14} />
               next up
             </div>
-            <p className="text-sm leading-6 text-[var(--text-primary)]">
+            <p className="text-xs leading-5 text-[var(--text-primary)]">
               Snippets, Explore publishing, and profiles are live. Next focus:
               faster search, AI retrieval, and cleaner review workflows.
             </p>
           </div>
 
-          <div className="mt-auto space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-4">
+          <div className="mt-auto space-y-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--accent)]">
-                <UserCircle size={18} />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--accent)]">
+                <UserCircle size={16} />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-[var(--text-primary)]">
@@ -305,8 +314,8 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/82 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div className="flex min-h-0 min-w-0 flex-col">
+          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/86 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex items-center justify-between gap-4">
               <Link
                 href="/dashboard"
@@ -381,11 +390,14 @@ export default function DashboardLayout({
             </nav>
           </header>
 
-          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+          <main
+            ref={mainRef}
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-6"
+          >
             <div className="mx-auto max-w-7xl">{children}</div>
           </main>
 
-          <div className="hidden h-7 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
+          <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
             <span className="text-[var(--accent)]">● master</span>
             <span>DevNotes Workbench · TypeScript · FastAPI · PostgreSQL</span>
             <span>UTF-8 · LF</span>
