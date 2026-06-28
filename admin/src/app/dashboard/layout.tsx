@@ -197,13 +197,13 @@ export default function DashboardLayout({
         />
       </div>
 
-      <div className="relative grid h-screen min-h-0 lg:grid-cols-[15.5rem_minmax(0,1fr)]">
-        <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/72 p-3 backdrop-blur-xl lg:flex lg:flex-col">
+      <div className="relative grid h-screen min-h-0 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/84 p-3 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
             className="group mb-5 flex items-center gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-lg shadow-black/10 transition-transform group-hover:scale-105">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
             </div>
             <div>
@@ -216,12 +216,12 @@ export default function DashboardLayout({
             </div>
           </Link>
 
-          <div className="mb-3 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          <div className="mb-2 flex items-center justify-between px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <span>Explorer</span>
             <span className="text-[var(--accent)]">main</span>
           </div>
 
-          <nav className="space-y-1 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-2">
+          <nav className="border border-[var(--border)] bg-[var(--bg-secondary)]/28 p-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.matcher(pathname);
@@ -229,10 +229,10 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  className={`flex items-center gap-3 border-l-2 px-3 py-2 text-sm transition-colors ${
                     active
-                      ? "bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                      ? "border-[var(--accent)] bg-[var(--bg-secondary)] text-[var(--accent)]"
+                      : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   <Icon size={16} />
@@ -242,34 +242,35 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="relative mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3">
-            <div className="mb-3 flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+          <div className="relative mt-4 overflow-hidden border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-3">
+            <div className="mb-3 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
               <span className="inline-flex items-center gap-2 text-[var(--accent)]">
-                <Sparkles size={13} /> Focus
+                <Sparkles size={13} /> Runtime
               </span>
               <span>live</span>
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="space-y-1.5">
               {[
-                { id: "a", height: 18 },
-                { id: "b", height: 28 },
-                { id: "c", height: 14 },
-                { id: "d", height: 34 },
-                { id: "e", height: 22 },
-                { id: "f", height: 30 },
-                { id: "g", height: 16 },
-                { id: "h", height: 26 },
-              ].map((bar) => (
-                <span
-                  key={bar.id}
-                  className="rounded-full bg-[var(--accent)]/55"
-                  style={{ height: bar.height }}
-                />
+                ["capture", "ready"],
+                ["search", "indexed"],
+                ["publish", "armed"],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between border-l border-[var(--border)] pl-2 text-[11px]"
+                >
+                  <span className="font-mono text-[var(--text-secondary)]">
+                    {label}
+                  </span>
+                  <span className="font-mono text-[var(--accent)]">
+                    {value}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
 
-          <div className="mt-auto space-y-2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-3">
+          <div className="mt-auto space-y-2 border border-[var(--border)] bg-[var(--bg-secondary)]/40 p-3">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={16} />
@@ -331,7 +332,7 @@ export default function DashboardLayout({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-col">
-          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/82 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-7">
+          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/88 px-4 py-2 backdrop-blur-xl sm:px-6 lg:px-7">
             <div className="flex items-center justify-between gap-4">
               <Link
                 href="/dashboard"
@@ -348,7 +349,7 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={openSearch}
-                className="hidden min-w-0 flex-1 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-4 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
+                className="hidden min-w-0 flex-1 items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/62 px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
               >
                 <Search size={15} />
                 <span className="min-w-0 flex-1 truncate">
@@ -408,9 +409,9 @@ export default function DashboardLayout({
 
           <main
             ref={mainRef}
-            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-7 lg:py-6"
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 lg:px-7 lg:py-5"
           >
-            <div className="mx-auto max-w-6xl">{children}</div>
+            <div className="mx-auto max-w-[1180px]">{children}</div>
           </main>
 
           <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">

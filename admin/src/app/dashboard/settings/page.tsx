@@ -63,7 +63,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
+      <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="type-eyebrow mb-3 text-[var(--accent)]">
@@ -104,7 +104,7 @@ export default function SettingsPage() {
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <form
-          className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/70 p-5 backdrop-blur-xl sm:p-6"
+          className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/70 p-5 backdrop-blur-xl sm:p-6"
           onSubmit={(event) => {
             event.preventDefault();
             save();

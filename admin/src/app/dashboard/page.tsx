@@ -274,7 +274,7 @@ function NoteCard({
     <article
       ref={observeRef}
       {...interactiveProps}
-      className="group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/58 p-4 shadow-sm shadow-black/5 backdrop-blur transition-colors hover:-translate-y-1 hover:bg-[var(--bg-secondary)]/70 hover:shadow-sm hover:shadow-black/10 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+      className="group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)]/58 p-4 shadow-sm shadow-black/5 backdrop-blur transition-colors hover:-translate-y-1 hover:bg-[var(--bg-secondary)]/70 hover:shadow-sm hover:shadow-black/10 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-0 transition-opacity group-hover:opacity-60" />
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -376,8 +376,8 @@ function WorkspacePanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-sm shadow-black/5 backdrop-blur-xl">
-      <div className="mb-3 flex items-start justify-between gap-3">
+    <section className="dev-panel overflow-hidden">
+      <div className="dev-panel-header flex items-start justify-between gap-3 px-4 py-3">
         <div>
           <h3 className="type-panel-title text-sm text-[var(--text-primary)]">
             {title}
@@ -389,13 +389,13 @@ function WorkspacePanel({
         {actionHref && actionLabel && (
           <Link
             href={actionHref}
-            className="rounded-md border border-[var(--border)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)] transition-colors hover:bg-[var(--bg)]"
+            className="dev-chip px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] transition-colors hover:bg-[var(--bg)]"
           >
             {actionLabel}
           </Link>
         )}
       </div>
-      {children}
+      <div className="p-4">{children}</div>
     </section>
   );
 }
@@ -403,8 +403,8 @@ function WorkspacePanel({
 function SelectedNotePreview({ note }: { note: Note | null }) {
   if (!note) {
     return (
-      <aside className="sticky top-24 hidden self-start rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
-        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--accent)]">
+      <aside className="sticky top-20 hidden self-start border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-4 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
+        <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)] text-[var(--accent)]">
           <Eye size={18} />
         </div>
         <p className="font-semibold text-[var(--text-primary)]">preview rail</p>
@@ -417,7 +417,7 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
   }
 
   return (
-    <aside className="sticky top-24 hidden self-start overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
+    <aside className="sticky top-20 hidden self-start overflow-hidden border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
       <div className="border-b border-[var(--border)] p-5">
         <div className="mb-3 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
           <span className="inline-flex items-center gap-2">
@@ -750,51 +750,68 @@ export default function DashboardPage() {
 
   return (
     <>
-      <section className="relative mb-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
-        <div className="pointer-events-none absolute right-4 top-4 h-20 w-20 rounded-full border border-[var(--accent)]/20" />
-        <div className="pointer-events-none absolute right-10 top-10 h-2 w-2 rounded-full bg-[var(--accent)]/70" />
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
+      <section className="dev-panel mb-5 overflow-hidden">
+        <div className="dev-panel-header flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+            <p className="type-eyebrow text-[var(--accent)]">Workspace</p>
+            <span className="font-mono text-[11px] text-[var(--text-secondary)]">
+              /devnotes/main
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+            <span className="dev-chip px-2 py-1">indexed</span>
+            <span className="dev-chip px-2 py-1">autosave-ready</span>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
           <div className="min-w-0">
-            <p className="type-eyebrow mb-3 text-[var(--accent)]">Workspace</p>
-            <p className="mt-3 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
-              Notes, snippets, publishing.
-            </p>
+            <div className="mb-3 border-l-2 border-[var(--accent)] pl-3">
+              <p className="font-mono text-xs text-[var(--text-secondary)]">
+                ~/workspace $ capture --fast --reuse --publish
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">
+                Build a searchable developer memory from notes, snippets, and
+                public writeups.
+              </p>
+            </div>
             <QuickCapture
               onCreated={(note) => {
                 setNotes((prev) => [note, ...prev]);
               }}
             />
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <Link href="/dashboard/create_note">
-                <Button className="gap-2 rounded-lg bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                <Button className="gap-2 rounded-md bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                   <Plus size={15} />
                   create note
                 </Button>
               </Link>
               <Button
                 variant="ghost"
-                className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 onClick={openWorkspaceSearch}
               >
                 <Search size={15} />
-                search workspace
-                <kbd className="rounded-lg bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                search
+                <kbd className="dev-chip px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   /
                 </kbd>
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 self-start rounded-2xl border border-[var(--border)] bg-[var(--bg)]/35 p-2">
+          <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
             {workspaceStats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-xl border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3 transition-colors hover:border-[var(--accent)]/50"
+                className="border-b border-r border-[var(--border)] p-3 transition-colors last:border-r-0 hover:bg-[var(--bg-secondary)]/55"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
                   {loading ? "—" : stat.value}
                 </p>
-                <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">
                   {stat.label}
                 </p>
                 <p className="mt-2 text-xs text-[var(--text-secondary)]">
@@ -815,7 +832,7 @@ export default function DashboardPage() {
             actionLabel="capture"
           >
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.privateCount}
                 </p>
@@ -826,7 +843,7 @@ export default function DashboardPage() {
                   <div className="h-full w-3/4 rounded-full bg-[var(--accent)]/70" />
                 </div>
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.publishCandidates.length}
                 </p>
@@ -846,7 +863,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.guideCount}
                 </p>
@@ -945,7 +962,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
+      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -1098,7 +1115,7 @@ export default function DashboardPage() {
       {error && (
         <Alert
           variant="destructive"
-          className="mb-6 flex items-center justify-between gap-4 rounded-xl border-[var(--error)] bg-[var(--bg-secondary)]/45 p-4"
+          className="mb-6 flex items-center justify-between gap-4 rounded-md border-[var(--error)] bg-[var(--bg-secondary)]/45 p-4"
         >
           <div className="flex items-center gap-3">
             <AlertCircle size={17} />
@@ -1137,7 +1154,7 @@ export default function DashboardPage() {
 
       {!loading && notes.length === 0 && !error && (
         <div className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-6 py-20 text-center shadow-sm shadow-black/5">
-          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
             <FileText size={28} />
           </div>
           <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">

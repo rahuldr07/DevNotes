@@ -66,10 +66,10 @@ body {
 
 .type-hero {
   font-family: var(--font-gellix), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(2.15rem, 3.4vw, 3.7rem);
-  font-weight: 430;
-  letter-spacing: -0.045em;
-  line-height: 1;
+  font-size: clamp(2rem, 3vw, 3.25rem);
+  font-weight: 470;
+  letter-spacing: -0.038em;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
@@ -91,9 +91,9 @@ body {
 }
 
 .type-eyebrow {
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -104,14 +104,36 @@ body {
 }
 
 .type-panel-title {
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .type-number {
-  font-weight: 500;
-  letter-spacing: -0.025em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.dev-panel {
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--bg-secondary) 46%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--border) 70%, transparent) inset;
+  backdrop-filter: blur(18px);
+}
+
+.dev-panel-header {
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 46%, transparent);
+}
+
+.dev-chip {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--bg) 56%, transparent);
+  font-family:
+    var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 code,

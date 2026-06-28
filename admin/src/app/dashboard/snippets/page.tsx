@@ -77,7 +77,7 @@ function SnippetCard({ note }: { note: Note }) {
   };
 
   return (
-    <article className="group overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-lg shadow-black/5 backdrop-blur transition-colors hover:border-[var(--accent)]/40 hover:shadow-md hover:shadow-black/10">
+    <article className="group overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-lg shadow-black/5 backdrop-blur transition-colors hover:border-[var(--accent)]/40 hover:shadow-md hover:shadow-black/10">
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -155,7 +155,7 @@ function SnippetEmptyState() {
   return (
     <div className="relative overflow-hidden rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center shadow-sm shadow-black/5">
       <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
         <Code2 size={28} />
       </div>
       <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
@@ -246,7 +246,7 @@ export default function SnippetsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
+      <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
           <div>
             <p className="type-eyebrow mb-3 text-[var(--accent)]">Snippets</p>
@@ -257,11 +257,11 @@ export default function SnippetsPage() {
               Save reusable code blocks and commands for fast recall.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/35 p-2">
+          <div className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/35 p-2">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-xl border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
+                className="rounded-md border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)]">
                   {loading ? "—" : stat.value}
@@ -302,7 +302,7 @@ export default function SnippetsPage() {
         />
       </section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl">
+      <section className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -374,14 +374,14 @@ export default function SnippetsPage() {
           ].map((key) => (
             <Skeleton
               key={key}
-              className="h-72 rounded-xl bg-[var(--bg-secondary)]"
+              className="h-72 rounded-md bg-[var(--bg-secondary)]"
             />
           ))}
         </div>
       ) : snippets.length === 0 ? (
         <SnippetEmptyState />
       ) : filteredSnippets.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center">
+        <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center">
           <p className="text-lg font-semibold text-[var(--text-primary)]">
             No snippets in {selectedLanguage}
           </p>

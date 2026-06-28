@@ -93,7 +93,7 @@ function ExploreEmptyState({
   return (
     <section className="relative overflow-hidden rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-md shadow-black/5 sm:p-8">
       <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
         <Sparkles size={28} />
       </div>
       <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
@@ -106,7 +106,7 @@ function ExploreEmptyState({
       </p>
 
       <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <Tags size={14} className="text-[var(--accent)]" /> starter topics
           </div>
@@ -130,7 +130,7 @@ function ExploreEmptyState({
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <PenLine size={14} className="text-[var(--accent)]" /> publish path
           </div>
@@ -522,7 +522,7 @@ export default function ExplorePage() {
 
   return (
     <>
-      <section className="mb-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6">
+      <section className="mb-6 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
           <div className="space-y-6">
             <div>
@@ -584,11 +584,11 @@ export default function ExplorePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 self-end rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)]/35 p-2">
+          <div className="grid grid-cols-2 gap-2 self-end rounded-lg border border-[var(--border)] bg-[var(--bg-primary)]/35 p-2">
             {exploreStats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-xl border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
+                className="rounded-md border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
               >
                 <div className="type-number text-3xl text-[var(--text-primary)]">
                   {stat.value}
@@ -602,7 +602,7 @@ export default function ExplorePage() {
         </div>
       </section>
 
-      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex items-center gap-2 px-2 text-xs text-[var(--text-secondary)]">
           <Flame size={15} className="text-[var(--accent)]" />
           {selectedTopic ? `Topic: #${selectedTopic}` : "Trending now"}
@@ -612,7 +612,7 @@ export default function ExplorePage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
+          <div className="flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
             <Search size={14} />
             <input
               value={search}
@@ -621,7 +621,7 @@ export default function ExplorePage() {
               className="w-48 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
             />
           </div>
-          <div className="flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+          <div className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-1">
             {(["trending", "recent"] as SortKey[]).map((key) => (
               <button
                 key={key}
@@ -637,7 +637,7 @@ export default function ExplorePage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+          <div className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-1">
             <button
               type="button"
               onClick={() => setView("grid")}
