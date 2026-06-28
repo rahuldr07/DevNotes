@@ -64,17 +64,6 @@ body {
     "calt" 1;
 }
 
-h1,
-h2,
-h3,
-.uppercase,
-.font-display {
-  font-family:
-    var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace;
-  letter-spacing: -0.055em;
-}
-
 code,
 pre,
 kbd,
