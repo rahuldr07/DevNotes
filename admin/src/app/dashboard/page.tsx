@@ -379,7 +379,7 @@ function WorkspacePanel({
     <section className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-sm shadow-black/5 backdrop-blur-xl">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-primary)]">
+          <h3 className="type-panel-title text-sm text-[var(--text-primary)]">
             {title}
           </h3>
           <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
@@ -753,15 +753,12 @@ export default function DashboardPage() {
       <section className="relative mb-8 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]">
           <div className="min-w-0">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-              Workspace
-            </p>
-            <h1 className="max-w-4xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
+            <p className="type-eyebrow mb-3 text-[var(--accent)]">Workspace</p>
+            <h1 className="type-hero max-w-4xl text-[var(--text-primary)]">
               Capture fast. Reuse smarter. Publish with context.
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-              A focused knowledge base for private notes, reusable snippets, and
-              public writing without switching tools.
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+              Your notes, snippets, and publishing flow in one quiet cockpit.
             </p>
             <QuickCapture
               onCreated={(note) => {
@@ -795,7 +792,7 @@ export default function DashboardPage() {
                 key={stat.label}
                 className="border-l border-[var(--border)] bg-[var(--bg)]/35 p-4 transition-colors hover:border-[var(--accent)]/50"
               >
-                <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] sm:text-3xl">
+                <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
                   {loading ? "—" : stat.value}
                 </p>
                 <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
@@ -820,40 +817,55 @@ export default function DashboardPage() {
           >
             <div className="grid gap-3 md:grid-cols-3">
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
-                <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+                <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.privateCount}
                 </p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   private drafts
                 </p>
-                <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
-                  Keep rough thinking private until it becomes a reusable guide
-                  or publishable page.
-                </p>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--border)]/60">
+                  <div className="h-full w-3/4 rounded-full bg-[var(--accent)]/70" />
+                </div>
               </div>
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
-                <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+                <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.publishCandidates.length}
                 </p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   publish-ready
                 </p>
-                <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
-                  Long or well-tagged private notes are surfaced as candidates
-                  for public publishing.
-                </p>
+                <div className="mt-4 flex gap-1">
+                  {[0, 1, 2, 3].map((step) => (
+                    <span
+                      key={step}
+                      className={`h-1.5 flex-1 rounded-full ${
+                        step < workspaceInsights.publishCandidates.length
+                          ? "bg-[var(--accent)]/70"
+                          : "bg-[var(--border)]/60"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
-                <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+                <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.guideCount}
                 </p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   guides
                 </p>
-                <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
-                  Structure deeper explanations as guides so search, profiles,
-                  and discovery feel intentional.
-                </p>
+                <div className="mt-4 grid grid-cols-5 gap-1">
+                  {[0, 1, 2, 3, 4].map((bar) => (
+                    <span
+                      key={bar}
+                      className="rounded-full bg-[var(--accent)]/60"
+                      style={{
+                        height: `${8 + bar * 3}px`,
+                        opacity: 0.35 + bar * 0.12,
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -871,7 +883,7 @@ export default function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <WorkspacePanel
               title="priority pins"
-              subtitle="Pinned notes stay closest to your writing surface."
+              subtitle="Pinned near your writing surface."
             >
               <div className="space-y-1">
                 {workspaceInsights.pinned.length > 0 ? (
@@ -893,7 +905,7 @@ export default function DashboardPage() {
 
             <WorkspacePanel
               title="reuse queue"
-              subtitle="Snippets and publish candidates that are ready to travel."
+              subtitle="Snippets and candidates ready to move."
               actionHref="/dashboard/snippets"
               actionLabel="snippets"
             >

@@ -526,15 +526,12 @@ export default function ExplorePage() {
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
           <div className="space-y-6">
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-                Explore
-              </p>
-              <h1 className="max-w-3xl text-balance text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
+              <p className="type-eyebrow mb-3 text-[var(--accent)]">Explore</p>
+              <h1 className="type-hero max-w-3xl text-[var(--text-primary)]">
                 Explore reusable knowledge from builders.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">
-                Browse public notes, snippets, guides, and checklists filtered
-                by topic, momentum, and author signals.
+              <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)]">
+                Public notes, guides, and snippets by topic.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -593,10 +590,10 @@ export default function ExplorePage() {
                 key={stat.label}
                 className="border-l border-[var(--border)] bg-[var(--bg-primary)]/35 p-4"
               >
-                <div className="font-mono text-3xl font-semibold text-[var(--text-primary)]">
+                <div className="type-number text-3xl text-[var(--text-primary)]">
                   {stat.value}
                 </div>
-                <div className="mt-2 text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                   {stat.label}
                 </div>
               </div>

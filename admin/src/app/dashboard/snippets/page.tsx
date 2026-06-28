@@ -249,15 +249,12 @@ export default function SnippetsPage() {
       <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
-              Snippets
-            </p>
-            <h1 className="max-w-3xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
+            <p className="type-eyebrow mb-3 text-[var(--accent)]">Snippets</p>
+            <h1 className="type-hero max-w-3xl text-[var(--text-primary)]">
               Copy-ready patterns, commands, configs, and fixes.
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-              Capture code-heavy knowledge separately from long-form notes so it
-              is fast to retrieve, filter by language, and reuse.
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+              Save reusable code blocks and commands for fast recall.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -266,10 +263,10 @@ export default function SnippetsPage() {
                 key={stat.label}
                 className="border-l border-[var(--border)] bg-[var(--bg)]/35 p-4"
               >
-                <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                <p className="type-number text-2xl text-[var(--text-primary)]">
                   {loading ? "—" : stat.value}
                 </p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   {stat.label}
                 </p>
                 <p className="mt-2 text-xs text-[var(--text-secondary)]">
@@ -313,11 +310,11 @@ export default function SnippetsPage() {
               language lanes
             </div>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Filter the vault by runtime, framework, or command language.
+              Filter by language or runtime.
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-2 text-xs text-[var(--text-secondary)]">
-            <Search size={14} /> global search indexes snippets too
+            <Search size={14} /> snippets indexed
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

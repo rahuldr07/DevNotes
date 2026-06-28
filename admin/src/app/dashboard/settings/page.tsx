@@ -66,29 +66,39 @@ export default function SettingsPage() {
       <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
+            <p className="type-eyebrow mb-3 text-[var(--accent)]">
               Public identity
             </p>
-            <h1 className="max-w-3xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
+            <h1 className="type-hero max-w-3xl text-[var(--text-primary)]">
               Shape your developer knowledge profile.
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-              These fields power your public author page and make published
-              notes feel credible enough to share.
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+              Your public profile metadata and links.
             </p>
           </div>
-          {form.username && (
-            <Link href={`/u/${form.username}`} target="_blank">
-              <Button
-                type="button"
-                variant="ghost"
-                className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              >
-                <ExternalLink size={15} />
-                view public profile
-              </Button>
-            </Link>
-          )}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex h-12 items-end gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2">
+              {[10, 16, 22, 14].map((height) => (
+                <span
+                  key={height}
+                  className="w-1.5 rounded-full bg-[var(--accent)]/60"
+                  style={{ height }}
+                />
+              ))}
+            </div>
+            {form.username && (
+              <Link href={`/u/${form.username}`} target="_blank">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  <ExternalLink size={15} />
+                  view public profile
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
