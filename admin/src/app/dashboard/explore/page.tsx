@@ -9,8 +9,10 @@ import {
   Heart,
   LayoutGrid,
   List,
+  PenLine,
   Search,
   Sparkles,
+  Tags,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,6 +34,13 @@ import type { Note } from "@/types/notes";
 
 type SortKey = "trending" | "recent";
 type ViewMode = "grid" | "list";
+
+const STARTER_TOPICS = ["fastapi", "nextjs", "postgres", "deploy", "debugging"];
+const PUBLISHING_STEPS = [
+  "Create a note, guide, checklist, or snippet.",
+  "Add focused tags so Explore can route it.",
+  "Publish from the editor when it is reusable.",
+];
 
 function appendUniqueNotes(current: Note[], incoming: Note[]) {
   const seen = new Set(current.map((note) => note.id));
@@ -71,6 +80,91 @@ function ExploreSkeleton({ view }: { view: ViewMode }) {
       <Skeleton className="h-3 w-5/6 bg-[var(--border)]" />
       <Skeleton className="h-3 w-28 bg-[var(--border)]" />
     </div>
+  );
+}
+
+function ExploreEmptyState({
+  hasNotes,
+  onTopic,
+}: {
+  hasNotes: boolean;
+  onTopic: (topic: string | null) => void;
+}) {
+  return (
+    <section className="relative overflow-hidden rounded-[2rem] border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-2xl shadow-black/5 sm:p-8">
+      <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60" />
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
+        <Sparkles size={28} />
+      </div>
+      <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+        {hasNotes ? "No matches for this filter" : "No public knowledge yet"}
+      </p>
+      <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+        {hasNotes
+          ? "Try another topic, switch back to all topics, or clear the search field to rediscover the public library."
+          : "Seed Explore by publishing a reusable note, snippet, guide, or checklist. The best public items are tagged, concise, and useful for another builder."}
+      </p>
+
+      <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+            <Tags size={14} className="text-[var(--accent)]" /> starter topics
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onTopic(null)}
+              className="rounded-full border border-[var(--accent)] px-3 py-1.5 text-xs text-[var(--accent)] transition-transform hover:-translate-y-0.5"
+            >
+              all topics
+            </button>
+            {STARTER_TOPICS.map((topic) => (
+              <button
+                key={topic}
+                type="button"
+                onClick={() => onTopic(topic)}
+                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              >
+                #{topic}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+            <PenLine size={14} className="text-[var(--accent)]" /> publish path
+          </div>
+          <div className="grid gap-2 text-xs text-[var(--text-secondary)] sm:grid-cols-3">
+            {PUBLISHING_STEPS.map((step, index) => (
+              <div
+                key={step}
+                className="rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
+              >
+                <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)]">
+                  {index + 1}
+                </span>
+                <p className="leading-5">{step}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <Link
+          href="/dashboard/create_note"
+          className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
+        >
+          <PenLine size={15} /> create publishable note
+        </Link>
+        <Link
+          href="/dashboard/snippets"
+          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+        >
+          <Code2 size={15} /> capture snippet first
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -460,6 +554,17 @@ export default function ExplorePage() {
               >
                 all topics
               </button>
+              {topicCounts.length === 0 &&
+                STARTER_TOPICS.slice(0, 4).map((topic) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => setSelectedTopic(topic)}
+                    className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  >
+                    #{topic}
+                  </button>
+                ))}
               {topicCounts.map(([topic, count]) => (
                 <button
                   key={topic}
@@ -630,9 +735,10 @@ export default function ExplorePage() {
       )}
 
       {!loading && visibleNotes.length === 0 && !error && (
-        <div className="py-20 text-center text-sm text-[var(--text-secondary)]">
-          nothing here yet
-        </div>
+        <ExploreEmptyState
+          hasNotes={notes.length > 0}
+          onTopic={setSelectedTopic}
+        />
       )}
 
       {!loading && visibleNotes.length > 0 && (
