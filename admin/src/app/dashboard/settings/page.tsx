@@ -63,15 +63,13 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[var(--accent)] opacity-[0.07] blur-3xl" />
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
-          <UserCircle size={13} className="text-[var(--accent)]" />
-          public identity
-        </div>
+      <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] sm:text-5xl">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
+              Public identity
+            </p>
+            <h1 className="max-w-3xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
               Shape your developer knowledge profile.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
@@ -84,7 +82,7 @@ export default function SettingsPage() {
               <Button
                 type="button"
                 variant="ghost"
-                className="gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <ExternalLink size={15} />
                 view public profile
@@ -96,7 +94,7 @@ export default function SettingsPage() {
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <form
-          className="rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/70 p-5 backdrop-blur-xl sm:p-6"
+          className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/70 p-5 backdrop-blur-xl sm:p-6"
           onSubmit={(event) => {
             event.preventDefault();
             save();
@@ -108,7 +106,7 @@ export default function SettingsPage() {
               <input
                 value={form.name}
                 onChange={(event) => setField("name", event.target.value)}
-                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 required
               />
             </label>
@@ -117,7 +115,7 @@ export default function SettingsPage() {
               <input
                 value={form.username}
                 onChange={(event) => setField("username", event.target.value)}
-                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 placeholder="your-handle"
                 required
               />
@@ -131,7 +129,7 @@ export default function SettingsPage() {
               onChange={(event) => setField("bio", event.target.value)}
               rows={4}
               maxLength={280}
-              className="w-full resize-none rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
               placeholder="Backend engineer writing about FastAPI, auth, and product systems."
             />
             <span className="text-xs text-[var(--text-secondary)]">
@@ -153,7 +151,7 @@ export default function SettingsPage() {
                 <input
                   value={form[field]}
                   onChange={(event) => setField(field, event.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   placeholder="https://..."
                 />
               </label>
@@ -164,7 +162,7 @@ export default function SettingsPage() {
             <Button
               type="submit"
               disabled={saving}
-              className="gap-2 rounded-2xl bg-[var(--accent)] px-5 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+              className="gap-2 rounded-lg bg-[var(--accent)] px-5 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin" />
@@ -176,12 +174,12 @@ export default function SettingsPage() {
           </div>
         </form>
 
-        <aside className="rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 backdrop-blur-xl">
+        <aside className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 backdrop-blur-xl">
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
             live profile card
           </p>
           <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg)]/60 p-5">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border)] text-[var(--accent)]">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--accent)]">
               <UserCircle size={28} />
             </div>
             <h2 className="break-words text-2xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">

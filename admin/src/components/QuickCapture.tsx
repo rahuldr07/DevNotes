@@ -1,6 +1,6 @@
 "use client";
 
-import { Code2, FileText, Loader2, Plus, Sparkles } from "lucide-react";
+import { Code2, FileText, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -58,7 +58,7 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
       onCreated?.(note);
       gooeyToast.success(
         nextMode === "snippet" ? "Snippet captured" : "Note captured",
-        { description: "Saved to your DevNotes cockpit." },
+        { description: "Saved to your workspace." },
       );
     } catch (error: unknown) {
       const message = normalizeErrorMessage(error, "Capture failed");
@@ -72,16 +72,12 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
   };
 
   return (
-    <div className="mt-7 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg)]/70 shadow-xl shadow-black/5 backdrop-blur">
+    <div className="mt-7 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 shadow-sm shadow-black/5 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
-        <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-          <Sparkles size={14} className="text-[var(--accent)]" />
-          quick capture
-          <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
-            /snippet supported
-          </span>
+        <div className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+          Quick capture
         </div>
-        <div className="flex items-center gap-1 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-1">
+        <div className="flex items-center gap-4 border-l border-[var(--border)] pl-4">
           {(["note", "snippet"] as const).map((item) => {
             const Icon = item === "note" ? FileText : Code2;
             return (
@@ -89,10 +85,10 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
                 key={item}
                 type="button"
                 onClick={() => setMode(item)}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs transition-colors ${
+                className={`inline-flex items-center gap-1.5 border-b py-1 text-xs transition-colors ${
                   mode === item
-                    ? "bg-[var(--accent)] text-[var(--bg)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    ? "border-[var(--accent)] text-[var(--accent)]"
+                    : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 <Icon size={13} />
@@ -126,14 +122,14 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
               value={language}
               onChange={(event) => setLanguage(event.target.value)}
               placeholder="lang"
-              className="h-10 w-24 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-xs text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              className="h-10 w-24 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-xs text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
             />
           )}
           <Button
             type="button"
             onClick={submit}
             disabled={saving || !content.trim()}
-            className="gap-2 rounded-2xl bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+            className="gap-2 rounded-lg bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
           >
             {saving ? (
               <Loader2 size={15} className="animate-spin" />

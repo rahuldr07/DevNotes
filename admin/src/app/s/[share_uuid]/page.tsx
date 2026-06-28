@@ -103,8 +103,8 @@ export default async function PublicNotePage({
   return (
     <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-[-10rem] top-[-14rem] h-96 w-96 rounded-full bg-[var(--accent)]/12 blur-3xl" />
-        <div className="absolute bottom-[-12rem] right-[-10rem] h-[28rem] w-[28rem] rounded-full bg-[var(--main-color)]/10 blur-3xl" />
+        <div className="absolute left-[-10rem] top-[-14rem] h-96 w-96 rounded-md bg-[var(--accent)]/12 blur-3xl" />
+        <div className="absolute bottom-[-12rem] right-[-10rem] h-[28rem] w-[28rem] rounded-md bg-[var(--main-color)]/10 blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.14]"
           style={{
@@ -124,7 +124,7 @@ export default async function PublicNotePage({
           >
             DevNotes
           </Link>
-          <div className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--text-secondary)] sm:flex">
+          <div className="hidden items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--text-secondary)] sm:flex">
             <Sparkles size={13} className="text-[var(--accent)]" />
             public knowledge page
           </div>
@@ -133,23 +133,23 @@ export default async function PublicNotePage({
 
       <main className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:py-14">
         <article className="min-w-0">
-          <section className="mb-8 rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-6 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-8 lg:p-10">
+          <section className="mb-8 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-6 shadow-md shadow-black/5 backdrop-blur-xl sm:p-8 lg:p-10">
             <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
-              <span className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+              <span className="rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                 {kind}
               </span>
               {note.language && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                <span className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                   <Code2 size={13} /> {note.language}
                 </span>
               )}
-              <span className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+              <span className="rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                 {publishedAt}
               </span>
-              <span className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+              <span className="rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                 {minutes} min read
               </span>
-              <span className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+              <span className="rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                 {note.view_count ?? 0} views
               </span>
             </div>
@@ -159,7 +159,7 @@ export default async function PublicNotePage({
             </h1>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={22} />
               </div>
               <div>
@@ -186,7 +186,7 @@ export default async function PublicNotePage({
                 {note.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-xs text-[var(--accent)]"
+                    className="rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-xs text-[var(--accent)]"
                   >
                     #{tag}
                   </span>
@@ -195,12 +195,12 @@ export default async function PublicNotePage({
             )}
           </section>
 
-          <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/70 p-4 backdrop-blur-xl sm:p-7 lg:p-9">
+          <section className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/70 p-4 backdrop-blur-xl sm:p-7 lg:p-9">
             <ReadOnlyEditor content={note.content} />
           </section>
 
           {relatedNotes.length > 0 && (
-            <section className="mt-8 rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl sm:p-6">
+            <section className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl sm:p-6">
               <div className="mb-5 flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
@@ -216,7 +216,7 @@ export default async function PublicNotePage({
                   <Link
                     key={related.share_uuid}
                     href={`/s/${related.share_uuid}`}
-                    className="group rounded-3xl border border-[var(--border)] bg-[var(--bg)]/60 p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/60 hover:shadow-xl hover:shadow-black/10"
+                    className="group rounded-xl border border-[var(--border)] bg-[var(--bg)]/60 p-4 transition-colors hover:border-[var(--accent)]/60 hover:shadow-sm hover:shadow-black/10"
                   >
                     <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                       <span>{noteKindLabel(related.note_type)}</span>
@@ -235,7 +235,7 @@ export default async function PublicNotePage({
                         {related.tags.slice(0, 2).map((tag) => (
                           <span
                             key={`${related.share_uuid}-${tag}`}
-                            className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--accent)]"
+                            className="rounded-md border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--accent)]"
                           >
                             #{tag}
                           </span>
@@ -250,7 +250,7 @@ export default async function PublicNotePage({
         </article>
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
               article signal
             </p>
@@ -303,20 +303,20 @@ export default async function PublicNotePage({
               href={note.source_url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+              className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
             >
               <span>Original source</span>
               <ExternalLink size={15} />
             </a>
           )}
 
-          <div className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">
             <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
               <Share2 size={14} /> shareable
             </div>
             <p className="text-sm leading-6 text-[var(--text-secondary)]">
               DevNotes public pages are being shaped into polished technical
-              essays with source credibility, author profiles, and AI-ready
+              essays with source credibility, author profiles, and structured
               discovery.
             </p>
             <CopyContentButton
@@ -324,7 +324,7 @@ export default async function PublicNotePage({
               label={
                 note.note_type === "snippet" ? "copy snippet" : "copy note"
               }
-              className="mt-4 w-full gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="mt-4 w-full gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             />
           </div>
         </aside>

@@ -183,8 +183,8 @@ export default function DashboardLayout({
   return (
     <div className="h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="pointer-events-none fixed inset-0 opacity-70">
-        <div className="absolute left-[-12rem] top-[-10rem] h-80 w-80 rounded-full bg-[var(--accent)]/10 blur-3xl" />
-        <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-96 rounded-full bg-[var(--main-color)]/10 blur-3xl" />
+        <div className="absolute left-[-12rem] top-[-10rem] h-80 w-80 rounded-md bg-[var(--accent)]/10 blur-3xl" />
+        <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-96 rounded-md bg-[var(--main-color)]/10 blur-3xl" />
         <div
           className="absolute inset-0"
           style={{
@@ -203,7 +203,7 @@ export default function DashboardLayout({
             href="/dashboard"
             className="group mb-6 flex items-center gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-lg shadow-black/10 transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-lg shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
             </div>
             <div>
@@ -211,7 +211,7 @@ export default function DashboardLayout({
                 DevNotes
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
-                knowledge cockpit
+                knowledge workspace
               </p>
             </div>
           </Link>
@@ -221,7 +221,7 @@ export default function DashboardLayout({
             <span className="text-[var(--accent)]">main</span>
           </div>
 
-          <nav className="space-y-1 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-2">
+          <nav className="space-y-1 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.matcher(pathname);
@@ -229,7 +229,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     active
                       ? "bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm"
                       : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
@@ -242,20 +242,20 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-3">
+          <div className="mt-5 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-3">
             <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
               <Sparkles size={14} />
               next up
             </div>
             <p className="text-xs leading-5 text-[var(--text-primary)]">
               Snippets, Explore publishing, and profiles are live. Next focus:
-              faster search, AI retrieval, and cleaner review workflows.
+              faster search, faster retrieval, and cleaner review workflows.
             </p>
           </div>
 
-          <div className="mt-auto space-y-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3">
+          <div className="mt-auto space-y-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--accent)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={16} />
               </div>
               <div className="min-w-0">
@@ -321,7 +321,7 @@ export default function DashboardLayout({
                 href="/dashboard"
                 className="flex items-center gap-2 lg:hidden"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)]">
                   <LayoutDashboard size={16} />
                 </span>
                 <span className="text-sm font-semibold tracking-[0.18em] uppercase">
@@ -348,7 +348,7 @@ export default function DashboardLayout({
 
               <div className="flex items-center gap-2">
                 <Link href="/dashboard/create_note">
-                  <Button className="gap-2 rounded-2xl bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                  <Button className="gap-2 rounded-lg bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                     <Plus size={15} />
                     <span className="hidden sm:inline">New note</span>
                   </Button>
@@ -376,7 +376,7 @@ export default function DashboardLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-colors ${
+                    className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors ${
                       active
                         ? "bg-[var(--bg-secondary)] text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"

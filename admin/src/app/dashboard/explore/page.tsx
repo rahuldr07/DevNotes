@@ -91,9 +91,9 @@ function ExploreEmptyState({
   onTopic: (topic: string | null) => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[2rem] border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-2xl shadow-black/5 sm:p-8">
+    <section className="relative overflow-hidden rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-md shadow-black/5 sm:p-8">
       <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
         <Sparkles size={28} />
       </div>
       <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
@@ -106,7 +106,7 @@ function ExploreEmptyState({
       </p>
 
       <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <Tags size={14} className="text-[var(--accent)]" /> starter topics
           </div>
@@ -114,7 +114,7 @@ function ExploreEmptyState({
             <button
               type="button"
               onClick={() => onTopic(null)}
-              className="rounded-full border border-[var(--accent)] px-3 py-1.5 text-xs text-[var(--accent)] transition-transform hover:-translate-y-0.5"
+              className="rounded-md border border-[var(--accent)] px-3 py-1.5 text-xs text-[var(--accent)] transition-transform hover:-translate-y-0.5"
             >
               all topics
             </button>
@@ -123,14 +123,14 @@ function ExploreEmptyState({
                 key={topic}
                 type="button"
                 onClick={() => onTopic(topic)}
-                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
                 #{topic}
               </button>
             ))}
           </div>
         </div>
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <PenLine size={14} className="text-[var(--accent)]" /> publish path
           </div>
@@ -138,9 +138,9 @@ function ExploreEmptyState({
             {PUBLISHING_STEPS.map((step, index) => (
               <div
                 key={step}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
               >
-                <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)]">
+                <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)] text-[var(--accent-foreground)]">
                   {index + 1}
                 </span>
                 <p className="leading-5">{step}</p>
@@ -153,13 +153,13 @@ function ExploreEmptyState({
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Link
           href="/dashboard/create_note"
-          className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
         >
           <PenLine size={15} /> create publishable note
         </Link>
         <Link
           href="/dashboard/snippets"
-          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
         >
           <Code2 size={15} /> capture snippet first
         </Link>
@@ -233,7 +233,7 @@ function ExploreNote({
         <h2 className="min-w-0 max-w-[240px] flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
           {note.title || "untitled"}
         </h2>
-        <span className="hidden shrink-0 rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] capitalize text-[var(--text-secondary)] lg:inline">
+        <span className="hidden shrink-0 rounded-md border border-[var(--border)] px-2 py-0.5 text-[10px] capitalize text-[var(--text-secondary)] lg:inline">
           {kind}
         </span>
         <p className="hidden min-w-0 flex-[2] truncate text-xs text-[var(--text-secondary)] md:block">
@@ -285,7 +285,7 @@ function ExploreNote({
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 capitalize">
+            <span className="rounded-md border border-[var(--border)] px-2 py-0.5 capitalize">
               {kind}
             </span>
             <span>{minutes} min</span>
@@ -522,15 +522,14 @@ export default function ExplorePage() {
 
   return (
     <>
-      <section className="mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(135deg,var(--bg-secondary),var(--bg-primary)_62%,rgba(255,255,255,0.03))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+      <section className="mb-8 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 shadow-sm shadow-black/5">
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1 text-xs text-[var(--text-secondary)]">
-              <Sparkles size={14} className="text-[var(--accent)]" />
-              Community discovery cockpit
-            </div>
             <div>
-              <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-tight text-[var(--text-primary)] md:text-6xl">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
+                Explore
+              </p>
+              <h1 className="max-w-3xl text-balance text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
                 Explore reusable knowledge from builders.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">
@@ -542,7 +541,7 @@ export default function ExplorePage() {
               <button
                 type="button"
                 onClick={() => setSelectedTopic(null)}
-                className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                className="border-b px-1 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                 style={{
                   borderColor: selectedTopic
                     ? "var(--border)"
@@ -560,7 +559,7 @@ export default function ExplorePage() {
                     key={topic}
                     type="button"
                     onClick={() => setSelectedTopic(topic)}
-                    className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                    className="border-b border-transparent px-1 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   >
                     #{topic}
                   </button>
@@ -570,7 +569,7 @@ export default function ExplorePage() {
                   key={topic}
                   type="button"
                   onClick={() => setSelectedTopic(topic)}
-                  className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  className="border-b px-1 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   style={{
                     borderColor:
                       selectedTopic === topic
@@ -592,7 +591,7 @@ export default function ExplorePage() {
             {exploreStats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-3xl border border-[var(--border)] bg-[var(--bg-primary)] p-4"
+                className="border-l border-[var(--border)] bg-[var(--bg-primary)]/35 p-4"
               >
                 <div className="font-mono text-3xl font-semibold text-[var(--text-primary)]">
                   {stat.value}
@@ -606,11 +605,11 @@ export default function ExplorePage() {
         </div>
       </section>
 
-      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex items-center gap-2 px-2 text-xs text-[var(--text-secondary)]">
           <Flame size={15} className="text-[var(--accent)]" />
           {selectedTopic ? `Topic: #${selectedTopic}` : "Trending now"}
-          <span className="rounded-full bg-[var(--bg-primary)] px-2 py-0.5">
+          <span className="rounded-md bg-[var(--bg-primary)] px-2 py-0.5">
             {visibleNotes.length} shown
           </span>
         </div>
@@ -675,7 +674,7 @@ export default function ExplorePage() {
           href={featuredNote.share_uuid ? `/s/${featuredNote.share_uuid}` : "#"}
           className="mb-6 grid gap-4 rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-secondary)] p-5 transition-colors hover:border-[var(--accent)] lg:grid-cols-[auto_1fr_auto] lg:items-center"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-[var(--accent-foreground)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)]">
             <BookOpen size={20} />
           </div>
           <div>

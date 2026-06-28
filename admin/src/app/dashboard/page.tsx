@@ -17,7 +17,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Sparkles,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -243,10 +242,10 @@ function NoteCard({
       <article
         ref={observeRef}
         {...interactiveProps}
-        className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-transparent px-3 py-3 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:bg-[var(--bg-secondary)]/80 hover:shadow-lg hover:shadow-black/5 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+        className="group flex cursor-pointer items-center gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors hover:border-[var(--border)] hover:bg-[var(--bg-secondary)]/80 hover:shadow-lg hover:shadow-black/5 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
       >
         <span
-          className="h-2 w-2 shrink-0 rounded-full"
+          className="h-2 w-2 shrink-0 rounded-md"
           style={{
             backgroundColor: note.is_pinned ? "var(--accent)" : "transparent",
           }}
@@ -275,14 +274,14 @@ function NoteCard({
     <article
       ref={observeRef}
       {...interactiveProps}
-      className="group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg)]/58 p-4 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-1 hover:bg-[var(--bg-secondary)]/70 hover:shadow-xl hover:shadow-black/10 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+      className="group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/58 p-4 shadow-sm shadow-black/5 backdrop-blur transition-colors hover:-translate-y-1 hover:bg-[var(--bg-secondary)]/70 hover:shadow-sm hover:shadow-black/10 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-0 transition-opacity group-hover:opacity-60" />
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2">
             {note.is_pinned && (
-              <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+              <span className="h-2 w-2 rounded-md bg-[var(--accent)]" />
             )}
             <h2 className="line-clamp-2 text-base font-medium leading-snug text-[var(--text-primary)]">
               {note.title || "untitled"}
@@ -293,7 +292,7 @@ function NoteCard({
               {note.tags.slice(0, 4).map((tag) => (
                 <span
                   key={`${note.id}-${tag}`}
-                  className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-2 py-0.5 text-[11px] text-[var(--accent)]"
+                  className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-2 py-0.5 text-[11px] text-[var(--accent)]"
                 >
                   #{tag}
                 </span>
@@ -327,7 +326,7 @@ function notePreview(note: Note, length = 92) {
   return plain.length > length ? `${plain.slice(0, length)}...` : plain;
 }
 
-function CockpitNoteRow({
+function WorkspaceNoteRow({
   note,
   eyebrow,
   icon,
@@ -339,9 +338,9 @@ function CockpitNoteRow({
   return (
     <Link
       href={`/dashboard/edit_note?id=${note.id}`}
-      className="group flex gap-3 rounded-2xl border border-transparent p-3 transition-all hover:-translate-y-0.5 hover:border-[var(--border)] hover:bg-[var(--bg)]/70"
+      className="group flex gap-3 rounded-lg border border-transparent p-3 transition-colors hover:border-[var(--border)] hover:bg-[var(--bg)]/70"
     >
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 text-[var(--accent)]">
+      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/70 text-[var(--accent)]">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
@@ -349,7 +348,7 @@ function CockpitNoteRow({
           {eyebrow}
           <ArrowRight
             size={12}
-            className="opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100"
+            className="opacity-0 transition-colors group-hover:translate-x-0.5 group-hover:opacity-100"
           />
         </span>
         <span className="mt-1 block truncate text-sm font-semibold text-[var(--text-primary)]">
@@ -363,7 +362,7 @@ function CockpitNoteRow({
   );
 }
 
-function CockpitPanel({
+function WorkspacePanel({
   title,
   subtitle,
   actionHref,
@@ -377,7 +376,7 @@ function CockpitPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-xl shadow-black/5 backdrop-blur-xl">
+    <section className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-sm shadow-black/5 backdrop-blur-xl">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-primary)]">
@@ -390,7 +389,7 @@ function CockpitPanel({
         {actionHref && actionLabel && (
           <Link
             href={actionHref}
-            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)] transition-colors hover:bg-[var(--bg)]"
+            className="rounded-md border border-[var(--border)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)] transition-colors hover:bg-[var(--bg)]"
           >
             {actionLabel}
           </Link>
@@ -404,8 +403,8 @@ function CockpitPanel({
 function SelectedNotePreview({ note }: { note: Note | null }) {
   if (!note) {
     return (
-      <aside className="sticky top-24 hidden self-start rounded-[1.75rem] border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
-        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] text-[var(--accent)]">
+      <aside className="sticky top-24 hidden self-start rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-5 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
+        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--accent)]">
           <Eye size={18} />
         </div>
         <p className="font-semibold text-[var(--text-primary)]">preview rail</p>
@@ -418,7 +417,7 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
   }
 
   return (
-    <aside className="sticky top-24 hidden self-start overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-2xl shadow-black/5 backdrop-blur-xl xl:block">
+    <aside className="sticky top-24 hidden self-start overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
       <div className="border-b border-[var(--border)] p-5">
         <div className="mb-3 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
           <span className="inline-flex items-center gap-2">
@@ -435,25 +434,25 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 p-5 text-xs">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
           <p className="text-[var(--text-secondary)]">reading</p>
           <p className="mt-1 font-semibold text-[var(--text-primary)]">
             {getReadingMinutes(note)} min
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
           <p className="text-[var(--text-secondary)]">visibility</p>
           <p className="mt-1 font-semibold text-[var(--text-primary)]">
             {note.is_published ? "public" : "private"}
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
           <p className="text-[var(--text-secondary)]">updated</p>
           <p className="mt-1 font-semibold text-[var(--text-primary)]">
             {formatDate(note)}
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
           <p className="text-[var(--text-secondary)]">tags</p>
           <p className="mt-1 font-semibold text-[var(--text-primary)]">
             {note.tags.length}
@@ -470,7 +469,7 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
             {note.tags.slice(0, 8).map((tag) => (
               <span
                 key={`${note.id}-preview-${tag}`}
-                className="rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-1 text-[11px] text-[var(--accent)]"
+                className="rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-1 text-[11px] text-[var(--accent)]"
               >
                 #{tag}
               </span>
@@ -481,7 +480,7 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
 
       <div className="border-t border-[var(--border)] p-5">
         <Link href={`/dashboard/edit_note?id=${note.id}`}>
-          <Button className="w-full justify-center gap-2 rounded-2xl bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+          <Button className="w-full justify-center gap-2 rounded-lg bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
             open editor <ArrowRight size={14} />
           </Button>
         </Link>
@@ -700,7 +699,7 @@ export default function DashboardPage() {
     [notes],
   );
 
-  const cockpitStats = useMemo(
+  const workspaceStats = useMemo(
     () => [
       {
         label: "total notes",
@@ -726,7 +725,7 @@ export default function DashboardPage() {
     [availableTags.length, notes],
   );
 
-  const cockpitInsights = useMemo(() => {
+  const workspaceInsights = useMemo(() => {
     const byUpdated = [...notes].sort(
       (a, b) =>
         new Date(b.updated_at ?? b.created_at).getTime() -
@@ -751,22 +750,18 @@ export default function DashboardPage() {
 
   return (
     <>
-      <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[var(--accent)] opacity-[0.07] blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-50" />
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+      <section className="relative mb-8 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-6 lg:p-7">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]">
           <div className="min-w-0">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
-              <Sparkles size={13} className="text-[var(--accent)]" />
-              DevNotes Cockpit v1
-            </div>
-            <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] sm:text-5xl">
-              Capture fast. Reuse smarter. Publish beautifully.
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">
+              Workspace
+            </p>
+            <h1 className="max-w-4xl text-3xl font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
+              Capture fast. Reuse smarter. Publish with context.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-              Your notes workspace is becoming a developer knowledge cockpit:
-              private thinking, public writing, and AI-ready retrieval in one
-              focused surface.
+              A focused knowledge base for private notes, reusable snippets, and
+              public writing without switching tools.
             </p>
             <QuickCapture
               onCreated={(note) => {
@@ -775,14 +770,14 @@ export default function DashboardPage() {
             />
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <Link href="/dashboard/create_note">
-                <Button className="gap-2 rounded-2xl bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                <Button className="gap-2 rounded-lg bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                   <Plus size={15} />
                   create note
                 </Button>
               </Link>
               <Button
                 variant="ghost"
-                className="gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 onClick={openWorkspaceSearch}
               >
                 <Search size={15} />
@@ -794,14 +789,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {cockpitStats.map((stat) => (
+          <div className="grid grid-cols-2 gap-2 self-start">
+            {workspaceStats.map((stat) => (
               <div
                 key={stat.label}
-                className="group relative overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:shadow-xl hover:shadow-black/10"
+                className="border-l border-[var(--border)] bg-[var(--bg)]/35 p-4 transition-colors hover:border-[var(--accent)]/50"
               >
-                <div className="absolute right-3 top-3 h-8 w-8 rounded-full border border-[var(--border)] opacity-40 transition-transform group-hover:scale-125" />
-                <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] sm:text-3xl">
                   {loading ? "—" : stat.value}
                 </p>
                 <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
@@ -818,16 +812,16 @@ export default function DashboardPage() {
 
       {!loading && notes.length > 0 && (
         <section className="mb-8 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          <CockpitPanel
-            title="today's cockpit"
+          <WorkspacePanel
+            title="today's workspace"
             subtitle="Jump back into active knowledge, pin important context, or turn polished notes into public reading."
             actionHref="/dashboard/create_note"
             actionLabel="capture"
           >
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
                 <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
-                  {cockpitInsights.privateCount}
+                  {workspaceInsights.privateCount}
                 </p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                   private drafts
@@ -837,9 +831,9 @@ export default function DashboardPage() {
                   or publishable page.
                 </p>
               </div>
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
                 <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
-                  {cockpitInsights.publishCandidates.length}
+                  {workspaceInsights.publishCandidates.length}
                 </p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                   publish-ready
@@ -849,9 +843,9 @@ export default function DashboardPage() {
                   for public publishing.
                 </p>
               </div>
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
                 <p className="text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
-                  {cockpitInsights.guideCount}
+                  {workspaceInsights.guideCount}
                 </p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                   guides
@@ -863,8 +857,8 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {cockpitInsights.recent.slice(0, 2).map((note) => (
-                <CockpitNoteRow
+              {workspaceInsights.recent.slice(0, 2).map((note) => (
+                <WorkspaceNoteRow
                   key={`recent-${note.id}`}
                   note={note}
                   eyebrow="recently touched"
@@ -872,17 +866,17 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-          </CockpitPanel>
+          </WorkspacePanel>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <CockpitPanel
+            <WorkspacePanel
               title="priority pins"
               subtitle="Pinned notes stay closest to your writing surface."
             >
               <div className="space-y-1">
-                {cockpitInsights.pinned.length > 0 ? (
-                  cockpitInsights.pinned.map((note) => (
-                    <CockpitNoteRow
+                {workspaceInsights.pinned.length > 0 ? (
+                  workspaceInsights.pinned.map((note) => (
+                    <WorkspaceNoteRow
                       key={`pin-${note.id}`}
                       note={note}
                       eyebrow="pinned context"
@@ -890,14 +884,14 @@ export default function DashboardPage() {
                     />
                   ))
                 ) : (
-                  <p className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-xs leading-5 text-[var(--text-secondary)]">
-                    Pin notes from the library to build your active cockpit.
+                  <p className="rounded-lg border border-dashed border-[var(--border)] p-4 text-xs leading-5 text-[var(--text-secondary)]">
+                    Pin notes from the library to build your active workspace.
                   </p>
                 )}
               </div>
-            </CockpitPanel>
+            </WorkspacePanel>
 
-            <CockpitPanel
+            <WorkspacePanel
               title="reuse queue"
               subtitle="Snippets and publish candidates that are ready to travel."
               actionHref="/dashboard/snippets"
@@ -905,12 +899,12 @@ export default function DashboardPage() {
             >
               <div className="space-y-1">
                 {[
-                  ...cockpitInsights.snippets,
-                  ...cockpitInsights.publishCandidates,
+                  ...workspaceInsights.snippets,
+                  ...workspaceInsights.publishCandidates,
                 ]
                   .slice(0, 3)
                   .map((note) => (
-                    <CockpitNoteRow
+                    <WorkspaceNoteRow
                       key={`reuse-${note.id}`}
                       note={note}
                       eyebrow={
@@ -927,20 +921,20 @@ export default function DashboardPage() {
                       }
                     />
                   ))}
-                {cockpitInsights.snippets.length === 0 &&
-                  cockpitInsights.publishCandidates.length === 0 && (
-                    <p className="rounded-2xl border border-dashed border-[var(--border)] p-4 text-xs leading-5 text-[var(--text-secondary)]">
+                {workspaceInsights.snippets.length === 0 &&
+                  workspaceInsights.publishCandidates.length === 0 && (
+                    <p className="rounded-lg border border-dashed border-[var(--border)] p-4 text-xs leading-5 text-[var(--text-secondary)]">
                       Add a snippet or tag a longer note to make the reuse queue
                       useful.
                     </p>
                   )}
               </div>
-            </CockpitPanel>
+            </WorkspacePanel>
           </div>
         </section>
       )}
 
-      <div className="mb-6 flex flex-col gap-5 rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
+      <div className="mb-6 flex flex-col gap-5 rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -960,7 +954,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="ghost"
-              className="gap-2 rounded-2xl px-3 text-xs text-[var(--text-secondary)]"
+              className="gap-2 rounded-lg px-3 text-xs text-[var(--text-secondary)]"
               onClick={openWorkspaceSearch}
             >
               <Search size={14} />
@@ -972,7 +966,7 @@ export default function DashboardPage() {
             <select
               value={sort}
               onChange={(event) => changeSort(event.target.value as SortKey)}
-              className="h-9 rounded-2xl border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
+              className="h-9 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
               aria-label="Sort notes"
             >
               <option value="updated">updated</option>
@@ -985,7 +979,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => changeView("grid")}
-                className="flex h-9 w-9 items-center justify-center rounded-2xl transition-colors hover:bg-[var(--bg-secondary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
                   color:
                     view === "grid" ? "var(--accent)" : "var(--text-secondary)",
@@ -997,7 +991,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => changeView("list")}
-                className="flex h-9 w-9 items-center justify-center rounded-2xl transition-colors hover:bg-[var(--bg-secondary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
                   color:
                     view === "list" ? "var(--accent)" : "var(--text-secondary)",
@@ -1008,7 +1002,7 @@ export default function DashboardPage() {
               </button>
             </div>
             <Link href="/dashboard/create_note">
-              <Button className="gap-2 rounded-2xl bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+              <Button className="gap-2 rounded-lg bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                 <Plus size={14} />
                 new note
               </Button>
@@ -1026,7 +1020,7 @@ export default function DashboardPage() {
                   setLibraryFilter(filter.key);
                   setSelectedNoteId(null);
                 }}
-                className="group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-all hover:-translate-y-0.5 hover:text-[var(--accent)]"
+                className="group inline-flex items-center gap-2 rounded-md border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
                 style={{
                   color:
                     libraryFilter === filter.key
@@ -1043,7 +1037,7 @@ export default function DashboardPage() {
                 }}
               >
                 <span>{filter.label}</span>
-                <span className="rounded-full bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                <span className="rounded-md bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   {filter.count}
                 </span>
               </button>
@@ -1056,7 +1050,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setSelectedTag(null)}
-              className="rounded-full border px-3 py-1.5 transition-all hover:-translate-y-0.5 hover:text-[var(--accent)]"
+              className="rounded-md border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
               style={{
                 color:
                   selectedTag === null
@@ -1073,7 +1067,7 @@ export default function DashboardPage() {
                 key={tag}
                 type="button"
                 onClick={() => setSelectedTag(tag)}
-                className="rounded-full border px-3 py-1.5 transition-all hover:-translate-y-0.5 hover:text-[var(--accent)]"
+                className="rounded-md border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
                 style={{
                   color:
                     selectedTag === tag
@@ -1093,7 +1087,7 @@ export default function DashboardPage() {
       {error && (
         <Alert
           variant="destructive"
-          className="mb-6 flex items-center justify-between gap-4 rounded-3xl border-[var(--error)] bg-[var(--bg-secondary)]/45 p-4"
+          className="mb-6 flex items-center justify-between gap-4 rounded-xl border-[var(--error)] bg-[var(--bg-secondary)]/45 p-4"
         >
           <div className="flex items-center gap-3">
             <AlertCircle size={17} />
@@ -1105,7 +1099,7 @@ export default function DashboardPage() {
             type="button"
             variant="ghost"
             onClick={fetchFirstPage}
-            className="gap-2 rounded-2xl border border-[var(--border)] text-xs text-[var(--text-secondary)]"
+            className="gap-2 rounded-lg border border-[var(--border)] text-xs text-[var(--text-secondary)]"
           >
             <RefreshCw size={13} /> retry
           </Button>
@@ -1131,8 +1125,8 @@ export default function DashboardPage() {
       )}
 
       {!loading && notes.length === 0 && !error && (
-        <div className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-6 py-20 text-center shadow-xl shadow-black/5">
-          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-3xl border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+        <div className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-6 py-20 text-center shadow-sm shadow-black/5">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
             <FileText size={28} />
           </div>
           <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
@@ -1140,7 +1134,7 @@ export default function DashboardPage() {
           </p>
           <p className="mx-auto mb-6 mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
             start with a blank page, then pin, tag, publish, and retrieve your
-            thinking from one cockpit
+            thinking from one workspace
           </p>
           <Link href="/dashboard/create_note">
             <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
@@ -1158,7 +1152,7 @@ export default function DashboardPage() {
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
             Try another status filter or clear the tag filter to widen the
-            cockpit surface.
+            library view.
           </p>
           <Button
             variant="ghost"

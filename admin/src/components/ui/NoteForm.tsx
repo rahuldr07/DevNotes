@@ -459,7 +459,7 @@ export default function NoteForm({
           saveNote();
         }}
       >
-        <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-[var(--border)] bg-[var(--bg)]/92 px-4 py-2 shadow-xl shadow-black/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-[var(--border)] bg-[var(--bg)]/92 px-4 py-2 shadow-sm shadow-black/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="mx-auto flex max-w-[92rem] items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <button
@@ -470,8 +470,8 @@ export default function NoteForm({
               >
                 <ArrowLeft size={16} />
               </button>
-              <div className="flex h-10 min-w-0 items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-4 text-xs text-[var(--text-secondary)] shadow-sm shadow-black/5">
-                <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+              <div className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-4 text-xs text-[var(--text-secondary)] shadow-sm shadow-black/5">
+                <span className="h-2 w-2 rounded-md bg-[var(--accent)]" />
                 <span className="truncate text-[var(--text-primary)]">
                   {title.trim() || "untitled"}.md
                 </span>
@@ -479,7 +479,7 @@ export default function NoteForm({
                   <span className="text-[var(--accent)]">●</span>
                 )}
               </div>
-              <span className="hidden rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] md:inline-flex">
+              <span className="hidden rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] md:inline-flex">
                 {mode === "create" ? "new file" : "editor workbench"}
               </span>
             </div>
@@ -521,7 +521,7 @@ export default function NoteForm({
               <Button
                 type="submit"
                 disabled={loading}
-                className="gap-2 rounded-2xl bg-[var(--accent)] px-4 text-xs text-[var(--bg)] shadow-lg shadow-black/10 hover:bg-[var(--accent-hover)]"
+                className="gap-2 rounded-lg bg-[var(--accent)] px-4 text-xs text-[var(--bg)] shadow-lg shadow-black/10 hover:bg-[var(--accent-hover)]"
               >
                 {loading ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -535,20 +535,20 @@ export default function NoteForm({
         </div>
 
         <div className="mx-auto grid max-w-[92rem] gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
-          <section className="min-w-0 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/78 shadow-2xl shadow-black/5 backdrop-blur-xl">
+          <section className="min-w-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg)]/78 shadow-md shadow-black/5 backdrop-blur-xl">
             <div className="relative border-b border-[var(--border)] bg-[var(--bg-secondary)]/38 px-5 py-6 sm:px-7">
               <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
               <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                <span className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                   <FileCode size={12} className="text-[var(--accent)]" />
                   {noteType}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
+                <span className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
                   <ShieldCheck size={12} className="text-[var(--accent)]" />
                   {readinessLabel} · {readinessScore}%
                 </span>
                 {isPublished && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-[var(--accent)]">
+                  <span className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-[var(--accent)]">
                     <Globe2 size={12} /> public
                   </span>
                 )}
@@ -575,7 +575,7 @@ export default function NoteForm({
                       key={item.value}
                       type="button"
                       onClick={() => setNoteType(item.value)}
-                      className={`rounded-2xl border px-3 py-2 text-left transition-all ${
+                      className={`rounded-lg border px-3 py-2 text-left transition-colors ${
                         noteType === item.value
                           ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]"
                           : "border-[var(--border)] bg-[var(--bg)]/50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -592,7 +592,7 @@ export default function NoteForm({
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/45 p-2">
+              <div className="mt-5 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/45 p-2">
                 {tags.map((tag) => (
                   <button
                     key={tag}
@@ -600,7 +600,7 @@ export default function NoteForm({
                     onClick={() =>
                       setTags((prev) => prev.filter((item) => item !== tag))
                     }
-                    className="rounded-full border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]/50"
+                    className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]/50"
                     title="Remove tag"
                   >
                     #{tag} ×
@@ -636,7 +636,7 @@ export default function NoteForm({
                 onChange={setContent}
                 placeholder="// start writing your note, snippet, runbook, or guide..."
               />
-              <div className="mt-5 grid gap-3 rounded-3xl border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 xl:hidden">
+              <div className="mt-5 grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-4 xl:hidden">
                 <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
                   <Tags size={13} className="text-[var(--accent)]" /> metadata
                 </p>
@@ -647,7 +647,7 @@ export default function NoteForm({
                       value={language}
                       onChange={(event) => setLanguage(event.target.value)}
                       placeholder="tsx, py, sql..."
-                      className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                      className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                     />
                   </label>
                 )}
@@ -657,19 +657,19 @@ export default function NoteForm({
                     value={sourceUrl}
                     onChange={(event) => setSourceUrl(event.target.value)}
                     placeholder="https://..."
-                    className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   />
                 </label>
               </div>
             </div>
           </section>
 
-          <aside className="hidden self-start overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-2xl shadow-black/5 backdrop-blur-xl xl:block">
+          <aside className="hidden self-start overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
             <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
               inspector
             </p>
             <div className="space-y-3 text-xs text-[var(--text-secondary)]">
-              <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg)]/60 p-4">
+              <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
                     <Sparkles size={13} className="text-[var(--accent)]" />{" "}
@@ -679,9 +679,9 @@ export default function NoteForm({
                     {readinessScore}%
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-secondary)]">
+                <div className="h-2 overflow-hidden rounded-md bg-[var(--bg-secondary)]">
                   <div
-                    className="h-full rounded-full bg-[var(--accent)] transition-all"
+                    className="h-full rounded-md bg-[var(--accent)] transition-all"
                     style={{ width: `${readinessScore}%` }}
                   />
                 </div>
@@ -719,7 +719,7 @@ export default function NoteForm({
                 ].map((stat) => (
                   <div
                     key={stat.label}
-                    className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3"
+                    className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3"
                   >
                     <div className="mb-2 text-[var(--accent)]">{stat.icon}</div>
                     <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
@@ -731,7 +731,7 @@ export default function NoteForm({
               </div>
 
               {noteType === "snippet" && (
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+                <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                   <label
                     className="inline-flex items-center gap-2 text-[var(--text-secondary)]"
                     htmlFor="note-language"
@@ -748,7 +748,7 @@ export default function NoteForm({
                   />
                 </div>
               )}
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                 <label
                   className="inline-flex items-center gap-2 text-[var(--text-secondary)]"
                   htmlFor="source-url"
@@ -764,7 +764,7 @@ export default function NoteForm({
                   className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-2 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 />
               </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                 <p className="mb-3 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
                   <Hash size={13} className="text-[var(--accent)]" /> outline
                 </p>
@@ -786,7 +786,7 @@ export default function NoteForm({
                   </p>
                 )}
               </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-3">
                 <p className="mb-2 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
                   <Globe2 size={13} className="text-[var(--accent)]" />{" "}
                   visibility
@@ -805,7 +805,7 @@ export default function NoteForm({
           </aside>
         </div>
 
-        <div className="mx-auto mt-4 flex max-w-[92rem] flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-4 py-3 text-xs text-[var(--text-secondary)] shadow-lg shadow-black/5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto mt-4 flex max-w-[92rem] flex-col gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-4 py-3 text-xs text-[var(--text-secondary)] shadow-lg shadow-black/5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
           <span>
             {wordCount > 0
               ? `${noteType} · ${wordCount} words · ${characterCount} chars · ${readTime} min`
