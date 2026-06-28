@@ -754,9 +754,6 @@ export default function DashboardPage() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]">
           <div className="min-w-0">
             <p className="type-eyebrow mb-3 text-[var(--accent)]">Workspace</p>
-            <h1 className="type-hero max-w-4xl text-[var(--text-primary)]">
-              Capture fast. Reuse smarter. Publish with context.
-            </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
               Your notes, snippets, and publishing flow in one quiet cockpit.
             </p>
