@@ -201,7 +201,7 @@ export default function DashboardLayout({
         <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/84 p-3 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
-            className="group mb-5 flex items-center gap-3"
+            className="group mb-4 flex items-center gap-3 border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-2"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
@@ -210,14 +210,14 @@ export default function DashboardLayout({
               <p className="type-logo text-sm text-[var(--text-primary)]">
                 DevNotes
               </p>
-              <p className="text-xs text-[var(--text-secondary)]">
-                notes cockpit
+              <p className="font-mono text-[10px] text-[var(--text-secondary)]">
+                repo://knowledge
               </p>
             </div>
           </Link>
 
-          <div className="mb-2 flex items-center justify-between px-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-            <span>Explorer</span>
+          <div className="mb-2 flex items-center justify-between px-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+            <span>src/workspace</span>
             <span className="text-[var(--accent)]">main</span>
           </div>
 
@@ -235,8 +235,11 @@ export default function DashboardLayout({
                       : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  <Icon size={16} />
-                  {item.label}
+                  <Icon size={15} />
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {active && (
+                    <span className="font-mono text-[10px]">open</span>
+                  )}
                 </Link>
               );
             })}
@@ -247,12 +250,12 @@ export default function DashboardLayout({
               <span className="inline-flex items-center gap-2 text-[var(--accent)]">
                 <Sparkles size={13} /> Runtime
               </span>
-              <span>live</span>
+              <span>online</span>
             </div>
             <div className="space-y-1.5">
               {[
                 ["capture", "ready"],
-                ["search", "indexed"],
+                ["search", "warm"],
                 ["publish", "armed"],
               ].map(([label, value]) => (
                 <div
@@ -332,7 +335,7 @@ export default function DashboardLayout({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-col">
-          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/88 px-4 py-2 backdrop-blur-xl sm:px-6 lg:px-7">
+          <header className="z-40 shrink-0 border-b border-[var(--border)] bg-[var(--bg)]/90 px-4 py-2 backdrop-blur-xl sm:px-6 lg:px-7">
             <div className="flex items-center justify-between gap-4">
               <Link
                 href="/dashboard"
@@ -346,6 +349,15 @@ export default function DashboardLayout({
                 </span>
               </Link>
 
+              <div className="hidden items-center gap-2 font-mono text-[11px] text-[var(--text-secondary)] lg:flex">
+                <span className="text-[var(--accent)]">devnotes</span>
+                <span>/</span>
+                <span>
+                  {navItems.find((item) => item.matcher(pathname))?.label ??
+                    "workspace"}
+                </span>
+              </div>
+
               <button
                 type="button"
                 onClick={openSearch}
@@ -353,7 +365,7 @@ export default function DashboardLayout({
               >
                 <Search size={15} />
                 <span className="min-w-0 flex-1 truncate">
-                  Search workspace
+                  Search notes, snippets, tags
                 </span>
                 <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   ⌘K
@@ -415,9 +427,9 @@ export default function DashboardLayout({
           </main>
 
           <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
-            <span className="text-[var(--accent)]">● master</span>
-            <span>DevNotes Workbench · TypeScript · FastAPI · PostgreSQL</span>
-            <span>UTF-8 · LF</span>
+            <span className="text-[var(--accent)]">● synced</span>
+            <span>DevNotes Workbench · Next.js · FastAPI · PostgreSQL</span>
+            <span>UTF-8 · LF · main</span>
           </div>
         </div>
       </div>
