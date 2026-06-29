@@ -246,7 +246,7 @@ export default function SnippetsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
+      <section className="dev-panel overflow-hidden p-4 sm:p-5 lg:p-6">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
           <div>
             <p className="type-eyebrow mb-3 text-[var(--accent)]">Snippets</p>
@@ -257,11 +257,11 @@ export default function SnippetsPage() {
               Save reusable code blocks and commands for fast recall.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/35 p-2">
+          <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-md border border-[var(--border)]/80 bg-[var(--bg-secondary)]/45 p-3"
+                className="border-b border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 last:border-r-0"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)]">
                   {loading ? "—" : stat.value}
@@ -281,14 +281,14 @@ export default function SnippetsPage() {
             type="button"
             onClick={fetchSnippets}
             variant="ghost"
-            className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
             <RefreshCw size={15} />
             refresh
           </Button>
           <a
             href="/dashboard/create_note"
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 px-3 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
           >
             <Sparkles size={14} /> open editor
           </a>
@@ -302,7 +302,7 @@ export default function SnippetsPage() {
         />
       </section>
 
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 p-4 backdrop-blur-xl">
+      <section className="dev-panel p-4">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -313,7 +313,7 @@ export default function SnippetsPage() {
               Filter by language or runtime.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-2 text-xs text-[var(--text-secondary)]">
+          <div className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-2 text-xs text-[var(--text-secondary)]">
             <Search size={14} /> snippets indexed
           </div>
         </div>

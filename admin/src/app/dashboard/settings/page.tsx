@@ -63,7 +63,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-4 shadow-sm shadow-black/5 backdrop-blur-xl sm:p-5 lg:p-6">
+      <section className="dev-panel overflow-hidden p-4 sm:p-5 lg:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="type-eyebrow mb-3 text-[var(--accent)]">
@@ -72,16 +72,16 @@ export default function SettingsPage() {
             <h1 className="type-hero max-w-3xl text-[var(--text-primary)]">
               Shape your developer knowledge profile.
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-              Your public profile metadata and links.
+            <p className="mt-4 max-w-xl font-mono text-xs leading-6 text-[var(--text-secondary)] sm:text-sm">
+              profile.config.json · public metadata and links
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex h-12 items-end gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2">
+            <div className="flex h-12 items-end gap-1 border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2">
               {[10, 16, 22, 14].map((height) => (
                 <span
                   key={height}
-                  className="w-1.5 rounded-full bg-[var(--accent)]/60"
+                  className="w-1.5 bg-[var(--accent)]/60"
                   style={{ height }}
                 />
               ))}
@@ -91,7 +91,7 @@ export default function SettingsPage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 >
                   <ExternalLink size={15} />
                   view public profile
@@ -104,7 +104,7 @@ export default function SettingsPage() {
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <form
-          className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/70 p-5 backdrop-blur-xl sm:p-6"
+          className="dev-panel p-5 sm:p-6"
           onSubmit={(event) => {
             event.preventDefault();
             save();
