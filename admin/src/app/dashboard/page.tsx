@@ -760,8 +760,10 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
-            <span className="dev-chip px-2 py-1">indexed</span>
-            <span className="dev-chip px-2 py-1">autosave-ready</span>
+            <span className="dev-chip px-2 py-1">{notes.length} files</span>
+            <span className="dev-chip px-2 py-1">
+              {availableTags.length} tags
+            </span>
           </div>
         </div>
 
@@ -803,10 +805,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
-            {workspaceStats.map((stat) => (
+            {workspaceStats.map((stat, index) => (
               <div
                 key={stat.label}
-                className="border-b border-r border-[var(--border)] p-3 transition-colors last:border-r-0 hover:bg-[var(--bg-secondary)]/55"
+                className={`border-[var(--border)] p-3 transition-colors hover:bg-[var(--bg-secondary)]/55 ${
+                  index % 2 === 0 ? "border-r" : ""
+                } ${index < 2 ? "border-b" : ""}`}
               >
                 <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
                   {loading ? "—" : stat.value}
@@ -827,23 +831,28 @@ export default function DashboardPage() {
         <section className="mb-8 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
           <WorkspacePanel
             title="today's workspace"
-            subtitle="Active context and publish cues."
+            subtitle="Active context, publish queue, and recent edits."
             actionHref="/dashboard/create_note"
             actionLabel="capture"
           >
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.privateCount}
                 </p>
                 <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   private drafts
                 </p>
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--border)]/60">
-                  <div className="h-full w-3/4 rounded-full bg-[var(--accent)]/70" />
+                <div className="mt-4 grid grid-cols-6 gap-1">
+                  {[0, 1, 2, 3, 4, 5].map((cell) => (
+                    <span
+                      key={cell}
+                      className={`h-1.5 ${cell < 4 ? "bg-[var(--accent)]/70" : "bg-[var(--border)]/60"}`}
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.publishCandidates.length}
                 </p>
@@ -854,7 +863,7 @@ export default function DashboardPage() {
                   {[0, 1, 2, 3].map((step) => (
                     <span
                       key={step}
-                      className={`h-1.5 flex-1 rounded-full ${
+                      className={`h-1.5 flex-1 ${
                         step < workspaceInsights.publishCandidates.length
                           ? "bg-[var(--accent)]/70"
                           : "bg-[var(--border)]/60"
@@ -863,7 +872,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.guideCount}
                 </p>
@@ -874,7 +883,7 @@ export default function DashboardPage() {
                   {[0, 1, 2, 3, 4].map((bar) => (
                     <span
                       key={bar}
-                      className="rounded-full bg-[var(--accent)]/60"
+                      className="bg-[var(--accent)]/60"
                       style={{
                         height: `${8 + bar * 3}px`,
                         opacity: 0.35 + bar * 0.12,
