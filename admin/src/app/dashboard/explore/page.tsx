@@ -74,7 +74,7 @@ function ExploreSkeleton({ view }: { view: ViewMode }) {
   }
 
   return (
-    <div className="mb-4 break-inside-avoid space-y-3 rounded-md bg-[var(--bg-secondary)] p-4">
+    <div className="mb-4 break-inside-avoid space-y-3 rounded-none bg-[var(--bg-secondary)] p-4">
       <Skeleton className="h-5 w-3/4 bg-[var(--border)]" />
       <Skeleton className="h-3 w-full bg-[var(--border)]" />
       <Skeleton className="h-3 w-5/6 bg-[var(--border)]" />
@@ -91,9 +91,9 @@ function ExploreEmptyState({
   onTopic: (topic: string | null) => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-md shadow-black/5 sm:p-8">
+    <section className="relative overflow-hidden rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-md shadow-black/5 sm:p-8">
       <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
         <Sparkles size={28} />
       </div>
       <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
@@ -106,7 +106,7 @@ function ExploreEmptyState({
       </p>
 
       <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-none border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <Tags size={14} className="text-[var(--accent)]" /> starter topics
           </div>
@@ -114,7 +114,7 @@ function ExploreEmptyState({
             <button
               type="button"
               onClick={() => onTopic(null)}
-              className="rounded-md border border-[var(--accent)] px-3 py-1.5 text-xs text-[var(--accent)] transition-transform hover:-translate-y-0.5"
+              className="rounded-none border border-[var(--accent)] px-3 py-1.5 text-xs text-[var(--accent)] transition-transform hover:-translate-y-0.5"
             >
               all topics
             </button>
@@ -123,14 +123,14 @@ function ExploreEmptyState({
                 key={topic}
                 type="button"
                 onClick={() => onTopic(topic)}
-                className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                className="rounded-none border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
                 #{topic}
               </button>
             ))}
           </div>
         </div>
-        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-none border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <PenLine size={14} className="text-[var(--accent)]" /> publish path
           </div>
@@ -138,9 +138,9 @@ function ExploreEmptyState({
             {PUBLISHING_STEPS.map((step, index) => (
               <div
                 key={step}
-                className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
+                className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
               >
-                <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)] text-[var(--accent-foreground)]">
+                <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--accent)] text-[var(--accent-foreground)]">
                   {index + 1}
                 </span>
                 <p className="leading-5">{step}</p>
@@ -153,13 +153,13 @@ function ExploreEmptyState({
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Link
           href="/dashboard/create_note"
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
+          className="inline-flex h-10 items-center gap-2 rounded-none bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
         >
           <PenLine size={15} /> create publishable note
         </Link>
         <Link
           href="/dashboard/snippets"
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+          className="inline-flex h-10 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
         >
           <Code2 size={15} /> capture snippet first
         </Link>
@@ -196,7 +196,7 @@ function ExploreNote({
         event.stopPropagation();
         onLike(note.id);
       }}
-      className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+      className="inline-flex items-center gap-1 rounded-none px-1.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
       aria-label={note.liked_by_me ? "Unlike note" : "Like note"}
     >
       <Heart
@@ -228,12 +228,12 @@ function ExploreNote({
               }
             : undefined
         }
-        className={`group flex ${articleClass} items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]`}
+        className={`group flex ${articleClass} items-center gap-3 rounded-none px-2 py-3 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]`}
       >
         <h2 className="min-w-0 max-w-[240px] flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
           {note.title || "untitled"}
         </h2>
-        <span className="hidden shrink-0 rounded-md border border-[var(--border)] px-2 py-0.5 text-[10px] capitalize text-[var(--text-secondary)] lg:inline">
+        <span className="hidden shrink-0 rounded-none border border-[var(--border)] px-2 py-0.5 text-[10px] capitalize text-[var(--text-secondary)] lg:inline">
           {kind}
         </span>
         <p className="hidden min-w-0 flex-[2] truncate text-xs text-[var(--text-secondary)] md:block">
@@ -280,12 +280,12 @@ function ExploreNote({
             }
           : undefined
       }
-      className={`group relative mb-4 break-inside-avoid ${articleClass} rounded-md p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]`}
+      className={`group relative mb-4 break-inside-avoid ${articleClass} rounded-none p-4 transition-colors hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]`}
     >
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-            <span className="rounded-md border border-[var(--border)] px-2 py-0.5 capitalize">
+            <span className="rounded-none border border-[var(--border)] px-2 py-0.5 capitalize">
               {kind}
             </span>
             <span>{minutes} min</span>
@@ -606,13 +606,13 @@ export default function ExplorePage() {
         <div className="inline-flex items-center gap-2 px-2 text-xs text-[var(--text-secondary)]">
           <Flame size={15} className="text-[var(--accent)]" />
           {selectedTopic ? `Topic: #${selectedTopic}` : "Trending now"}
-          <span className="rounded-md bg-[var(--bg-primary)] px-2 py-0.5">
+          <span className="rounded-none bg-[var(--bg-primary)] px-2 py-0.5">
             {visibleNotes.length} shown
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
+          <div className="flex h-9 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
             <Search size={14} />
             <input
               value={search}
@@ -621,13 +621,13 @@ export default function ExplorePage() {
               className="w-48 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
             />
           </div>
-          <div className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] p-1">
             {(["trending", "recent"] as SortKey[]).map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setSort(key)}
-                className="rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-[var(--bg-secondary)]"
+                className="rounded-none px-3 py-1.5 text-xs transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
                   color:
                     sort === key ? "var(--accent)" : "var(--text-secondary)",
@@ -637,11 +637,11 @@ export default function ExplorePage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] p-1">
             <button
               type="button"
               onClick={() => setView("grid")}
-              className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
+              className="flex h-8 w-8 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
               style={{
                 color:
                   view === "grid" ? "var(--accent)" : "var(--text-secondary)",
@@ -653,7 +653,7 @@ export default function ExplorePage() {
             <button
               type="button"
               onClick={() => setView("list")}
-              className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
+              className="flex h-8 w-8 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
               style={{
                 color:
                   view === "list" ? "var(--accent)" : "var(--text-secondary)",
@@ -669,9 +669,9 @@ export default function ExplorePage() {
       {!loading && featuredNote && (
         <Link
           href={featuredNote.share_uuid ? `/s/${featuredNote.share_uuid}` : "#"}
-          className="mb-6 grid gap-4 rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-secondary)] p-5 transition-colors hover:border-[var(--accent)] lg:grid-cols-[auto_1fr_auto] lg:items-center"
+          className="mb-6 grid gap-4 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)] p-5 transition-colors hover:border-[var(--accent)] lg:grid-cols-[auto_1fr_auto] lg:items-center"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-none bg-[var(--accent)] text-[var(--accent-foreground)]">
             <BookOpen size={20} />
           </div>
           <div>

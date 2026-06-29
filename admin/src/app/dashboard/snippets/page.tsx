@@ -77,11 +77,11 @@ function SnippetCard({ note }: { note: Note }) {
   };
 
   return (
-    <article className="group overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-lg shadow-black/5 backdrop-blur transition-colors hover:border-[var(--accent)]/40 hover:shadow-md hover:shadow-black/10">
+    <article className="group overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-lg shadow-black/5 backdrop-blur transition-colors hover:border-[var(--accent)]/40 hover:shadow-md hover:shadow-black/10">
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[var(--accent)]">
               <Code2 size={12} />
               {language}
             </span>
@@ -96,7 +96,7 @@ function SnippetCard({ note }: { note: Note }) {
           type="button"
           onClick={copy}
           variant="ghost"
-          className="gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/70 px-3 text-xs text-[var(--text-secondary)] hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)]"
+          className="gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/70 px-3 text-xs text-[var(--text-secondary)] hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)]"
         >
           {copied ? <Check size={14} /> : <Clipboard size={14} />}
           {copied ? "copied" : "copy"}
@@ -111,7 +111,7 @@ function SnippetCard({ note }: { note: Note }) {
             (note.tags || []).slice(0, 5).map((tag) => (
               <span
                 key={`${note.id}-${tag}`}
-                className="rounded-md border border-[var(--border)] bg-[var(--bg)]/55 px-2 py-0.5 text-[var(--accent)]"
+                className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 px-2 py-0.5 text-[var(--accent)]"
               >
                 #{tag}
               </span>
@@ -153,9 +153,9 @@ function SnippetEmptyState() {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center shadow-sm shadow-black/5">
+    <div className="relative overflow-hidden rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center shadow-sm shadow-black/5">
       <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
         <Code2 size={28} />
       </div>
       <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
@@ -170,7 +170,7 @@ function SnippetEmptyState() {
         {examples.map((example) => (
           <div
             key={example}
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 p-3 font-mono"
+            className="rounded-none border border-[var(--border)] bg-[var(--bg)]/60 p-3 font-mono"
           >
             {example}
           </div>
@@ -281,14 +281,14 @@ export default function SnippetsPage() {
             type="button"
             onClick={fetchSnippets}
             variant="ghost"
-            className="gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
             <RefreshCw size={15} />
             refresh
           </Button>
           <a
             href="/dashboard/create_note"
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-3 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+            className="inline-flex h-9 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
           >
             <Sparkles size={14} /> open editor
           </a>
@@ -321,7 +321,7 @@ export default function SnippetsPage() {
           <button
             type="button"
             onClick={() => setSelectedLanguage(ALL_LANGUAGES)}
-            className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
+            className="rounded-none border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
             style={{
               color:
                 selectedLanguage === ALL_LANGUAGES
@@ -340,7 +340,7 @@ export default function SnippetsPage() {
               key={language}
               type="button"
               onClick={() => setSelectedLanguage(language)}
-              className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-none border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
               style={{
                 color:
                   selectedLanguage === language
@@ -374,14 +374,14 @@ export default function SnippetsPage() {
           ].map((key) => (
             <Skeleton
               key={key}
-              className="h-72 rounded-md bg-[var(--bg-secondary)]"
+              className="h-72 rounded-none bg-[var(--bg-secondary)]"
             />
           ))}
         </div>
       ) : snippets.length === 0 ? (
         <SnippetEmptyState />
       ) : filteredSnippets.length === 0 ? (
-        <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center">
+        <div className="rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center">
           <p className="text-lg font-semibold text-[var(--text-primary)]">
             No snippets in {selectedLanguage}
           </p>
@@ -399,7 +399,7 @@ export default function SnippetsPage() {
           {groupedSnippets.map(([language, items]) => (
             <section key={language} className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <div className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                   <Code2 size={13} className="text-[var(--accent)]" />
                   {language}
                 </div>

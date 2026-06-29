@@ -81,7 +81,7 @@ export default function EditNotePage() {
     return (
       <div className="flex items-center justify-center py-12">
         <div
-          className="p-6 rounded-lg"
+          className="p-6 rounded-none"
           style={{
             backgroundColor: "var(--sub-alt-color)",
             color: "var(--error-color)",

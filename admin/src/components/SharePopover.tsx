@@ -74,12 +74,12 @@ export function SharePopover({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-96 overflow-hidden rounded-3xl bg-[var(--bg-secondary)] p-0 shadow-2xl shadow-black/25"
+        className="w-96 overflow-hidden rounded-none bg-[var(--bg-secondary)] p-0 shadow-2xl shadow-black/25"
         style={{ border: "1px solid var(--border)" }}
       >
         <div className="border-b border-[var(--border)] bg-[var(--bg)]/35 p-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
+            <div className="grid h-10 w-10 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
               <Share2 size={16} />
             </div>
             <div>
@@ -94,7 +94,7 @@ export function SharePopover({
         </div>
 
         <div className="space-y-4 p-4">
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+          <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-4">
             <div className="mb-3 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Globe
@@ -121,7 +121,7 @@ export function SharePopover({
             </p>
 
             {isPublished && (
-              <div className="mt-3 flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-2">
+              <div className="mt-3 flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-2">
                 <input
                   readOnly
                   value={publicUrl}
@@ -131,7 +131,7 @@ export function SharePopover({
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="grid h-8 w-8 place-items-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+                  className="grid h-8 w-8 place-items-center rounded-none text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
                   aria-label="Copy public link"
                 >
                   <Copy size={14} />
@@ -139,7 +139,7 @@ export function SharePopover({
                 <button
                   type="button"
                   onClick={openPublicLink}
-                  className="grid h-8 w-8 place-items-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
+                  className="grid h-8 w-8 place-items-center rounded-none text-[var(--text-secondary)] transition-colors hover:bg-[var(--border)] hover:text-[var(--text-primary)]"
                   aria-label="Open public link"
                 >
                   <ExternalLink size={14} />
@@ -148,7 +148,7 @@ export function SharePopover({
             )}
           </div>
 
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+          <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Users

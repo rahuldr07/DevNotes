@@ -40,11 +40,11 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Border radius scale */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
 }
 
 /* ─── Smooth theme transitions ──────────────────────────────────────────── */
@@ -116,7 +116,7 @@ body {
 
 .dev-panel {
   border: 1px solid var(--border);
-  border-radius: 0.625rem;
+  border-radius: 0;
   background: color-mix(in srgb, var(--bg-secondary) 46%, transparent);
   box-shadow: 0 1px 0 color-mix(in srgb, var(--border) 70%, transparent) inset;
   backdrop-filter: blur(18px);
@@ -129,7 +129,7 @@ body {
 
 .dev-chip {
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0;
   background: color-mix(in srgb, var(--bg) 56%, transparent);
   font-family:
     var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
@@ -278,11 +278,11 @@ samp,
 }
 
 .auth-command-card {
-  border-radius: 1.75rem;
+  border-radius: 0;
 }
 
 .onboarding-dialog {
-  border-radius: 1.5rem;
+  border-radius: 0;
 }
 /* ═══════════════════════════════════════════════════════════════════════════
    DEVNOTES THEME SYSTEM — MonkeyType-inspired CSS variable architecture
@@ -634,7 +634,7 @@ samp,
   position: relative;
   overflow: hidden;
   border: 1px solid var(--border-color);
-  border-radius: 1.5rem;
+  border-radius: 0;
   background:
     radial-gradient(
       circle at 24px 24px,
@@ -658,7 +658,7 @@ samp,
   right: 1rem;
   z-index: 1;
   border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--sub-alt-color) 70%, transparent);
   color: var(--sub-color);
   font-size: 0.65rem;
@@ -675,7 +675,7 @@ samp,
   bottom: 1rem;
   left: 1.55rem;
   width: 0.35rem;
-  border-radius: 999px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--main-color) 35%, transparent);
   opacity: 0.45;
   pointer-events: none;
@@ -757,7 +757,7 @@ samp,
   background: var(--hover-color);
   color: var(--main-color);
   padding: 0.15em 0.45em;
-  border-radius: 5px;
+  border-radius: 0;
   border: 1px solid var(--border-color);
 }
 
@@ -765,7 +765,7 @@ samp,
 .tiptap pre {
   background: color-mix(in srgb, var(--bg-color) 82%, black);
   border: 1px solid var(--border-color);
-  border-radius: 18px;
+  border-radius: 0;
   padding: 1.25rem 1.45rem;
   margin: 1.2rem 0;
   overflow-x: auto;
@@ -852,7 +852,7 @@ samp,
   align-items: center;
   gap: 2px;
   padding: 5px 7px;
-  border-radius: 14px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--sub-alt-color) 88%, black);
   border: 1px solid var(--border-color);
   box-shadow: 0 18px 50px color-mix(in srgb, black 24%, transparent);
@@ -864,7 +864,7 @@ samp,
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -889,7 +889,7 @@ samp,
 .bubble-link-input {
   height: 28px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 0;
   border: 1px solid var(--border-color);
   background: var(--bg-color);
   color: var(--text-color);
@@ -912,7 +912,7 @@ samp,
   align-items: center;
   gap: 4px;
   padding: 5px 8px;
-  border-radius: 12px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--sub-alt-color) 86%, black);
   border: 1px solid var(--border-color);
   box-shadow: none;
@@ -930,7 +930,7 @@ samp,
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -971,7 +971,7 @@ samp,
   width: 15px;
   height: 15px;
   border: 1.5px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 0;
   background: transparent;
   cursor: pointer;
   position: relative;
@@ -1030,7 +1030,7 @@ samp,
 }
 .tiptap-code-block-wrapper pre {
   margin: 0;
-  border-radius: 14px;
+  border-radius: 0;
   background:
     linear-gradient(
       90deg,
@@ -1050,7 +1050,7 @@ samp,
   top: 2rem;
   bottom: 1rem;
   width: 0.3rem;
-  border-radius: 999px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--main-color) 32%, transparent);
   pointer-events: none;
 }
@@ -1067,7 +1067,7 @@ samp,
   background: color-mix(in srgb, var(--main-color) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--main-color) 25%, transparent);
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: 0;
   pointer-events: none;
   z-index: 1;
 }
@@ -1080,7 +1080,7 @@ samp,
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
-  border-radius: 5px;
+  border-radius: 0;
   border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
   background: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
   color: var(--text-secondary);

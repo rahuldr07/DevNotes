@@ -183,8 +183,8 @@ export default function DashboardLayout({
   return (
     <div className="h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="pointer-events-none fixed inset-0 opacity-70">
-        <div className="absolute left-[-12rem] top-[-10rem] h-80 w-80 rounded-md bg-[var(--accent)]/10 blur-3xl" />
-        <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-96 rounded-md bg-[var(--main-color)]/10 blur-3xl" />
+        <div className="absolute left-[-12rem] top-[-10rem] h-80 w-80 rounded-none bg-[var(--accent)]/10 blur-3xl" />
+        <div className="absolute bottom-[-12rem] right-[-8rem] h-96 w-96 rounded-none bg-[var(--main-color)]/10 blur-3xl" />
         <div
           className="absolute inset-0"
           style={{
@@ -203,7 +203,7 @@ export default function DashboardLayout({
             href="/dashboard"
             className="group mb-4 flex items-center gap-3 border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-2"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm shadow-black/10 transition-transform group-hover:scale-105">
+            <div className="flex h-9 w-9 items-center justify-center rounded-none border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
             </div>
             <div>
@@ -275,7 +275,7 @@ export default function DashboardLayout({
 
           <div className="mt-auto space-y-2 border border-[var(--border)] bg-[var(--bg-secondary)]/40 p-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--bg)] text-[var(--accent)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-none bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={16} />
               </div>
               <div className="min-w-0">
@@ -341,7 +341,7 @@ export default function DashboardLayout({
                 href="/dashboard"
                 className="flex items-center gap-2 lg:hidden"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-none border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)]">
                   <LayoutDashboard size={16} />
                 </span>
                 <span className="text-sm font-semibold tracking-[0.18em] uppercase">
@@ -361,23 +361,23 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={openSearch}
-                className="hidden min-w-0 flex-1 items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--bg-secondary)]/62 px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
+                className="hidden min-w-0 flex-1 items-center gap-3 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/62 px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)] sm:flex lg:max-w-xl"
               >
                 <Search size={15} />
                 <span className="min-w-0 flex-1 truncate">
                   Search notes, snippets, tags
                 </span>
-                <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   ⌘K
                 </kbd>
-                <kbd className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   /
                 </kbd>
               </button>
 
               <div className="flex items-center gap-2">
                 <Link href="/dashboard/create_note">
-                  <Button className="gap-2 rounded-lg bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                  <Button className="gap-2 rounded-none bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                     <Plus size={15} />
                     <span className="hidden sm:inline">New note</span>
                   </Button>
@@ -405,7 +405,7 @@ export default function DashboardLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors ${
+                    className={`flex shrink-0 items-center gap-2 rounded-none px-3 py-1.5 text-xs transition-colors ${
                       active
                         ? "bg-[var(--bg-secondary)] text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"

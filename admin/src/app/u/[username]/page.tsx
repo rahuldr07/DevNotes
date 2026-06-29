@@ -104,8 +104,8 @@ export default async function AuthorProfilePage({
   return (
     <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[var(--accent)]/12 blur-3xl" />
-        <div className="absolute bottom-[-14rem] right-[-10rem] h-[30rem] w-[30rem] rounded-full bg-[var(--main-color)]/10 blur-3xl" />
+        <div className="absolute left-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-none bg-[var(--accent)]/12 blur-3xl" />
+        <div className="absolute bottom-[-14rem] right-[-10rem] h-[30rem] w-[30rem] rounded-none bg-[var(--main-color)]/10 blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.13]"
           style={{
@@ -125,20 +125,20 @@ export default async function AuthorProfilePage({
           >
             DevNotes
           </Link>
-          <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--text-secondary)]">
+          <span className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--text-secondary)]">
             public profile
           </span>
         </div>
       </header>
 
       <main className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
-        <section className="mb-8 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-6 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-8 lg:p-10">
+        <section className="mb-8 overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-6 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
             <div>
-              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-none border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={34} />
               </div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1 text-xs text-[var(--text-secondary)]">
                 <Sparkles size={13} className="text-[var(--accent)]" />
                 developer knowledge profile
               </div>
@@ -167,7 +167,7 @@ export default async function AuthorProfilePage({
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5 text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+                        className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5 text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
                       >
                         {label} <ExternalLink size={12} />
                       </a>
@@ -176,18 +176,18 @@ export default async function AuthorProfilePage({
                 </div>
               )}
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
+                <span className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
                   <CalendarDays size={13} /> joined{" "}
                   {formatJoined(profile.created_at)}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
+                <span className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
                   <FileText size={13} /> {publicNotes.length} public notes
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+              <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
                 <p className="text-2xl font-semibold tracking-[-0.04em]">
                   {publicNotes.length}
                 </p>
@@ -195,7 +195,7 @@ export default async function AuthorProfilePage({
                   notes
                 </p>
               </div>
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+              <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
                 <p className="text-2xl font-semibold tracking-[-0.04em]">
                   {totalLikes}
                 </p>
@@ -203,7 +203,7 @@ export default async function AuthorProfilePage({
                   likes
                 </p>
               </div>
-              <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+              <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
                 <p className="text-2xl font-semibold tracking-[-0.04em]">
                   {totalViews}
                 </p>
@@ -216,13 +216,13 @@ export default async function AuthorProfilePage({
         </section>
 
         {featuredNote && (
-          <section className="mb-8 rounded-[2rem] border border-[var(--border)] bg-[var(--bg)]/60 p-5 backdrop-blur-xl sm:p-6">
+          <section className="mb-8 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 p-5 backdrop-blur-xl sm:p-6">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
               featured latest
             </p>
             <Link
               href={`/s/${featuredNote.share_uuid}`}
-              className="group block rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 transition-colors hover:border-[var(--accent)]/50"
+              className="group block rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 transition-colors hover:border-[var(--accent)]/50"
             >
               <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
                 <span>{formatNoteDate(featuredNote)}</span>
@@ -258,7 +258,7 @@ export default async function AuthorProfilePage({
             {topTags.map(([tag, count]) => (
               <span
                 key={tag}
-                className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--accent)]"
+                className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--accent)]"
               >
                 #{tag}{" "}
                 <span className="text-[var(--text-secondary)]">{count}</span>
@@ -268,7 +268,7 @@ export default async function AuthorProfilePage({
         )}
 
         {publicNotes.length === 0 ? (
-          <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--bg-secondary)]/50 py-20 text-center text-sm text-[var(--text-secondary)] backdrop-blur-xl">
+          <div className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 py-20 text-center text-sm text-[var(--text-secondary)] backdrop-blur-xl">
             <FileText className="mx-auto mb-4 text-[var(--accent)]" size={30} />
             Nothing published yet.
           </div>
@@ -278,7 +278,7 @@ export default async function AuthorProfilePage({
               <Link
                 key={note.id}
                 href={`/s/${note.share_uuid}`}
-                className="group block rounded-[1.75rem] border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:bg-[var(--bg-secondary)]/70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="group block rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:bg-[var(--bg-secondary)]/70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
               >
                 <div className="mb-4 flex items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
                   <span className="capitalize">
@@ -298,7 +298,7 @@ export default async function AuthorProfilePage({
                     {note.tags.slice(0, 4).map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full bg-[var(--bg)]/70 px-2 py-0.5 text-[11px] text-[var(--accent)]"
+                        className="rounded-none bg-[var(--bg)]/70 px-2 py-0.5 text-[11px] text-[var(--accent)]"
                       >
                         #{tag}
                       </span>

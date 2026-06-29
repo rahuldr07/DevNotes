@@ -243,7 +243,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm transition-opacity hover:opacity-70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-none transition-opacity hover:opacity-70 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 style={{ color: "var(--sub-color)" }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -267,7 +267,7 @@ export default function LoginPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded-sm"
+              className="h-4 w-4 rounded-none"
               style={{
                 accentColor: "var(--accent)",
               }}

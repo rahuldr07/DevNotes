@@ -72,7 +72,7 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
   };
 
   return (
-    <div className="mt-7 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 shadow-sm shadow-black/5 backdrop-blur">
+    <div className="mt-7 overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/70 shadow-sm shadow-black/5 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
         <div className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
           Quick capture
@@ -122,14 +122,14 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
               value={language}
               onChange={(event) => setLanguage(event.target.value)}
               placeholder="lang"
-              className="h-10 w-24 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-xs text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              className="h-10 w-24 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-xs text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
             />
           )}
           <Button
             type="button"
             onClick={submit}
             disabled={saving || !content.trim()}
-            className="gap-2 rounded-lg bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+            className="gap-2 rounded-none bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
           >
             {saving ? (
               <Loader2 size={15} className="animate-spin" />

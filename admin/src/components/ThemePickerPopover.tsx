@@ -44,7 +44,7 @@ function ThemeOption({
         {[bg, main, subAlt, text].map((color) => (
           <span
             key={`${meta.id}-${color}`}
-            className="h-3 w-3 rounded-[2px]"
+            className="h-3 w-3 rounded-none"
             style={{ backgroundColor: color }}
           />
         ))}
@@ -93,7 +93,7 @@ export function ThemePickerPopover() {
           aria-label="switch theme"
         >
           <span
-            className="h-2.5 w-2.5 rounded-[2px]"
+            className="h-2.5 w-2.5 rounded-none"
             style={{ backgroundColor: currentThemeMeta.swatches[1] }}
           />
           <span className="hidden sm:inline">{currentThemeMeta.name}</span>

@@ -37,7 +37,7 @@ function ThemeChoice({
       onClick={() => onSelect(meta.id)}
       onMouseEnter={() => onHover(meta.id)}
       onMouseLeave={onLeave}
-      className="group relative overflow-hidden rounded-2xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
+      className="group relative overflow-hidden rounded-none border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
       style={{ color: isSelected ? "var(--accent)" : "var(--text-secondary)" }}
     >
       <span
@@ -48,19 +48,19 @@ function ThemeChoice({
       />
       <span className="flex items-center gap-3">
         <span
-          className="relative flex h-11 w-16 shrink-0 overflow-hidden rounded-xl border"
+          className="relative flex h-11 w-16 shrink-0 overflow-hidden rounded-none border"
           style={{ borderColor: main, backgroundColor: bg }}
         >
           <span
-            className="absolute left-2 top-2 h-2 w-7 rounded-full"
+            className="absolute left-2 top-2 h-2 w-7 rounded-none"
             style={{ backgroundColor: main }}
           />
           <span
-            className="absolute bottom-2 left-2 h-2 w-10 rounded-full"
+            className="absolute bottom-2 left-2 h-2 w-10 rounded-none"
             style={{ backgroundColor: text }}
           />
           <span
-            className="absolute bottom-2 right-2 h-5 w-2 rounded-full"
+            className="absolute bottom-2 right-2 h-5 w-2 rounded-none"
             style={{ backgroundColor: subAlt }}
           />
         </span>
@@ -77,14 +77,14 @@ function ThemeChoice({
             {[bg, main, subAlt, text].map((color) => (
               <span
                 key={`${meta.id}-${color}`}
-                className="h-2 w-5 rounded-full"
+                className="h-2 w-5 rounded-none"
                 style={{ backgroundColor: color }}
               />
             ))}
           </span>
         </span>
         <span
-          className="grid h-7 w-7 place-items-center rounded-full border transition-transform group-hover:scale-105"
+          className="grid h-7 w-7 place-items-center rounded-none border transition-transform group-hover:scale-105"
           style={{
             borderColor: isSelected ? "var(--accent)" : "var(--border)",
           }}
@@ -146,15 +146,15 @@ export function OnboardingDialog() {
               </p>
               <div className="flex items-center gap-1.5">
                 <span
-                  className="h-2.5 w-2.5 rounded-full"
+                  className="h-2.5 w-2.5 rounded-none"
                   style={{ backgroundColor: "var(--error-color)" }}
                 />
                 <span
-                  className="h-2.5 w-2.5 rounded-full"
+                  className="h-2.5 w-2.5 rounded-none"
                   style={{ backgroundColor: "var(--accent)" }}
                 />
                 <span
-                  className="h-2.5 w-2.5 rounded-full"
+                  className="h-2.5 w-2.5 rounded-none"
                   style={{ backgroundColor: "var(--success)" }}
                 />
               </div>

@@ -136,7 +136,7 @@ export function VersionHistoryDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                className="flex h-8 w-8 items-center justify-center rounded-none text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                 aria-label="Close version history"
               >
                 <X size={16} />
@@ -166,7 +166,7 @@ export function VersionHistoryDrawer({
                         key={version.id}
                         type="button"
                         onClick={() => setSelectedId(version.id)}
-                        className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-[var(--bg-secondary)]"
+                        className="w-full rounded-none px-3 py-2 text-left transition-colors hover:bg-[var(--bg-secondary)]"
                         style={{
                           backgroundColor:
                             selectedId === version.id
@@ -212,7 +212,7 @@ export function VersionHistoryDrawer({
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <article className="min-w-0 rounded-md bg-[var(--bg-secondary)] p-4">
+                  <article className="min-w-0 rounded-none bg-[var(--bg-secondary)] p-4">
                     <p className="mb-3 text-xs text-[var(--text-secondary)]">
                       current
                     </p>
@@ -227,7 +227,7 @@ export function VersionHistoryDrawer({
                     <ReadOnlyEditor content={current.content} />
                   </article>
 
-                  <article className="min-w-0 rounded-md bg-[var(--bg-secondary)] p-4">
+                  <article className="min-w-0 rounded-none bg-[var(--bg-secondary)] p-4">
                     <p className="mb-3 text-xs text-[var(--text-secondary)]">
                       selected
                     </p>

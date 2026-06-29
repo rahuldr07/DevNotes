@@ -91,7 +91,7 @@ export default function SettingsPage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  className="gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  className="gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 >
                   <ExternalLink size={15} />
                   view public profile
@@ -116,7 +116,7 @@ export default function SettingsPage() {
               <input
                 value={form.name}
                 onChange={(event) => setField("name", event.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="w-full rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 required
               />
             </label>
@@ -125,7 +125,7 @@ export default function SettingsPage() {
               <input
                 value={form.username}
                 onChange={(event) => setField("username", event.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="w-full rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                 placeholder="your-handle"
                 required
               />
@@ -139,7 +139,7 @@ export default function SettingsPage() {
               onChange={(event) => setField("bio", event.target.value)}
               rows={4}
               maxLength={280}
-              className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              className="w-full resize-none rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
               placeholder="Backend engineer writing about FastAPI, auth, and product systems."
             />
             <span className="text-xs text-[var(--text-secondary)]">
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                 <input
                   value={form[field]}
                   onChange={(event) => setField(field, event.target.value)}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                  className="w-full rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   placeholder="https://..."
                 />
               </label>
@@ -172,7 +172,7 @@ export default function SettingsPage() {
             <Button
               type="submit"
               disabled={saving}
-              className="gap-2 rounded-lg bg-[var(--accent)] px-5 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+              className="gap-2 rounded-none bg-[var(--accent)] px-5 text-[var(--bg)] hover:bg-[var(--accent-hover)]"
             >
               {saving ? (
                 <Loader2 size={15} className="animate-spin" />
@@ -184,12 +184,12 @@ export default function SettingsPage() {
           </div>
         </form>
 
-        <aside className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 backdrop-blur-xl">
+        <aside className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 p-5 backdrop-blur-xl">
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
             live profile card
           </p>
-          <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--bg)]/60 p-5">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--accent)]">
+          <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/60 p-5">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-none border border-[var(--border)] text-[var(--accent)]">
               <UserCircle size={28} />
             </div>
             <h2 className="break-words text-2xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">

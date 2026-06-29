@@ -47,7 +47,7 @@ export const THEMES: ThemeMeta[] = [
   },
   {
     id: "paper",
-    name: "Paper",
+    name: "Paper CLI",
     isDark: false,
     swatches: ["#f5f0e8", "#b5451b", "#e8e0d0", "#3d2b1f"],
   },

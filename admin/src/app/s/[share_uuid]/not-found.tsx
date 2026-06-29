@@ -5,8 +5,8 @@ export default function SharedNoteNotFound() {
   return (
     <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[var(--bg)] px-4 py-12 text-[var(--text-primary)]">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-[-10rem] top-[-14rem] h-96 w-96 rounded-md bg-[var(--accent)]/12 blur-3xl" />
-        <div className="absolute bottom-[-12rem] right-[-10rem] h-[28rem] w-[28rem] rounded-md bg-[var(--main-color)]/10 blur-3xl" />
+        <div className="absolute left-[-10rem] top-[-14rem] h-96 w-96 rounded-none bg-[var(--accent)]/12 blur-3xl" />
+        <div className="absolute bottom-[-12rem] right-[-10rem] h-[28rem] w-[28rem] rounded-none bg-[var(--main-color)]/10 blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.12]"
           style={{
@@ -18,9 +18,9 @@ export default function SharedNoteNotFound() {
         />
       </div>
 
-      <section className="relative w-full max-w-xl rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-6 shadow-md shadow-black/10 backdrop-blur-xl sm:p-8">
+      <section className="relative w-full max-w-xl rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-6 shadow-md shadow-black/10 backdrop-blur-xl sm:p-8">
         <div className="mb-6 flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
+          <div className="grid h-12 w-12 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)]">
             <AlertTriangle size={22} />
           </div>
           <div>
@@ -42,14 +42,14 @@ export default function SharedNoteNotFound() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--bg)] transition-colors hover:bg-[var(--accent-hover)]"
+            className="inline-flex items-center gap-2 rounded-none bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--bg)] transition-colors hover:bg-[var(--accent-hover)]"
           >
             <Home size={15} />
             go home
           </Link>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+            className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
           >
             <ArrowLeft size={15} />
             back to workspace

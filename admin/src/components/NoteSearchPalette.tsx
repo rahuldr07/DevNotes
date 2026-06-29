@@ -105,7 +105,7 @@ function highlightText(text: string, indices: readonly [number, number][]) {
     parts.push(
       <mark
         key={`m-${start}-${end}`}
-        className="rounded-sm bg-[var(--accent)] px-0.5 text-[var(--bg)]"
+        className="rounded-none bg-[var(--accent)] px-0.5 text-[var(--bg)]"
       >
         {text.slice(start, end + 1)}
       </mark>,
@@ -383,7 +383,7 @@ export function NoteSearchPalette({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="w-full max-w-3xl overflow-hidden rounded-lg bg-[var(--bg-secondary)] shadow-md shadow-black/30"
+            className="w-full max-w-3xl overflow-hidden rounded-none bg-[var(--bg-secondary)] shadow-md shadow-black/30"
             style={{ border: "1px solid var(--border)" }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -391,7 +391,7 @@ export function NoteSearchPalette({
               className="flex items-center gap-3 px-5 py-4"
               style={{ borderBottom: "1px solid var(--border)" }}
             >
-              <div className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
+              <div className="grid h-9 w-9 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
                 <Search size={16} />
               </div>
               <input
@@ -417,7 +417,7 @@ export function NoteSearchPalette({
                       setMode(item);
                       setSelectedIndex(0);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] px-3 py-1.5 text-[11px] transition-colors hover:bg-[var(--border)]"
+                    className="inline-flex items-center gap-1.5 rounded-none border border-[var(--border)] px-3 py-1.5 text-[11px] transition-colors hover:bg-[var(--border)]"
                     style={{
                       color:
                         mode === item
@@ -452,23 +452,23 @@ export function NoteSearchPalette({
 
             <div className="max-h-[62vh] overflow-y-auto p-3">
               {showIndexLoading ? (
-                <div className="rounded-xl border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                <div className="rounded-none border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   loading retrieval index...
                 </div>
               ) : mode === "full" && !query.trim() ? (
-                <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                <div className="rounded-none border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   type to search every note in your vault with ranked retrieval
                 </div>
               ) : fullLoading ? (
-                <div className="rounded-xl border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                <div className="rounded-none border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   searching your knowledge graph...
                 </div>
               ) : fullError ? (
-                <div className="rounded-xl border border-[var(--error)] px-4 py-10 text-center text-sm text-[var(--error)]">
+                <div className="rounded-none border border-[var(--error)] px-4 py-10 text-center text-sm text-[var(--error)]">
                   {fullError}
                 </div>
               ) : paletteItems.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+                <div className="rounded-none border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   no matching commands or notes yet
                 </div>
               ) : (
@@ -481,7 +481,7 @@ export function NoteSearchPalette({
                         type="button"
                         onMouseEnter={() => setSelectedIndex(index)}
                         onClick={() => executeItem(item)}
-                        className="group mb-2 w-full rounded-xl border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                        className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
                         style={{
                           backgroundColor: isSelected
                             ? "color-mix(in srgb, var(--accent) 10%, transparent)"
@@ -492,7 +492,7 @@ export function NoteSearchPalette({
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
                             <Search size={16} />
                           </span>
                           <span className="min-w-0 flex-1">
@@ -503,7 +503,7 @@ export function NoteSearchPalette({
                               Recent search. Press enter to run it again.
                             </span>
                           </span>
-                          <span className="rounded-md border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                          <span className="rounded-none border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                             recent
                           </span>
                         </div>
@@ -520,7 +520,7 @@ export function NoteSearchPalette({
                         type="button"
                         onMouseEnter={() => setSelectedIndex(index)}
                         onClick={() => executeItem(item)}
-                        className="group mb-2 w-full rounded-xl border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                        className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
                         style={{
                           backgroundColor: isSelected
                             ? "color-mix(in srgb, var(--accent) 10%, transparent)"
@@ -531,7 +531,7 @@ export function NoteSearchPalette({
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
                             <Icon size={16} />
                           </span>
                           <span className="min-w-0 flex-1">
@@ -542,7 +542,7 @@ export function NoteSearchPalette({
                               {item.command.description}
                             </span>
                           </span>
-                          <span className="rounded-md border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                          <span className="rounded-none border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                             command
                           </span>
                         </div>
@@ -581,7 +581,7 @@ export function NoteSearchPalette({
                         router.push(`/dashboard/edit_note?id=${note.id}`);
                         onClose();
                       }}
-                      className="group mb-2 w-full rounded-xl border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                      className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
                       style={{
                         backgroundColor: isSelected
                           ? "color-mix(in srgb, var(--accent) 10%, transparent)"
@@ -604,7 +604,7 @@ export function NoteSearchPalette({
                             <button
                               type="button"
                               onClick={(event) => copySnippet(note, event)}
-                              className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                              className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] px-2 py-1 transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                             >
                               {copiedId === note.id ? (
                                 <Check size={11} />
@@ -628,7 +628,7 @@ export function NoteSearchPalette({
                           {note.tags.slice(0, 4).map((tag) => (
                             <span
                               key={`${note.id}-${tag}`}
-                              className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[10px] text-[var(--accent)]"
+                              className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[10px] text-[var(--accent)]"
                             >
                               <Hash size={10} />
                               {tag}
