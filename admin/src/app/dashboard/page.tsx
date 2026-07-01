@@ -47,7 +47,7 @@ import { stripMarkdown } from "@/lib/notes";
 import type { Note } from "@/types/notes";
 
 type SortKey = "updated" | "newest" | "oldest" | "reading" | "title";
-type ViewMode = "grid" | "list";
+type ViewMode = "grid" | "list" | "compact";
 type LibraryFilter =
   | "all"
   | "pinned"
@@ -99,6 +99,17 @@ function appendUniqueNotes(current: Note[], incoming: Note[]) {
 }
 
 function NoteCardSkeleton({ view }: { view: ViewMode }) {
+  if (view === "compact") {
+    return (
+      <div className="grid grid-cols-[1rem_minmax(0,1fr)_5rem_6rem] items-center gap-3 border-b border-[var(--border)] px-3 py-2">
+        <Skeleton className="h-2 w-2 bg-[var(--bg-secondary)]" />
+        <Skeleton className="h-3 w-2/3 bg-[var(--bg-secondary)]" />
+        <Skeleton className="h-3 w-full bg-[var(--bg-secondary)]" />
+        <Skeleton className="h-3 w-full bg-[var(--bg-secondary)]" />
+      </div>
+    );
+  }
+
   if (view === "list") {
     return (
       <div className="flex items-center gap-4 px-2 py-3">
@@ -236,6 +247,49 @@ function NoteCard({
     onFocus: () => onSelect?.(note.id),
     onMouseLeave: () => setShowActions(false),
   };
+
+  if (view === "compact") {
+    return (
+      <article
+        ref={observeRef}
+        {...interactiveProps}
+        className="group grid cursor-pointer grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-3 py-2 transition-colors hover:bg-[var(--bg-secondary)]/72 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] md:grid-cols-[1rem_minmax(0,1fr)_5rem_6.5rem_auto]"
+      >
+        <span
+          className="h-2 w-2 shrink-0 rounded-none"
+          style={{
+            backgroundColor: note.is_pinned ? "var(--accent)" : "var(--border)",
+          }}
+        />
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate text-sm font-medium text-[var(--text-primary)]">
+              {note.title || "untitled"}
+            </h2>
+            <span className="hidden shrink-0 rounded-none border border-[var(--border)] px-1.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-[var(--text-secondary)] sm:inline">
+              {getNoteKind(note)}
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-[11px] leading-4 text-[var(--text-secondary)]">
+            {preview || "empty note"}
+          </p>
+        </div>
+        <span className="hidden font-mono text-[11px] text-[var(--text-secondary)] md:inline">
+          {getReadingMinutes(note)}m
+        </span>
+        <span className="hidden text-[11px] text-[var(--text-secondary)] md:inline">
+          {formatDate(note)}
+        </span>
+        <div
+          className={`shrink-0 transition-opacity ${
+            showActions ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <GhostActions note={note} onDelete={onDelete} onPin={onPin} />
+        </div>
+      </article>
+    );
+  }
 
   if (view === "list") {
     return (
@@ -507,7 +561,13 @@ export default function DashboardPage() {
     const savedSort = localStorage.getItem("devnotes-sort") as SortKey | null;
     const savedView = localStorage.getItem("devnotes-view") as ViewMode | null;
     if (savedSort) setSort(savedSort);
-    if (savedView) setView(savedView);
+    if (
+      savedView === "grid" ||
+      savedView === "list" ||
+      savedView === "compact"
+    ) {
+      setView(savedView);
+    }
   }, []);
 
   const changeSort = (value: SortKey) => {
@@ -1037,6 +1097,20 @@ export default function DashboardPage() {
               >
                 <List size={15} />
               </button>
+              <button
+                type="button"
+                onClick={() => changeView("compact")}
+                className="flex h-9 w-9 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
+                style={{
+                  color:
+                    view === "compact"
+                      ? "var(--accent)"
+                      : "var(--text-secondary)",
+                }}
+                aria-label="Compact view"
+              >
+                <FileText size={15} />
+              </button>
             </div>
             <Link href="/dashboard/create_note">
               <Button className="gap-2 rounded-none bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
@@ -1148,7 +1222,9 @@ export default function DashboardPage() {
           className={
             view === "grid"
               ? "columns-1 gap-4 md:columns-2 lg:columns-3"
-              : "space-y-1"
+              : view === "compact"
+                ? "overflow-hidden border border-[var(--border)] bg-[var(--bg)]/45"
+                : "space-y-1"
           }
         >
           {Array.from({ length: 8 }).map((_, index) => (
@@ -1210,7 +1286,9 @@ export default function DashboardPage() {
             className={
               view === "grid"
                 ? "columns-1 gap-4 md:columns-2 2xl:columns-3"
-                : "space-y-1"
+                : view === "compact"
+                  ? "overflow-hidden border border-[var(--border)] bg-[var(--bg)]/45"
+                  : "space-y-1"
             }
           >
             {sortedNotes.map((note, index) => (
