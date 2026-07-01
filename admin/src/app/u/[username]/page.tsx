@@ -5,12 +5,14 @@ import {
   Eye,
   FileText,
   Heart,
+  Layers3,
   Sparkles,
   UserCircle,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CopyProfileLinkButton } from "@/components/CopyProfileLinkButton";
 import { backendFetch } from "@/lib/backend";
 import { stripMarkdown } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
@@ -58,6 +60,10 @@ function getTopTags(notes: Note[]) {
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 8);
+}
+
+function notesForTag(notes: Note[], tag: string) {
+  return notes.filter((note) => note.tags.includes(tag)).slice(0, 2);
 }
 
 export async function generateMetadata({
@@ -173,8 +179,16 @@ export default async function AuthorProfilePage({
                       </a>
                     ) : null,
                   )}
+                  <CopyProfileLinkButton />
                 </div>
               )}
+              {!profile.website_url &&
+                !profile.github_url &&
+                !profile.twitter_url && (
+                  <div className="mt-5 flex flex-wrap gap-2 text-xs">
+                    <CopyProfileLinkButton />
+                  </div>
+                )}
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
                 <span className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5">
                   <CalendarDays size={13} /> joined{" "}
@@ -254,16 +268,48 @@ export default async function AuthorProfilePage({
         )}
 
         {topTags.length > 0 && (
-          <section className="mb-8 flex flex-wrap gap-2">
-            {topTags.map(([tag, count]) => (
-              <span
-                key={tag}
-                className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-3 py-1.5 text-xs text-[var(--accent)]"
-              >
-                #{tag}{" "}
-                <span className="text-[var(--text-secondary)]">{count}</span>
+          <section className="mb-8 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-5 backdrop-blur-xl sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+                  <Layers3 size={14} /> topic clusters
+                </p>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  Fast paths into the author&apos;s public knowledge map.
+                </p>
+              </div>
+              <span className="hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1.5 text-xs text-[var(--text-secondary)] sm:inline-flex">
+                {topTags.length} topics
               </span>
-            ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {topTags.map(([tag, count]) => (
+                <div
+                  key={tag}
+                  className="rounded-none border border-[var(--border)] bg-[var(--bg)]/58 p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-[var(--accent)]">
+                      #{tag}
+                    </span>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {count} {count === 1 ? "note" : "notes"}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {notesForTag(publicNotes, tag).map((note) => (
+                      <Link
+                        key={`${tag}-${note.id}`}
+                        href={`/s/${note.share_uuid}`}
+                        className="block truncate text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+                      >
+                        {note.title || "untitled"}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
         )}
 
