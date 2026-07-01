@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Search,
   Sparkles,
+  Tags,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuickCapture } from "@/components/QuickCapture";
@@ -58,8 +59,21 @@ function groupByLanguage(snippets: Note[]) {
   );
 }
 
+function topTagsForSnippets(snippets: Note[]) {
+  const counts = new Map<string, number>();
+  for (const snippet of snippets) {
+    for (const tag of snippet.tags || []) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 4);
+}
+
 function SnippetCard({ note }: { note: Note }) {
   const [copied, setCopied] = useState(false);
+  const [copyCount, setCopyCount] = useState(0);
   const language = normalizeLanguage(note.language);
   const lines = snippetLineCount(note.content);
 
@@ -67,6 +81,7 @@ function SnippetCard({ note }: { note: Note }) {
     try {
       await navigator.clipboard.writeText(note.content);
       setCopied(true);
+      setCopyCount((count) => count + 1);
       gooeyToast.success("Snippet copied", {
         description: `${note.title || language} is ready on your clipboard.`,
       });
@@ -86,6 +101,7 @@ function SnippetCard({ note }: { note: Note }) {
               {language}
             </span>
             <span>{lines} lines</span>
+            <span>{copyCount > 0 ? `${copyCount} copied` : "copy-ready"}</span>
             <span>updated {formatSnippetDate(note)}</span>
           </div>
           <h2 className="line-clamp-2 text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
@@ -264,7 +280,7 @@ export default function SnippetsPage() {
                 className="border-b border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 last:border-r-0"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)]">
-                  {loading ? "—" : stat.value}
+                  {loading ? "â€”" : stat.value}
                 </p>
                 <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   {stat.label}
@@ -333,7 +349,7 @@ export default function SnippetsPage() {
                   : "var(--border)",
             }}
           >
-            all · {snippets.length}
+            all Â· {snippets.length}
           </button>
           {languages.map(([language, count]) => (
             <button
@@ -352,7 +368,7 @@ export default function SnippetsPage() {
                     : "var(--border)",
               }}
             >
-              <Filter size={12} /> {language} · {count}
+              <Filter size={12} /> {language} Â· {count}
             </button>
           ))}
         </div>
@@ -398,14 +414,45 @@ export default function SnippetsPage() {
         <div className="space-y-6">
           {groupedSnippets.map(([language, items]) => (
             <section key={language} className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                  <Code2 size={13} className="text-[var(--accent)]" />
-                  {language}
+              <div className="flex flex-col gap-3 border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                    <Code2 size={13} className="text-[var(--accent)]" />
+                    {language}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                    <span>
+                      {items.length}{" "}
+                      {items.length === 1 ? "snippet" : "snippets"}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      {items.reduce(
+                        (sum, item) => sum + snippetLineCount(item.content),
+                        0,
+                      )}{" "}
+                      lines indexed
+                    </span>
+                  </div>
                 </div>
-                <span className="text-xs text-[var(--text-secondary)]">
-                  {items.length} {items.length === 1 ? "snippet" : "snippets"}
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--text-secondary)]">
+                  <Tags size={12} className="text-[var(--accent)]" />
+                  {topTagsForSnippets(items).length > 0 ? (
+                    topTagsForSnippets(items).map(([tag, count]) => (
+                      <span
+                        key={`${language}-${tag}`}
+                        className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 px-2 py-0.5 text-[var(--accent)]"
+                      >
+                        #{tag}{" "}
+                        <span className="text-[var(--text-secondary)]">
+                          {count}
+                        </span>
+                      </span>
+                    ))
+                  ) : (
+                    <span>no tag clusters yet</span>
+                  )}
+                </div>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 {items.map((note) => (
