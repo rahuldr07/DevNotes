@@ -6,7 +6,12 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.repositories import session_repo, user_repo
-from app.services.security import hash_password, verify_password
+from app.services.security import (
+    hash_password,
+    hash_token,
+    verify_password,
+    verify_token_hash,
+)
 from app.models.user import User
 
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -204,13 +209,13 @@ def authenticate_user(
         {"sub": str(db_user.id), "sid": session_id, "remember": remember_me},
         expires_days=expire_days,
     )
-    user_repo.update_refresh_token(db, db_user.id, hash_password(refresh_token))
+    user_repo.update_refresh_token(db, db_user.id, hash_token(refresh_token))
     if db is not None:
         session_repo.create(
             db,
             session_id=session_id,
             user_id=db_user.id,
-            refresh_token_hash=hash_password(refresh_token),
+            refresh_token_hash=hash_token(refresh_token),
             expires_at=refresh_token_expires_at(expire_days),
             user_agent=user_agent,
             ip_address=ip_address,
@@ -244,13 +249,13 @@ def refresh_access_token(db: Session, refresh_token: str) -> dict:
         active_session = session_repo.get_active(db, session_id=str(session_id))
         if not active_session or active_session.user_id != db_user.id:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
-        if not verify_password(refresh_token, active_session.refresh_token_hash):
+        if not verify_token_hash(refresh_token, active_session.refresh_token_hash):
+            # Reuse detected: a stale (already-rotated) token was presented,
+            # so treat the whole session as compromised.
             session_repo.revoke(db, session=active_session)
             raise HTTPException(status_code=401, detail="Invalid refresh token")
     else:
-        if not db_user.refresh_token:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-        if not verify_password(refresh_token, db_user.refresh_token):
+        if not verify_token_hash(refresh_token, db_user.refresh_token):
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     # Rotation preserves the remember-me choice made at login (sliding window):
@@ -264,12 +269,12 @@ def refresh_access_token(db: Session, refresh_token: str) -> dict:
         {"sub": str(db_user.id), "sid": next_session_id, "remember": remember_me},
         expires_days=expire_days,
     )
-    user_repo.update_refresh_token(db, db_user.id, hash_password(new_refresh_token))
+    user_repo.update_refresh_token(db, db_user.id, hash_token(new_refresh_token))
     if active_session is not None:
         session_repo.rotate(
             db,
             session=active_session,
-            refresh_token_hash=hash_password(new_refresh_token),
+            refresh_token_hash=hash_token(new_refresh_token),
             expires_at=refresh_token_expires_at(expire_days),
         )
     return {
@@ -298,13 +303,11 @@ def logout_refresh_token(db: Session, refresh_token: str) -> None:
         active_session = session_repo.get_active(db, session_id=str(session_id))
         if not active_session or active_session.user_id != db_user.id:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
-        if not verify_password(refresh_token, active_session.refresh_token_hash):
+        if not verify_token_hash(refresh_token, active_session.refresh_token_hash):
             session_repo.revoke(db, session=active_session)
             raise HTTPException(status_code=401, detail="Invalid refresh token")
         session_repo.revoke(db, session=active_session)
     else:
-        if not db_user.refresh_token:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-        if not verify_password(refresh_token, db_user.refresh_token):
+        if not verify_token_hash(refresh_token, db_user.refresh_token):
             raise HTTPException(status_code=401, detail="Invalid refresh token")
     user_repo.update_refresh_token(db, db_user.id, None)

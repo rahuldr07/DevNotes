@@ -1,3 +1,6 @@
+import hashlib
+import hmac
+
 from passlib.context import CryptContext
 
 # CryptContext is a passlib utility that handles password hashing.
@@ -25,3 +28,24 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     We NEVER decrypt the hash. bcrypt has a built-in way to compare.
     """
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def hash_token(token: str) -> str:
+    """
+    Digest for REFRESH TOKENS — not passwords.
+
+    bcrypt silently truncates input at 72 bytes, and JWTs for the same
+    user/session share an identical prefix far longer than that, so a
+    bcrypt hash cannot tell a stale rotated token from the current one
+    (which silently defeated refresh-token reuse detection). Tokens are
+    high-entropy signed values, not low-entropy passwords, so a fast
+    SHA-256 digest over the FULL token is the correct primitive here.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def verify_token_hash(token: str, token_hash: str | None) -> bool:
+    """Constant-time comparison of a refresh token against its stored digest."""
+    if not token_hash:
+        return False
+    return hmac.compare_digest(hash_token(token), token_hash)

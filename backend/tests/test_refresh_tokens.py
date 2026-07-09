@@ -4,7 +4,7 @@ from types import SimpleNamespace
 def test_login_returns_refresh_token_and_stores_hash(monkeypatch):
     from app.repositories import user_repo
     from app.services import auth_service
-    from app.services.security import hash_password, verify_password
+    from app.services.security import hash_password, verify_token_hash
 
     user = SimpleNamespace(id=1, hashed_password=hash_password("abc12345"))
     saved = {}
@@ -33,13 +33,13 @@ def test_login_returns_refresh_token_and_stores_hash(monkeypatch):
     assert result["refresh_expires_in"] == 7 * 24 * 60 * 60
     assert saved["user_id"] == 1
     assert saved["refresh_token_hash"] != result["refresh_token"]
-    assert verify_password(result["refresh_token"], saved["refresh_token_hash"])
+    assert verify_token_hash(result["refresh_token"], saved["refresh_token_hash"])
 
 
 def test_login_creates_session_when_db_available(monkeypatch):
     from app.repositories import session_repo, user_repo
     from app.services import auth_service
-    from app.services.security import hash_password, verify_password
+    from app.services.security import hash_password, verify_token_hash
 
     user = SimpleNamespace(id=1, hashed_password=hash_password("abc12345"))
     saved = {}
@@ -65,8 +65,8 @@ def test_login_creates_session_when_db_available(monkeypatch):
 
     assert sessions["user_id"] == 1
     assert sessions["session_id"]
-    assert verify_password(result["refresh_token"], sessions["refresh_token_hash"])
-    assert verify_password(result["refresh_token"], saved["refresh_token_hash"])
+    assert verify_token_hash(result["refresh_token"], sessions["refresh_token_hash"])
+    assert verify_token_hash(result["refresh_token"], saved["refresh_token_hash"])
 
 
 def test_login_remember_me_extends_refresh_session(monkeypatch):
@@ -112,7 +112,7 @@ def test_refresh_preserves_remember_me_duration(monkeypatch):
 
     from app.repositories import session_repo, user_repo
     from app.services import auth_service
-    from app.services.security import hash_password
+    from app.services.security import hash_token
 
     user = SimpleNamespace(id=1, refresh_token=None)
     refresh_token = auth_service.create_refresh_token(
@@ -122,7 +122,7 @@ def test_refresh_preserves_remember_me_duration(monkeypatch):
     session = SimpleNamespace(
         id="session-1",
         user_id=1,
-        refresh_token_hash=hash_password(refresh_token),
+        refresh_token_hash=hash_token(refresh_token),
     )
     rotated = {}
 
@@ -224,14 +224,14 @@ def test_login_without_remember_me_sets_session_refresh_cookie(auth_client, monk
 def test_refresh_rotates_session_token(monkeypatch):
     from app.repositories import session_repo, user_repo
     from app.services import auth_service
-    from app.services.security import hash_password, verify_password
+    from app.services.security import hash_token, verify_token_hash
 
     user = SimpleNamespace(id=1, refresh_token=None)
     refresh_token = auth_service.create_refresh_token({"sub": "1", "sid": "session-1"})
     session = SimpleNamespace(
         id="session-1",
         user_id=1,
-        refresh_token_hash=hash_password(refresh_token),
+        refresh_token_hash=hash_token(refresh_token),
     )
     rotated = {}
 
@@ -259,7 +259,47 @@ def test_refresh_rotates_session_token(monkeypatch):
 
     assert result["refresh_token"] != refresh_token
     assert rotated["session"] is session
-    assert verify_password(result["refresh_token"], rotated["refresh_token_hash"])
+    assert verify_token_hash(result["refresh_token"], rotated["refresh_token_hash"])
+
+
+def test_refresh_rejects_stale_token_after_rotation(monkeypatch):
+    """Regression: bcrypt truncates at 72 bytes, so same-session JWTs (identical
+    prefix) all passed the old hash check and reuse detection never fired."""
+    from app.repositories import session_repo, user_repo
+    from app.services import auth_service
+    from app.services.security import hash_token
+    from fastapi import HTTPException
+    import pytest
+
+    user = SimpleNamespace(id=1, refresh_token=None)
+    stale_token = auth_service.create_refresh_token({"sub": "1", "sid": "session-1"})
+    current_token = auth_service.create_refresh_token({"sub": "1", "sid": "session-1"})
+    session = SimpleNamespace(
+        id="session-1",
+        user_id=1,
+        refresh_token_hash=hash_token(current_token),
+    )
+    revoked = {}
+
+    monkeypatch.setattr(user_repo, "get_by_id", lambda db, user_id: user)
+    monkeypatch.setattr(
+        session_repo,
+        "get_active",
+        lambda db, session_id: session,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        session_repo,
+        "revoke",
+        lambda db, **kwargs: revoked.update(kwargs),
+        raising=False,
+    )
+
+    with pytest.raises(HTTPException) as excinfo:
+        auth_service.refresh_access_token(object(), stale_token)
+
+    assert excinfo.value.status_code == 401
+    assert revoked["session"] is session
 
 
 def test_refresh_endpoint_returns_rotated_tokens(auth_client, monkeypatch):
