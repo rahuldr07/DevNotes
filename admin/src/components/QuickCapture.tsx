@@ -99,23 +99,36 @@ export function QuickCapture({ onCreated }: QuickCaptureProps) {
         </div>
       </div>
       <div className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <textarea
-          value={content}
-          onChange={(event) => setContent(event.target.value)}
-          onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-              event.preventDefault();
-              submit();
+        <div className="min-w-0">
+          <textarea
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              const submitCombo = event.metaKey || event.ctrlKey;
+              // Notes save on plain Enter (Shift+Enter for a newline);
+              // snippets are usually multi-line, so they keep Ctrl+Enter.
+              const plainEnterSave =
+                mode === "note" && !event.shiftKey && !submitCombo;
+              if (submitCombo || plainEnterSave) {
+                event.preventDefault();
+                submit();
+              }
+            }}
+            rows={mode === "snippet" ? 5 : 3}
+            placeholder={
+              mode === "snippet"
+                ? "Paste a command, config, stack trace, or reusable code pattern..."
+                : "What do you want to remember?"
             }
-          }}
-          rows={mode === "snippet" ? 5 : 3}
-          placeholder={
-            mode === "snippet"
-              ? "Paste a command, config, stack trace, or reusable code pattern..."
-              : "What do you want to remember?"
-          }
-          className="min-h-24 resize-none bg-transparent text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
-        />
+            className="min-h-24 w-full resize-none bg-transparent text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
+          />
+          <p className="mt-1 font-mono text-[10px] text-[var(--text-secondary)]">
+            {mode === "note"
+              ? "enter saves · shift+enter for newline"
+              : "ctrl+enter saves"}
+          </p>
+        </div>
         <div className="flex flex-row items-end gap-2 lg:flex-col lg:justify-between">
           {mode === "snippet" && (
             <input

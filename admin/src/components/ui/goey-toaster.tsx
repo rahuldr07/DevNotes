@@ -30,7 +30,10 @@ function withDefaults(options?: ToastOptions): ToastOptions {
   };
 }
 
-const gooeyToast = Object.assign(baseToast, {
+// Delegates to the library without mutating it — assigning these wrappers
+// onto baseToast itself would make each method call itself and overflow
+// the stack on the first toast.
+const gooeyToast = {
   success(title: string, options?: ToastOptions) {
     return baseToast.success(
       title,
@@ -71,7 +74,8 @@ const gooeyToast = Object.assign(baseToast, {
       }),
     );
   },
-});
+  dismiss: baseToast.dismiss.bind(baseToast),
+};
 
 export { gooeyToast };
 export type { GooeyToasterProps };
