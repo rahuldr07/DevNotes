@@ -32,11 +32,6 @@ import { saveRefreshToken, saveToken } from "@/lib/auth";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { getCurrentUserAfterAuth } from "@/lib/session";
 import { useAuthStore } from "@/stores/useAuthStore";
-import {
-  decryptData,
-  type EncryptedData,
-  encryptData,
-} from "../../../utils/crypto";
 
 interface LoginResponse {
   access_token: string;
@@ -54,7 +49,6 @@ const labelStyle = {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
@@ -65,32 +59,9 @@ export default function LoginPage() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
 
-  // Load saved credentials on mount
+  // Purge credentials stored by the removed "Remember me" feature
   useEffect(() => {
-    const loadCredentials = async () => {
-      try {
-        const stored = localStorage.getItem("secure_credentials");
-        if (stored) {
-          const {
-            email,
-            encrypted,
-          }: { email: string; encrypted: EncryptedData } = JSON.parse(stored);
-
-          if (email && encrypted) {
-            setEmail(email);
-            const decryptedPassword = await decryptData(email, encrypted);
-            setPassword(decryptedPassword);
-            setRememberMe(true);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load saved credentials:", err);
-        // If decryption fails (e.g. data corruption), clear storage
-        localStorage.removeItem("secure_credentials");
-      }
-    };
-
-    loadCredentials();
+    localStorage.removeItem("secure_credentials");
   }, []);
 
   const validate = useCallback(() => {
@@ -119,23 +90,8 @@ export default function LoginPage() {
           password,
         });
 
-        // Handle "Remember Me" - Encrypt and store credentials if checked
-        if (rememberMe) {
-          try {
-            const encrypted = await encryptData(email, password);
-            localStorage.setItem(
-              "secure_credentials",
-              JSON.stringify({ email, encrypted }),
-            );
-          } catch (cryptoError) {
-            console.error("Encryption failed:", cryptoError);
-            // Non-blocking error - login succeeds even if remember me fails
-          }
-        } else {
-          localStorage.removeItem("secure_credentials");
-        }
-
-        // Save token (session cookie only, as requested)
+        // Save token (session cookie only; persistence comes from the
+        // HttpOnly refresh cookie, not stored credentials)
         saveToken(response.access_token, { remember: false });
         saveRefreshToken(response.refresh_token);
         const user = await getCurrentUserAfterAuth(email);
@@ -151,7 +107,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     },
-    [email, password, rememberMe, router, setUser, validate],
+    [email, password, router, setUser, validate],
   );
 
   return (
@@ -256,24 +212,6 @@ export default function LoginPage() {
               </p>
             )}
           </div>
-
-          <label
-            htmlFor="remember-me"
-            className="flex items-center gap-2.5 text-sm cursor-pointer select-none"
-            style={{ color: "var(--sub-color)" }}
-          >
-            <input
-              id="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded-none"
-              style={{
-                accentColor: "var(--accent)",
-              }}
-            />
-            Remember me
-          </label>
 
           <Button
             type="submit"

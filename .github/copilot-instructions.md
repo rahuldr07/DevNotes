@@ -45,9 +45,14 @@ alembic upgrade head
 
 # Rollback migration
 alembic downgrade -1
+
+# Run backend tests (pytest, no live DB required — repos are mocked)
+python -m pytest -q
 ```
 
-No test suite is currently configured.
+Frontend type-checking runs with `npx tsc --noEmit` from `admin/`. The root
+`package.json` also exposes aggregate scripts: `npm run test` runs Biome lint,
+`tsc --noEmit`, and the backend pytest suite together.
 
 ## Architecture
 
@@ -59,11 +64,13 @@ The backend follows a layered architecture. All application code lives inside th
 - **`app/config.py`**: Centralized settings using Pydantic Settings (loads from `.env`)
 - **`app/database.py`**: SQLAlchemy engine and session configuration with Aurora-specific pool settings
 - **`app/dependencies.py`**: Dependency injection functions (`get_db()`, `get_current_user()`)
-- **`app/routers/`**: Route handlers organized by resource (`notes.py`, `auth.py`)
+- **`app/routers/`**: Route handlers organized by resource (`notes.py`, `auth.py`, `profiles.py`)
 - **`app/models/`**: SQLAlchemy ORM models (database tables)
 - **`app/schemas/`**: Pydantic models for request/response validation
-- **`app/services/`**: Business logic (`auth.py` for JWT, `security.py` for password hashing)
+- **`app/services/`**: Business logic (`auth_service.py` for JWT/sessions, `note_service.py`, `profile_service.py`, `security.py` for password hashing)
+- **`app/repositories/`**: Data-access layer used by services (`user_repo.py`, `note_repo.py`, `session_repo.py`)
 - **`alembic/`**: Database migration files
+- **`tests/`**: Pytest suite (route-level tests with `get_db`/`get_current_user` overridden)
 
 **Database Connection Pattern**:
 

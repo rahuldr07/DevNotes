@@ -280,7 +280,7 @@ export default function SnippetsPage() {
                 className="border-b border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 last:border-r-0"
               >
                 <p className="type-number text-2xl text-[var(--text-primary)]">
-                  {loading ? "â€”" : stat.value}
+                  {loading ? "—" : stat.value}
                 </p>
                 <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
                   {stat.label}
@@ -349,7 +349,7 @@ export default function SnippetsPage() {
                   : "var(--border)",
             }}
           >
-            all Â· {snippets.length}
+            all · {snippets.length}
           </button>
           {languages.map(([language, count]) => (
             <button
@@ -368,7 +368,7 @@ export default function SnippetsPage() {
                     : "var(--border)",
               }}
             >
-              <Filter size={12} /> {language} Â· {count}
+              <Filter size={12} /> {language} · {count}
             </button>
           ))}
         </div>

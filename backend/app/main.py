@@ -104,7 +104,7 @@ app.add_middleware(
 
 # ── Register routers ──
 app.include_router(auth.router)
-app.include_router(notes.router)  # ← uncomment after building notes router
+app.include_router(notes.router)
 app.include_router(profiles.router)
 
 
