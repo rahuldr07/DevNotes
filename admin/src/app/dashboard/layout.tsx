@@ -18,6 +18,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
+import { ShortcutsDialog } from "@/components/ShortcutsDialog";
 import { useSound } from "@/components/SoundProvider";
 import { ThemePickerPopover } from "@/components/ThemePickerPopover";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,18 @@ import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
 import { getUserNotesPage } from "@/lib/note-api";
 import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
 import type { Note } from "@/types/notes";
+
+// g-chord targets: press g, then one of these keys, to jump anywhere.
+const CHORD_ROUTES: Record<string, string> = {
+  d: "/dashboard",
+  s: "/dashboard/snippets",
+  e: "/dashboard/explore",
+  a: "/dashboard/ask",
+  n: "/dashboard/create_note",
+  p: "/dashboard/settings",
+};
+
+const CHORD_TIMEOUT_MS = 1400;
 
 const navItems = [
   {
@@ -86,6 +99,9 @@ export default function DashboardLayout({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchNotes, setSearchNotes] = useState<Note[]>([]);
   const [searchHydrated, setSearchHydrated] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [chordPending, setChordPending] = useState(false);
+  const chordTimerRef = useRef<number | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
   const openSearch = useCallback(() => {
@@ -143,6 +159,14 @@ export default function DashboardLayout({
     };
   }, [searchHydrated, searchOpen]);
 
+  const clearChord = useCallback(() => {
+    if (chordTimerRef.current !== null) {
+      window.clearTimeout(chordTimerRef.current);
+      chordTimerRef.current = null;
+    }
+    setChordPending(false);
+  }, []);
+
   useEffect(() => {
     const onGlobalShortcut = (event: KeyboardEvent) => {
       const target = event.target;
@@ -155,9 +179,49 @@ export default function DashboardLayout({
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         openSearch();
-      } else if (!inInput && event.key === "/") {
-        event.preventDefault();
-        openSearch();
+        return;
+      }
+      if (
+        inInput ||
+        shortcutsOpen ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      // Second key of a pending g-chord wins over single-key shortcuts.
+      if (chordPending) {
+        clearChord();
+        const route = CHORD_ROUTES[event.key.toLowerCase()];
+        if (route) {
+          event.preventDefault();
+          router.push(route);
+        }
+        return;
+      }
+
+      switch (event.key) {
+        case "/":
+          event.preventDefault();
+          openSearch();
+          break;
+        case "n":
+          event.preventDefault();
+          router.push("/dashboard/create_note");
+          break;
+        case "?":
+          event.preventDefault();
+          setShortcutsOpen(true);
+          break;
+        case "g":
+          setChordPending(true);
+          chordTimerRef.current = window.setTimeout(() => {
+            chordTimerRef.current = null;
+            setChordPending(false);
+          }, CHORD_TIMEOUT_MS);
+          break;
       }
     };
 
@@ -168,7 +232,7 @@ export default function DashboardLayout({
       window.removeEventListener("keydown", onGlobalShortcut);
       window.removeEventListener("devnotes:open-search", onOpenSearch);
     };
-  }, [openSearch]);
+  }, [chordPending, clearChord, openSearch, router, shortcutsOpen]);
 
   const handleLogout = async () => {
     try {
@@ -435,7 +499,21 @@ export default function DashboardLayout({
           <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
             <span className="text-[var(--accent)]">● synced</span>
             <span>DevNotes Workbench · Next.js · FastAPI · PostgreSQL</span>
-            <span>UTF-8 · LF · main</span>
+            <span className="flex items-center gap-3">
+              {chordPending && (
+                <span className="font-mono text-[var(--accent)]">
+                  g · waiting for key…
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShortcutsOpen(true)}
+                className="font-mono transition-colors hover:text-[var(--accent)]"
+              >
+                ? shortcuts
+              </button>
+              <span>UTF-8 · LF · main</span>
+            </span>
           </div>
         </div>
       </div>
@@ -444,6 +522,10 @@ export default function DashboardLayout({
         notes={searchNotes}
         indexLoading={searchOpen && !searchHydrated}
         onClose={() => setSearchOpen(false)}
+      />
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
       />
     </div>
   );
