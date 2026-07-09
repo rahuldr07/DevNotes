@@ -30,6 +30,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
+    remember_me: bool = False
 
     @field_validator("password")
     @classmethod
@@ -45,6 +46,10 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
+    # Lets cookie-setting layers (FastAPI + the Next.js BFF proxy) size the
+    # refresh cookie without re-decoding the JWT.
+    remember_me: bool = False
+    refresh_expires_in: int = 7 * 24 * 60 * 60
 
 
 class UserResponse(BaseModel):

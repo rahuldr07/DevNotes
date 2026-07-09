@@ -10,7 +10,12 @@ from app.services.security import hash_password, verify_password
 from app.models.user import User
 
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+REMEMBER_ME_REFRESH_EXPIRE_DAYS = 30
 USERNAME_MAX_LENGTH = 30
+
+
+def _refresh_expire_days(remember_me: bool) -> int:
+    return REMEMBER_ME_REFRESH_EXPIRE_DAYS if remember_me else REFRESH_TOKEN_EXPIRE_DAYS
 
 
 def _username_base(name: str) -> str:
@@ -60,16 +65,16 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 
-def create_refresh_token(data: dict) -> str:
+def create_refresh_token(data: dict, expires_days: int = REFRESH_TOKEN_EXPIRE_DAYS) -> str:
     settings = get_settings()
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(timezone.utc) + timedelta(days=expires_days)
     to_encode.update({"exp": expire, "token_type": "refresh", "jti": str(uuid.uuid4())})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def refresh_token_expires_at() -> datetime:
-    return datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+def refresh_token_expires_at(expires_days: int = REFRESH_TOKEN_EXPIRE_DAYS) -> datetime:
+    return datetime.now(timezone.utc) + timedelta(days=expires_days)
 
 
 def verify_access_token(token: str) -> dict:
@@ -155,6 +160,7 @@ def authenticate_user(
     password: str,
     user_agent: str | None = None,
     ip_address: str | None = None,
+    remember_me: bool = False,
 ) -> dict:
     """
     Authenticates a user by email and password.
@@ -189,9 +195,15 @@ def authenticate_user(
 
     # Create JWT tokens with user ID. Refresh tokens also carry a session id
     # when a real DB session is available, enabling multi-device sessions.
+    # "Remember me" only changes how long the refresh session lives — the
+    # remember flag travels inside the refresh JWT so rotation preserves it.
     session_id = str(uuid.uuid4())
+    expire_days = _refresh_expire_days(remember_me)
     access_token = create_access_token({"sub": str(db_user.id)})
-    refresh_token = create_refresh_token({"sub": str(db_user.id), "sid": session_id})
+    refresh_token = create_refresh_token(
+        {"sub": str(db_user.id), "sid": session_id, "remember": remember_me},
+        expires_days=expire_days,
+    )
     user_repo.update_refresh_token(db, db_user.id, hash_password(refresh_token))
     if db is not None:
         session_repo.create(
@@ -199,7 +211,7 @@ def authenticate_user(
             session_id=session_id,
             user_id=db_user.id,
             refresh_token_hash=hash_password(refresh_token),
-            expires_at=refresh_token_expires_at(),
+            expires_at=refresh_token_expires_at(expire_days),
             user_agent=user_agent,
             ip_address=ip_address,
         )
@@ -208,6 +220,8 @@ def authenticate_user(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",  # tells the client how to send it (Authorization: Bearer ...)
+        "remember_me": remember_me,
+        "refresh_expires_in": expire_days * 24 * 60 * 60,
     }
 
 
@@ -239,21 +253,31 @@ def refresh_access_token(db: Session, refresh_token: str) -> dict:
         if not verify_password(refresh_token, db_user.refresh_token):
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+    # Rotation preserves the remember-me choice made at login (sliding window):
+    # the flag rides in the refresh JWT, so each rotation extends the session
+    # by the same duration the user originally chose.
+    remember_me = bool(payload.get("remember", False))
+    expire_days = _refresh_expire_days(remember_me)
     access_token = create_access_token({"sub": str(db_user.id)})
     next_session_id = str(session_id or uuid.uuid4())
-    new_refresh_token = create_refresh_token({"sub": str(db_user.id), "sid": next_session_id})
+    new_refresh_token = create_refresh_token(
+        {"sub": str(db_user.id), "sid": next_session_id, "remember": remember_me},
+        expires_days=expire_days,
+    )
     user_repo.update_refresh_token(db, db_user.id, hash_password(new_refresh_token))
     if active_session is not None:
         session_repo.rotate(
             db,
             session=active_session,
             refresh_token_hash=hash_password(new_refresh_token),
-            expires_at=refresh_token_expires_at(),
+            expires_at=refresh_token_expires_at(expire_days),
         )
     return {
         "access_token": access_token,
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
+        "remember_me": remember_me,
+        "refresh_expires_in": expire_days * 24 * 60 * 60,
     }
 
 

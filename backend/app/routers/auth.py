@@ -50,6 +50,15 @@ def set_auth_cookies(request: Request, response: Response, tokens: dict) -> None
       path="/",
       max_age=60 * 30,
    )
+   # Remember-me sessions get a persistent cookie sized to the refresh token
+   # lifetime; otherwise a session cookie (no max_age) that dies with the
+   # browser, even though the token itself stays valid server-side for 7 days.
+   remember_me = bool(tokens.get("remember_me", False))
+   refresh_max_age = (
+      tokens.get("refresh_expires_in", 60 * 60 * 24 * auth_service.REFRESH_TOKEN_EXPIRE_DAYS)
+      if remember_me
+      else None
+   )
    response.set_cookie(
       REFRESH_COOKIE,
       tokens["refresh_token"],
@@ -57,7 +66,7 @@ def set_auth_cookies(request: Request, response: Response, tokens: dict) -> None
       secure=secure,
       samesite="lax",
       path="/",
-      max_age=60 * 60 * 24 * auth_service.REFRESH_TOKEN_EXPIRE_DAYS,
+      max_age=refresh_max_age,
    )
 
 
@@ -97,6 +106,7 @@ def login(request: Request, response: Response, credentials: UserLogin, db: Sess
       credentials.password,
       user_agent=request.headers.get("user-agent"),
       ip_address=request.client.host if request.client else None,
+      remember_me=credentials.remember_me,
    )
    set_auth_cookies(request, response, tokens)
    return tokens

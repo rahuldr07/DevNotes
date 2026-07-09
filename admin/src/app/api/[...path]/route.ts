@@ -21,7 +21,11 @@ interface TokenPayload {
   access_token?: string;
   refresh_token?: string;
   token_type?: string;
+  remember_me?: boolean;
+  refresh_expires_in?: number;
 }
+
+const DEFAULT_REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
 
 function buildBackendEndpoint(request: NextRequest, path: string[]) {
   const endpoint = `/${path.map(encodeURIComponent).join("/")}`;
@@ -114,12 +118,16 @@ function applyAuthCookies(
   }
 
   if (tokens.refresh_token) {
+    // Remember-me sessions persist across browser restarts; otherwise the
+    // refresh cookie is a session cookie (no maxAge) and dies with the browser.
     response.cookies.set(REFRESH_COOKIE, tokens.refresh_token, {
       httpOnly: true,
       secure: cookieSecure(request),
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      ...(tokens.remember_me
+        ? { maxAge: tokens.refresh_expires_in ?? DEFAULT_REFRESH_MAX_AGE }
+        : {}),
     });
   }
 }

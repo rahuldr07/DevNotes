@@ -49,6 +49,7 @@ const labelStyle = {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
@@ -59,9 +60,12 @@ export default function LoginPage() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
 
-  // Purge credentials stored by the removed "Remember me" feature
   useEffect(() => {
+    // Purge credentials stored by the removed password-storing "Remember me"
     localStorage.removeItem("secure_credentials");
+    // Pre-fill the email (never the password — that's the browser's job)
+    const savedEmail = localStorage.getItem("devnotes-login-email");
+    if (savedEmail) setEmail(savedEmail);
   }, []);
 
   const validate = useCallback(() => {
@@ -88,10 +92,13 @@ export default function LoginPage() {
         const response = await api.post<LoginResponse>("/auth/login", {
           email,
           password,
+          remember_me: rememberMe,
         });
 
-        // Save token (session cookie only; persistence comes from the
-        // HttpOnly refresh cookie, not stored credentials)
+        localStorage.setItem("devnotes-login-email", email);
+
+        // Save token (session cookie only; staying signed in comes from the
+        // HttpOnly refresh cookie, whose lifetime remember_me controls)
         saveToken(response.access_token, { remember: false });
         saveRefreshToken(response.refresh_token);
         const user = await getCurrentUserAfterAuth(email);
@@ -107,7 +114,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     },
-    [email, password, router, setUser, validate],
+    [email, password, rememberMe, router, setUser, validate],
   );
 
   return (
@@ -212,6 +219,22 @@ export default function LoginPage() {
               </p>
             )}
           </div>
+
+          <label
+            htmlFor="remember-me"
+            className="flex cursor-pointer select-none items-center gap-2.5 text-sm"
+            style={{ color: "var(--sub-color)" }}
+          >
+            <input
+              id="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
+              className="h-4 w-4 rounded-none"
+              style={{ accentColor: "var(--accent)" }}
+            />
+            Keep me signed in for 30 days
+          </label>
 
           <Button
             type="submit"
