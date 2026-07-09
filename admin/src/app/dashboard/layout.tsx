@@ -52,6 +52,12 @@ const navItems = [
     matcher: (pathname: string) => pathname.startsWith("/dashboard/explore"),
   },
   {
+    href: "/dashboard/ask",
+    label: "Ask",
+    icon: Sparkles,
+    matcher: (pathname: string) => pathname.startsWith("/dashboard/ask"),
+  },
+  {
     href: "/dashboard/create_note",
     label: "New note",
     icon: Plus,

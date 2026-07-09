@@ -80,6 +80,14 @@ const COMMANDS: PaletteCommand[] = [
     icon: Compass,
   },
   {
+    id: "ask",
+    title: "Ask your workspace",
+    description: "Question your own notes with ranked, cited retrieval.",
+    href: "/dashboard/ask",
+    keywords: ["ask", "ai", "question", "answer", "retrieval", "sources"],
+    icon: Sparkles,
+  },
+  {
     id: "settings",
     title: "Edit public profile",
     description: "Tune your identity, bio, links, and publishing profile.",
