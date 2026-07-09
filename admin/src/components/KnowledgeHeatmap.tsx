@@ -270,8 +270,13 @@ export function KnowledgeHeatmap() {
               {weeks.map((week) => (
                 <div key={week.key} className="flex flex-col gap-[3px]">
                   {week.days.map((day) => (
-                    <span
+                    // Hover detail only; the container's aria-label carries
+                    // the summary, so cells stay out of the tab order.
+                    <button
                       key={day.key}
+                      type="button"
+                      tabIndex={-1}
+                      aria-hidden="true"
                       title={
                         day.inRange
                           ? `${day.label}: ${day.count} ${day.count === 1 ? "touch" : "touches"}`
@@ -279,7 +284,7 @@ export function KnowledgeHeatmap() {
                       }
                       onMouseEnter={() => day.inRange && setHovered(day)}
                       onMouseLeave={() => setHovered(null)}
-                      className="h-3 w-3 rounded-none border border-black/5"
+                      className="h-3 w-3 cursor-default rounded-none border border-black/5 p-0"
                       style={{
                         backgroundColor: day.inRange
                           ? LEVEL_COLORS[day.level]
