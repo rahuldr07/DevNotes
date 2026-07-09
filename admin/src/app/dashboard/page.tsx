@@ -30,6 +30,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { KnowledgeHeatmap } from "@/components/KnowledgeHeatmap";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -886,6 +887,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {!loading && notes.length > 0 && <KnowledgeHeatmap />}
 
       {!loading && notes.length > 0 && (
         <section className="mb-8 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
