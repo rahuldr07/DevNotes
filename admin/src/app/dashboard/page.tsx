@@ -31,6 +31,7 @@ import {
   useState,
 } from "react";
 import { KnowledgeHeatmap } from "@/components/KnowledgeHeatmap";
+import { AnimatedNumber, Reveal } from "@/components/motion";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -811,84 +812,90 @@ export default function DashboardPage() {
 
   return (
     <>
-      <section className="dev-panel mb-5 overflow-hidden">
-        <div className="dev-panel-header flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-none bg-[var(--accent)]" />
-            <p className="type-eyebrow text-[var(--accent)]">Workspace</p>
-            <span className="font-mono text-[11px] text-[var(--text-secondary)]">
-              /devnotes/main
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
-            <span className="dev-chip px-2 py-1">{notes.length} files</span>
-            <span className="dev-chip px-2 py-1">
-              {availableTags.length} tags
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          <div className="min-w-0">
-            <div className="mb-3 border-l-2 border-[var(--accent)] pl-3">
-              <p className="font-mono text-xs text-[var(--text-secondary)]">
-                ~/workspace $ capture --fast --reuse --publish
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">
-                Build a searchable developer memory from notes, snippets, and
-                public writeups.
-              </p>
+      <Reveal>
+        <section className="dev-panel mb-5 overflow-hidden">
+          <div className="dev-panel-header flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-none bg-[var(--accent)]" />
+              <p className="type-eyebrow text-[var(--accent)]">Workspace</p>
+              <span className="font-mono text-[11px] text-[var(--text-secondary)]">
+                /devnotes/main
+              </span>
             </div>
-            <QuickCapture
-              onCreated={(note) => {
-                setNotes((prev) => [note, ...prev]);
-              }}
-            />
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Link href="/dashboard/create_note">
-                <Button className="gap-2 rounded-none bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
-                  <Plus size={15} />
-                  create note
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                className="gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                onClick={openWorkspaceSearch}
-              >
-                <Search size={15} />
-                search
-                <kbd className="dev-chip px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                  /
-                </kbd>
-              </Button>
+            <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+              <span className="dev-chip px-2 py-1">{notes.length} files</span>
+              <span className="dev-chip px-2 py-1">
+                {availableTags.length} tags
+              </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
-            {workspaceStats.map((stat, index) => (
-              <div
-                key={stat.label}
-                className={`border-[var(--border)] p-3 transition-colors hover:bg-[var(--bg-secondary)]/55 ${
-                  index % 2 === 0 ? "border-r" : ""
-                } ${index < 2 ? "border-b" : ""}`}
-              >
-                <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
-                  {loading ? "—" : stat.value}
+          <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+            <div className="min-w-0">
+              <div className="mb-3 border-l-2 border-[var(--accent)] pl-3">
+                <p className="font-mono text-xs text-[var(--text-secondary)]">
+                  ~/workspace $ capture --fast --reuse --publish
                 </p>
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-                  {stat.label}
-                </p>
-                <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                  {stat.hint}
+                <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">
+                  Build a searchable developer memory from notes, snippets, and
+                  public writeups.
                 </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <QuickCapture
+                onCreated={(note) => {
+                  setNotes((prev) => [note, ...prev]);
+                }}
+              />
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Link href="/dashboard/create_note">
+                  <Button className="gap-2 rounded-none bg-[var(--accent)] px-4 text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                    <Plus size={15} />
+                    create note
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  className="gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/50 px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  onClick={openWorkspaceSearch}
+                >
+                  <Search size={15} />
+                  search
+                  <kbd className="dev-chip px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
+                    /
+                  </kbd>
+                </Button>
+              </div>
+            </div>
 
-      {!loading && notes.length > 0 && <KnowledgeHeatmap />}
+            <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
+              {workspaceStats.map((stat, index) => (
+                <div
+                  key={stat.label}
+                  className={`border-[var(--border)] p-3 transition-colors hover:bg-[var(--bg-secondary)]/55 ${
+                    index % 2 === 0 ? "border-r" : ""
+                  } ${index < 2 ? "border-b" : ""}`}
+                >
+                  <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
+                    {loading ? "—" : <AnimatedNumber value={stat.value} />}
+                  </p>
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                    {stat.label}
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--text-secondary)]">
+                    {stat.hint}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </Reveal>
+
+      {!loading && notes.length > 0 && (
+        <Reveal delay={0.06}>
+          <KnowledgeHeatmap />
+        </Reveal>
+      )}
 
       {!loading && notes.length > 0 && (
         <section className="mb-8 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">

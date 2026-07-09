@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CopyContentButton } from "@/components/CopyContentButton";
+import { Reveal } from "@/components/motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { searchNotes } from "@/lib/note-api";
 import { stripMarkdown } from "@/lib/notes";
@@ -195,104 +196,106 @@ export default function AskWorkspacePage() {
   return (
     <div className="space-y-5">
       {/* ── Ask console ── */}
-      <section className="dev-panel relative overflow-hidden p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-            <Sparkles size={14} className="text-[var(--accent)]" />
-            ask workspace
-          </div>
-          <span className="dev-chip px-2.5 py-1 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
-            retrieval mode · ranked by postgres fts
-          </span>
-        </div>
-
-        <h1 className="type-page-title mt-4 text-2xl text-[var(--text-primary)] sm:text-3xl">
-          Ask your past self before you ask the internet.
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-          Questions run against your own notes and snippets with ranked
-          full-text retrieval. Answer synthesis will cite these exact sources
-          when it ships — the sources are already the answer most days.
-        </p>
-
-        <form
-          className="mt-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            ask(question, noteType);
-          }}
-        >
-          <div className="flex items-center gap-3 border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1.5 transition-colors focus-within:border-[var(--accent)]/60">
-            <Search size={16} className="shrink-0 text-[var(--accent)]" />
-            <input
-              ref={inputRef}
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder="what do i know about…"
-              className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]/60"
-              // biome-ignore lint/a11y/noAutofocus: the question input is the sole purpose of this page
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={loading || !question.trim()}
-              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-none px-4 text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-40"
-              style={{ backgroundColor: "var(--accent)", color: "var(--bg)" }}
-            >
-              {loading ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <CornerDownLeft size={13} />
-              )}
-              ask
-            </button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {TYPE_FILTERS.map((filter) => (
-              <button
-                key={filter.value || "all"}
-                type="button"
-                onClick={() => {
-                  setNoteType(filter.value);
-                  if (askedQuestion) ask(askedQuestion, filter.value);
-                }}
-                className="rounded-none border px-3 py-1.5 text-xs lowercase transition-colors hover:-translate-y-0.5"
-                style={{
-                  color:
-                    noteType === filter.value
-                      ? "var(--accent)"
-                      : "var(--text-secondary)",
-                  borderColor:
-                    noteType === filter.value
-                      ? "var(--accent)"
-                      : "var(--border)",
-                }}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        </form>
-
-        {recentQuestions.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="type-eyebrow text-[var(--text-secondary)]">
-              recent
+      <Reveal>
+        <section className="dev-panel relative overflow-hidden p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+              <Sparkles size={14} className="text-[var(--accent)]" />
+              ask workspace
+            </div>
+            <span className="dev-chip px-2.5 py-1 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+              retrieval mode · ranked by postgres fts
             </span>
-            {recentQuestions.map((recent) => (
-              <button
-                key={recent}
-                type="button"
-                onClick={() => ask(recent, noteType)}
-                className="dev-chip px-2.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
-              >
-                {recent}
-              </button>
-            ))}
           </div>
-        )}
-      </section>
+
+          <h1 className="type-page-title mt-4 text-2xl text-[var(--text-primary)] sm:text-3xl">
+            Ask your past self before you ask the internet.
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+            Questions run against your own notes and snippets with ranked
+            full-text retrieval. Answer synthesis will cite these exact sources
+            when it ships — the sources are already the answer most days.
+          </p>
+
+          <form
+            className="mt-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              ask(question, noteType);
+            }}
+          >
+            <div className="flex items-center gap-3 border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1.5 transition-colors focus-within:border-[var(--accent)]/60">
+              <Search size={16} className="shrink-0 text-[var(--accent)]" />
+              <input
+                ref={inputRef}
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="what do i know about…"
+                className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]/60"
+                // biome-ignore lint/a11y/noAutofocus: the question input is the sole purpose of this page
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={loading || !question.trim()}
+                className="inline-flex h-9 shrink-0 items-center gap-2 rounded-none px-4 text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-40"
+                style={{ backgroundColor: "var(--accent)", color: "var(--bg)" }}
+              >
+                {loading ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <CornerDownLeft size={13} />
+                )}
+                ask
+              </button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {TYPE_FILTERS.map((filter) => (
+                <button
+                  key={filter.value || "all"}
+                  type="button"
+                  onClick={() => {
+                    setNoteType(filter.value);
+                    if (askedQuestion) ask(askedQuestion, filter.value);
+                  }}
+                  className="rounded-none border px-3 py-1.5 text-xs lowercase transition-colors hover:-translate-y-0.5"
+                  style={{
+                    color:
+                      noteType === filter.value
+                        ? "var(--accent)"
+                        : "var(--text-secondary)",
+                    borderColor:
+                      noteType === filter.value
+                        ? "var(--accent)"
+                        : "var(--border)",
+                  }}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </form>
+
+          {recentQuestions.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="type-eyebrow text-[var(--text-secondary)]">
+                recent
+              </span>
+              {recentQuestions.map((recent) => (
+                <button
+                  key={recent}
+                  type="button"
+                  onClick={() => ask(recent, noteType)}
+                  className="dev-chip px-2.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+                >
+                  {recent}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      </Reveal>
 
       {error && (
         <Alert className="border-[var(--error)] bg-[var(--bg-secondary)] text-[var(--text-primary)]">
@@ -302,180 +305,184 @@ export default function AskWorkspacePage() {
 
       {/* ── Results ── */}
       {askedQuestion && !error ? (
-        <section className="dev-panel p-4 sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-              <FileText size={14} className="text-[var(--accent)]" />
-              sources for “{askedQuestion}”
+        <Reveal delay={0.05}>
+          <section className="dev-panel p-4 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+                <FileText size={14} className="text-[var(--accent)]" />
+                sources for “{askedQuestion}”
+              </div>
+              <span className="font-mono text-[11px] text-[var(--text-secondary)]">
+                {loading
+                  ? "scanning workspace…"
+                  : `${sources.length} source${sources.length === 1 ? "" : "s"} · ranked by relevance`}
+              </span>
             </div>
-            <span className="font-mono text-[11px] text-[var(--text-secondary)]">
-              {loading
-                ? "scanning workspace…"
-                : `${sources.length} source${sources.length === 1 ? "" : "s"} · ranked by relevance`}
-            </span>
-          </div>
 
-          {loading ? (
-            <div className="flex items-center gap-3 p-6 text-sm text-[var(--text-secondary)]">
-              <Loader2
-                size={15}
-                className="animate-spin text-[var(--accent)]"
-              />
-              retrieving ranked matches…
-            </div>
-          ) : sources.length === 0 ? (
-            <div className="flex flex-col items-start gap-3 p-6">
-              <p className="text-sm text-[var(--text-primary)]">
-                Nothing in your workspace matches that yet.
-              </p>
-              <p className="text-sm text-[var(--text-secondary)]">
-                Try fewer or different words — or make today the day this answer
-                gets captured.
-              </p>
-              <Link
-                href="/dashboard/create_note"
-                className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] px-3 py-2 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
-              >
-                write it down now <ArrowRight size={13} />
-              </Link>
-            </div>
-          ) : (
-            <ol className="space-y-3">
-              {sources.map((source, index) => {
-                const segments = buildExcerpt(source.content, terms);
-                return (
-                  <li
-                    key={source.id}
-                    className="group border border-[var(--border)] bg-[var(--bg)]/45 p-4 transition-colors hover:border-[var(--accent)]/50"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-[11px] text-[var(--accent)]">
-                        [{index + 1}]
-                      </span>
-                      <Link
-                        href={`/dashboard/edit_note?id=${source.id}`}
-                        className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
-                      >
-                        {source.title}
-                      </Link>
-                      <span className="dev-chip px-2 py-0.5 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
-                        {source.note_type ?? "note"}
-                      </span>
-                      {source.language && (
-                        <span className="dev-chip px-2 py-0.5 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--accent)]">
-                          {source.language}
+            {loading ? (
+              <div className="flex items-center gap-3 p-6 text-sm text-[var(--text-secondary)]">
+                <Loader2
+                  size={15}
+                  className="animate-spin text-[var(--accent)]"
+                />
+                retrieving ranked matches…
+              </div>
+            ) : sources.length === 0 ? (
+              <div className="flex flex-col items-start gap-3 p-6">
+                <p className="text-sm text-[var(--text-primary)]">
+                  Nothing in your workspace matches that yet.
+                </p>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Try fewer or different words — or make today the day this
+                  answer gets captured.
+                </p>
+                <Link
+                  href="/dashboard/create_note"
+                  className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] px-3 py-2 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+                >
+                  write it down now <ArrowRight size={13} />
+                </Link>
+              </div>
+            ) : (
+              <ol className="space-y-3">
+                {sources.map((source, index) => {
+                  const segments = buildExcerpt(source.content, terms);
+                  return (
+                    <li
+                      key={source.id}
+                      className="group border border-[var(--border)] bg-[var(--bg)]/45 p-4 transition-colors hover:border-[var(--accent)]/50"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-[11px] text-[var(--accent)]">
+                          [{index + 1}]
                         </span>
-                      )}
-                    </div>
-
-                    {segments.length > 0 && (
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                        {segments.map((segment) =>
-                          segment.hit ? (
-                            <mark
-                              key={segment.start}
-                              className="bg-transparent font-medium"
-                              style={{ color: "var(--accent)" }}
-                            >
-                              {segment.text}
-                            </mark>
-                          ) : (
-                            <span key={segment.start}>{segment.text}</span>
-                          ),
-                        )}
-                      </p>
-                    )}
-
-                    {source.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {source.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="dev-chip px-2 py-0.5 text-[0.68rem] text-[var(--text-secondary)]"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-2.5">
-                      <span className="font-mono text-[11px] text-[var(--text-secondary)]">
-                        updated{" "}
-                        {formatDate(source.updated_at ?? source.created_at)}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <CopyContentButton
-                          content={source.content}
-                          className="h-8 gap-1.5 rounded-none px-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
-                        />
                         <Link
                           href={`/dashboard/edit_note?id=${source.id}`}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-none px-2.5 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+                          className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]"
                         >
-                          open <ArrowRight size={12} />
+                          {source.title}
                         </Link>
+                        <span className="dev-chip px-2 py-0.5 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+                          {source.note_type ?? "note"}
+                        </span>
+                        {source.language && (
+                          <span className="dev-chip px-2 py-0.5 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--accent)]">
+                            {source.language}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </section>
+
+                      {segments.length > 0 && (
+                        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                          {segments.map((segment) =>
+                            segment.hit ? (
+                              <mark
+                                key={segment.start}
+                                className="bg-transparent font-medium"
+                                style={{ color: "var(--accent)" }}
+                              >
+                                {segment.text}
+                              </mark>
+                            ) : (
+                              <span key={segment.start}>{segment.text}</span>
+                            ),
+                          )}
+                        </p>
+                      )}
+
+                      {source.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {source.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="dev-chip px-2 py-0.5 text-[0.68rem] text-[var(--text-secondary)]"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-2.5">
+                        <span className="font-mono text-[11px] text-[var(--text-secondary)]">
+                          updated{" "}
+                          {formatDate(source.updated_at ?? source.created_at)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <CopyContentButton
+                            content={source.content}
+                            className="h-8 gap-1.5 rounded-none px-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
+                          />
+                          <Link
+                            href={`/dashboard/edit_note?id=${source.id}`}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-none px-2.5 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+                          >
+                            open <ArrowRight size={12} />
+                          </Link>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+        </Reveal>
       ) : (
         !error && (
           /* ── Pre-ask empty state ── */
-          <section className="dev-panel p-6">
-            <div className="flex flex-col items-start gap-4">
-              <p className="type-eyebrow text-[var(--text-secondary)]">
-                how it works
-              </p>
-              <div className="grid gap-px border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
-                {[
-                  [
-                    "01 · ask",
-                    "Type a question the way you'd search your own memory.",
-                  ],
-                  [
-                    "02 · retrieve",
-                    "Ranked full-text search pulls the most relevant notes and snippets.",
-                  ],
-                  [
-                    "03 · reuse",
-                    "Copy the source, open it in the editor, or capture the missing note.",
-                  ],
-                ].map(([step, body]) => (
-                  <div key={step} className="bg-[var(--bg)] p-4">
-                    <p className="font-mono text-[11px] text-[var(--accent)]">
-                      {step}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                      {body}
-                    </p>
-                  </div>
-                ))}
+          <Reveal delay={0.05}>
+            <section className="dev-panel p-6">
+              <div className="flex flex-col items-start gap-4">
+                <p className="type-eyebrow text-[var(--text-secondary)]">
+                  how it works
+                </p>
+                <div className="grid gap-px border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
+                  {[
+                    [
+                      "01 · ask",
+                      "Type a question the way you'd search your own memory.",
+                    ],
+                    [
+                      "02 · retrieve",
+                      "Ranked full-text search pulls the most relevant notes and snippets.",
+                    ],
+                    [
+                      "03 · reuse",
+                      "Copy the source, open it in the editor, or capture the missing note.",
+                    ],
+                  ].map(([step, body]) => (
+                    <div key={step} className="bg-[var(--bg)] p-4">
+                      <p className="font-mono text-[11px] text-[var(--accent)]">
+                        {step}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                        {body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="type-eyebrow text-[var(--text-secondary)]">
+                    try
+                  </span>
+                  {SAMPLE_QUESTIONS.map((sample) => (
+                    <button
+                      key={sample}
+                      type="button"
+                      onClick={() => {
+                        setQuestion(sample);
+                        ask(sample, noteType);
+                      }}
+                      className="dev-chip px-2.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+                    >
+                      {sample}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="type-eyebrow text-[var(--text-secondary)]">
-                  try
-                </span>
-                {SAMPLE_QUESTIONS.map((sample) => (
-                  <button
-                    key={sample}
-                    type="button"
-                    onClick={() => {
-                      setQuestion(sample);
-                      ask(sample, noteType);
-                    }}
-                    className="dev-chip px-2.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
-                  >
-                    {sample}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
+            </section>
+          </Reveal>
         )
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { Flame } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatedNumber } from "@/components/motion";
 import { getUserNotesPage } from "@/lib/note-api";
 import type { Note } from "@/types/notes";
 
@@ -313,7 +314,7 @@ export function KnowledgeHeatmap() {
           {statTiles.map((tile) => (
             <div key={tile.label} className="bg-[var(--bg)] p-3">
               <p className="type-number text-2xl text-[var(--text-primary)]">
-                {loading ? "—" : tile.value}
+                {loading ? "—" : <AnimatedNumber value={tile.value} />}
                 <span className="ml-1 font-mono text-[10px] text-[var(--text-secondary)]">
                   {tile.unit}
                 </span>
