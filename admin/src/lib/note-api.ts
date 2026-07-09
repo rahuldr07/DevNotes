@@ -80,13 +80,23 @@ export async function getCommunityNotesPage({
   return normalizePage(response);
 }
 
+export interface SearchNotesFilters {
+  noteType?: string;
+  tag?: string;
+  language?: string;
+  limit?: number;
+}
+
 export async function searchNotes(
   query: string,
   signal?: AbortSignal,
-  noteType?: string,
+  filters: SearchNotesFilters = {},
 ) {
   const params = new URLSearchParams({ q: query });
-  if (noteType) params.set("note_type", noteType);
+  if (filters.noteType) params.set("note_type", filters.noteType);
+  if (filters.tag) params.set("tag", filters.tag);
+  if (filters.language) params.set("language", filters.language);
+  if (filters.limit) params.set("limit", String(filters.limit));
   const response = await api.get<Note[] | PaginatedNotesResponse>(
     `/notes/search?${params.toString()}`,
     { signal },

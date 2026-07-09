@@ -261,6 +261,8 @@ def search_notes(
     cursor: int | None = None,
     limit: int = 20,
     note_type: str | None = None,
+    tag: str | None = None,
+    language: str | None = None,
 ) -> list[Note]:
     terms = _search_terms(search_query)
     if not terms:
@@ -269,10 +271,16 @@ def search_notes(
     base_query = db.query(Note).filter(Note.user_id == user_id)
     if note_type:
         base_query = base_query.filter(Note.note_type == note_type)
+    if language:
+        base_query = base_query.filter(func.lower(Note.language) == language.lower())
     if cursor is not None:
         base_query = base_query.filter(Note.id < cursor)
 
     if db.bind and db.bind.dialect.name == "postgresql":
+        if tag:
+            # Tags are normalized to lowercase on write (normalize_tags),
+            # so an exact array-contains match is safe here.
+            base_query = base_query.filter(Note.tags.contains([tag.lower()]))
         ts_query = func.websearch_to_tsquery("english", search_query)
         rank = func.ts_rank(Note.search_vector, ts_query)
         return (
@@ -288,6 +296,13 @@ def search_notes(
         ilike_filters.extend([Note.title.ilike(pattern), Note.content.ilike(pattern)])
 
     candidates = base_query.filter(or_(*ilike_filters)).limit(max(limit * 4, 40)).all()
+    if tag:
+        wanted = tag.lower()
+        candidates = [
+            note
+            for note in candidates
+            if wanted in [t.lower() for t in (note.tags or [])]
+        ]
     ranked = [
         (score, note)
         for note in candidates

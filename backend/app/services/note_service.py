@@ -286,6 +286,14 @@ def toggle_pin(db: Session, user_id: int, note_id: int) -> Note:
     return note_repo.toggle_pin(db, note_id=note_id)
 
 
+def _normalize_filter(value: str | None) -> str | None:
+    """Blank or whitespace-only filters mean 'no filter'."""
+    if value is None:
+        return None
+    cleaned = value.strip().lower()
+    return cleaned or None
+
+
 def search_notes(
     db: Session,
     user_id: int,
@@ -293,6 +301,8 @@ def search_notes(
     cursor: int | None = None,
     limit: int = 20,
     note_type: str | None = None,
+    tag: str | None = None,
+    language: str | None = None,
 ) -> dict:
     if not query.strip():
         return {"data": [], "next_cursor": None}
@@ -303,6 +313,8 @@ def search_notes(
         cursor=cursor,
         limit=limit + 1,
         note_type=note_type,
+        tag=_normalize_filter(tag),
+        language=_normalize_filter(language),
     )
     return _paginate(notes, limit)
 
