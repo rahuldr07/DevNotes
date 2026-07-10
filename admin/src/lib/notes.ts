@@ -16,18 +16,24 @@ export function normalizeTags(tags: string[]): string[] {
 
 // Strip markdown syntax before text-based operations (preview/search/word count).
 export function stripMarkdown(md: string): string {
-  return md
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`\n]+)`/g, "$1")
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/^#{1,6} /gm, "")
-    .replace(/(\*\*|__)([\s\S]*?)\1/g, "$2")
-    .replace(/([*_])([\s\S]*?)\1/g, "$2")
-    .replace(/~~([\s\S]*?)~~/g, "$1")
-    .replace(/^[-*+] /gm, "")
-    .replace(/^\d+\. /gm, "")
-    .replace(/^> /gm, "")
-    .replace(/[-]{3,}/g, " ")
-    .trim();
+  return (
+    md
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/`([^`\n]+)`/g, "$1")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/^#{1,6} /gm, "")
+      // Emphasis markers only strip at word boundaries so snake_case
+      // identifiers and glob*patterns survive intact (CommonMark treats
+      // intra-word "_" as literal too).
+      .replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, "$2")
+      .replace(/(?<![\w\\])([*_])(?=\S)([^*_\n]*?\S)\1(?!\w)/g, "$2")
+      .replace(/~~([\s\S]*?)~~/g, "$1")
+      .replace(/^[-*+] /gm, "")
+      .replace(/^\d+\. /gm, "")
+      .replace(/^> /gm, "")
+      .replace(/[-]{3,}/g, " ")
+      .replace(/\\([\\`*_{}[\]()#+\-.!~|>])/g, "$1")
+      .trim()
+  );
 }

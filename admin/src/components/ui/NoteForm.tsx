@@ -84,7 +84,10 @@ function extractOutline(markdown: string) {
     .map((line) => line.match(/^(#{1,3})\s+(.+)$/))
     .filter((match): match is RegExpMatchArray => Boolean(match))
     .slice(0, 6)
-    .map((match) => ({ level: match[1].length, title: match[2].trim() }));
+    .map((match) => ({
+      level: match[1].length,
+      title: stripMarkdown(match[2]) || match[2].trim(),
+    }));
 }
 
 function getReadinessLabel(score: number) {
@@ -459,7 +462,7 @@ export default function NoteForm({
           saveNote();
         }}
       >
-        <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-[var(--border)] bg-[var(--bg)]/92 px-4 py-2 shadow-sm shadow-black/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-[var(--border)] bg-[var(--bg)]/92 px-4 py-2 shadow-sm shadow-black/5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-7 lg:px-7">
           <div className="mx-auto flex max-w-[92rem] items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <button
