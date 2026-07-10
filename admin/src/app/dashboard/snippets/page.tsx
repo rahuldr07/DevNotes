@@ -29,8 +29,14 @@ function normalizeLanguage(language?: string | null) {
   return language?.trim().toLowerCase() || UNKNOWN_LANGUAGE;
 }
 
+/** Markdown fence markers are authoring syntax — drop them so cards and the
+ *  clipboard get the runnable code, not ```lang wrappers. */
+function stripCodeFences(content: string) {
+  return content.replace(/^```[^\n]*\n?/gm, "").trim();
+}
+
 function snippetPreview(content: string) {
-  const trimmed = content.trim();
+  const trimmed = stripCodeFences(content);
   return trimmed.length > 420 ? `${trimmed.slice(0, 420)}...` : trimmed;
 }
 
@@ -79,7 +85,7 @@ function SnippetCard({ note }: { note: Note }) {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(note.content);
+      await navigator.clipboard.writeText(stripCodeFences(note.content));
       setCopied(true);
       setCopyCount((count) => count + 1);
       gooeyToast.success("Snippet copied", {
@@ -310,6 +316,7 @@ export default function SnippetsPage() {
           </a>
         </div>
         <QuickCapture
+          defaultMode="snippet"
           onCreated={(note) => {
             if (note.note_type === "snippet") {
               setSnippets((prev) => [note, ...prev]);

@@ -18,7 +18,7 @@ export function normalizeTags(tags: string[]): string[] {
 export function stripMarkdown(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`\n]+`/g, " ")
+    .replace(/`([^`\n]+)`/g, "$1")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/^#{1,6} /gm, "")

@@ -60,6 +60,8 @@ const TEMPLATES: CaptureTemplate[] = [
 
 interface QuickCaptureProps {
   onCreated?: (note: Note) => void;
+  /** Which mode the capture box starts in — snippet pages want "snippet". */
+  defaultMode?: CaptureMode;
 }
 
 function inferTitle(content: string, mode: CaptureMode) {
@@ -76,9 +78,12 @@ function stripCommandPrefix(value: string) {
   return value.replace(/^\/(snippet|note)\s+/i, "").trimStart();
 }
 
-export function QuickCapture({ onCreated }: QuickCaptureProps) {
+export function QuickCapture({
+  onCreated,
+  defaultMode = "note",
+}: QuickCaptureProps) {
   const [content, setContent] = useState("");
-  const [mode, setMode] = useState<CaptureMode>("note");
+  const [mode, setMode] = useState<CaptureMode>(defaultMode);
   const [language, setLanguage] = useState("tsx");
   const [saving, setSaving] = useState(false);
   const [template, setTemplate] = useState<CaptureTemplate | null>(null);
