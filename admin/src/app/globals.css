@@ -7,8 +7,9 @@
 
 /* ─── Tailwind theme tokens ─────────────────────────────────────────────── */
 @theme inline {
-  /* Font — Gellix local family for UI, Roboto Mono for code/editor metadata */
-  --font-sans: var(--font-gellix);
+  /* Font — each theme picks its UI face via --ui-font-sans (Gellix by
+     default, JetBrains Mono for terminal colorways, Lora for editorial). */
+  --font-sans: var(--ui-font-sans, var(--font-gellix));
   --font-mono: var(--font-roboto-mono);
 
   /* Map shadcn semantic vars to Tailwind color utilities */
@@ -39,12 +40,21 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Border radius scale */
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --radius-2xl: 0px;
+  /* Border radius scale — follows the active theme's --ui-radius so sharp
+     workbench themes stay square and soft colorways round the whole UI. */
+  --radius-sm: calc(var(--ui-radius, 0px) * 0.6);
+  --radius-md: var(--ui-radius, 0px);
+  --radius-lg: var(--ui-radius, 0px);
+  --radius-xl: calc(var(--ui-radius, 0px) * 1.5);
+  --radius-2xl: calc(var(--ui-radius, 0px) * 2);
+}
+
+/* The app is written against the sharp workbench baseline (rounded-none).
+   Themes soften that baseline through --ui-radius, so `rounded-none` reads
+   as "workbench corner", not a hard zero. Unlayered on purpose: it must win
+   over the layered Tailwind utility. */
+[data-theme] .rounded-none {
+  border-radius: var(--ui-radius, 0px);
 }
 
 /* ─── Smooth theme transitions ──────────────────────────────────────────── */
@@ -65,7 +75,9 @@ body {
 }
 
 .type-hero {
-  font-family: var(--font-gellix), ui-sans-serif, system-ui, sans-serif;
+  font-family:
+    var(--ui-font-sans, var(--font-gellix)), ui-sans-serif, system-ui,
+    sans-serif;
   font-size: clamp(2rem, 3vw, 3.25rem);
   font-weight: 470;
   letter-spacing: -0.038em;
@@ -74,7 +86,9 @@ body {
 }
 
 .type-page-title {
-  font-family: var(--font-gellix), ui-sans-serif, system-ui, sans-serif;
+  font-family:
+    var(--ui-font-sans, var(--font-gellix)), ui-sans-serif, system-ui,
+    sans-serif;
   font-weight: 500;
   letter-spacing: -0.045em;
   line-height: 1;
@@ -115,10 +129,13 @@ body {
 }
 
 .dev-panel {
-  border: 1px solid var(--border);
-  border-radius: 0;
+  border: var(--ui-panel-border, 1px) solid var(--border);
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--bg-secondary) 46%, transparent);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--border) 70%, transparent) inset;
+  box-shadow: var(
+    --ui-panel-shadow,
+    0 1px 0 color-mix(in srgb, var(--border) 70%, transparent) inset
+  );
   backdrop-filter: blur(18px);
 }
 
@@ -128,8 +145,8 @@ body {
 }
 
 .dev-chip {
-  border: 1px solid var(--border);
-  border-radius: 0;
+  border: var(--ui-panel-border, 1px) solid var(--border);
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--bg) 56%, transparent);
   font-family:
     var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
@@ -278,20 +295,22 @@ samp,
 }
 
 .auth-command-card {
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
 }
 
 .onboarding-dialog {
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
 }
 /* ═══════════════════════════════════════════════════════════════════════════
    DEVNOTES THEME SYSTEM — MonkeyType-inspired CSS variable architecture
-   
-   10 semantic variables drive the entire UI.
-   Applied via data-theme="..." attribute on <html>.
-   ThemeProvider.tsx sets this attribute + .dark class (for shadcn compat).
 
-   Our 10 vars:
+   Theme colorways live in src/lib/themes.ts (single source of truth); the
+   [data-theme="..."] variable blocks are generated from that registry and
+   inlined by the root layout. An inline init script applies the saved theme
+   before first paint, and ThemeProvider keeps the attribute + .dark class
+   (shadcn compat) in sync afterwards.
+
+   The generated vars each theme provides:
    --bg-color       Page background
    --main-color     Primary accent — buttons, links, highlights
    --sub-color      Muted text — labels, metadata, placeholders
@@ -302,273 +321,8 @@ samp,
    --hover-color    Hover state backgrounds
    --input-bg       Input field backgrounds
    --focus-ring     Focus outlines on interactive elements
+   ...plus the shadcn semantic vars and the --bg/--accent/... aliases.
    ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── 1. Catppuccin Mocha (default) ── cozy dark purple-blue ── */
-[data-theme="catppuccin-mocha"] {
-  --bg-color: #1e1e2e;
-  --main-color: #cba6f7;
-  --sub-color: #a6adc8;
-  --sub-alt-color: #313244;
-  --text-color: #cdd6f4;
-  --error-color: #f38ba8;
-  --border-color: #45475a;
-  --hover-color: #45475a;
-  --input-bg: #313244;
-  --focus-ring: #cba6f7;
-  --radius: 0.625rem;
-
-  /* shadcn semantic vars — derived from our theme vars above */
-  --background: #1e1e2e;
-  --foreground: #cdd6f4;
-  --card: #313244;
-  --card-foreground: #cdd6f4;
-  --popover: #313244;
-  --popover-foreground: #cdd6f4;
-  --primary: #cba6f7;
-  --primary-foreground: #1e1e2e;
-  --secondary: #45475a;
-  --secondary-foreground: #cdd6f4;
-  --muted: #313244;
-  --muted-foreground: #a6adc8;
-  --accent: #45475a;
-  --accent-foreground: #cdd6f4;
-  --destructive: #f38ba8;
-  --border: #45475a;
-  --input: #313244;
-  --ring: #cba6f7;
-  --sidebar: #181825;
-  --sidebar-foreground: #cdd6f4;
-  --sidebar-primary: #cba6f7;
-  --sidebar-primary-foreground: #1e1e2e;
-  --sidebar-accent: #313244;
-  --sidebar-accent-foreground: #cdd6f4;
-  --sidebar-border: #45475a;
-  --sidebar-ring: #cba6f7;
-}
-
-/* ── 2. Catppuccin Latte ── warm light cream ── */
-[data-theme="catppuccin-latte"] {
-  --bg-color: #eff1f5;
-  --main-color: #8839ef;
-  --sub-color: #6c6f85;
-  --sub-alt-color: #dce0e8;
-  --text-color: #4c4f69;
-  --error-color: #d20f39;
-  --border-color: #ccd0da;
-  --hover-color: #ccd0da;
-  --input-bg: #e6e9ef;
-  --focus-ring: #8839ef;
-  --radius: 0.625rem;
-
-  --background: #eff1f5;
-  --foreground: #4c4f69;
-  --card: #dce0e8;
-  --card-foreground: #4c4f69;
-  --popover: #dce0e8;
-  --popover-foreground: #4c4f69;
-  --primary: #8839ef;
-  --primary-foreground: #ffffff;
-  --secondary: #ccd0da;
-  --secondary-foreground: #4c4f69;
-  --muted: #dce0e8;
-  --muted-foreground: #6c6f85;
-  --accent: #ccd0da;
-  --accent-foreground: #4c4f69;
-  --destructive: #d20f39;
-  --border: #ccd0da;
-  --input: #e6e9ef;
-  --ring: #8839ef;
-  --sidebar: #e6e9ef;
-  --sidebar-foreground: #4c4f69;
-  --sidebar-primary: #8839ef;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #dce0e8;
-  --sidebar-accent-foreground: #4c4f69;
-  --sidebar-border: #ccd0da;
-  --sidebar-ring: #8839ef;
-}
-
-/* ── 3. Serika Dark ── MonkeyType classic yellow-on-charcoal ── */
-[data-theme="serika-dark"] {
-  --bg-color: #1a1a1a;
-  --main-color: #e2b714;
-  --sub-color: #646669;
-  --sub-alt-color: #2a2a2a;
-  --text-color: #d1d0c5;
-  --error-color: #ca4754;
-  --border-color: rgba(255, 255, 255, 0.06);
-  --hover-color: #222222;
-  --input-bg: transparent;
-  --focus-ring: #e2b714;
-  --radius: 0.25rem;
-
-  --background: #1a1a1a;
-  --foreground: #d1d0c5;
-  --card: #1a1a1a;
-  --card-foreground: #d1d0c5;
-  --popover: #2a2a2a;
-  --popover-foreground: #d1d0c5;
-  --primary: #e2b714;
-  --primary-foreground: #1a1a1a;
-  --secondary: #2a2a2a;
-  --secondary-foreground: #d1d0c5;
-  --muted: #2a2a2a;
-  --muted-foreground: #646669;
-  --accent: #e2b714;
-  --accent-foreground: #d1d0c5;
-  --destructive: #ca4754;
-  --border: rgba(255, 255, 255, 0.06);
-  --input: transparent;
-  --ring: #e2b714;
-  --sidebar: #1a1a1a;
-  --sidebar-foreground: #d1d0c5;
-  --sidebar-primary: #e2b714;
-  --sidebar-primary-foreground: #1a1a1a;
-  --sidebar-accent: #2a2a2a;
-  --sidebar-accent-foreground: #d1d0c5;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #e2b714;
-}
-
-/* ── 4. Nord ── cool arctic blue-gray ── */
-[data-theme="nord"] {
-  --bg-color: #2e3440;
-  --main-color: #88c0d0;
-  --sub-color: #4c566a;
-  --sub-alt-color: #3b4252;
-  --text-color: #eceff4;
-  --error-color: #bf616a;
-  --border-color: #434c5e;
-  --hover-color: #434c5e;
-  --input-bg: #3b4252;
-  --focus-ring: #88c0d0;
-  --radius: 0.625rem;
-
-  --background: #2e3440;
-  --foreground: #eceff4;
-  --card: #3b4252;
-  --card-foreground: #eceff4;
-  --popover: #3b4252;
-  --popover-foreground: #eceff4;
-  --primary: #88c0d0;
-  --primary-foreground: #2e3440;
-  --secondary: #434c5e;
-  --secondary-foreground: #eceff4;
-  --muted: #3b4252;
-  --muted-foreground: #4c566a;
-  --accent: #434c5e;
-  --accent-foreground: #eceff4;
-  --destructive: #bf616a;
-  --border: #434c5e;
-  --input: #3b4252;
-  --ring: #88c0d0;
-  --sidebar: #272d3b;
-  --sidebar-foreground: #eceff4;
-  --sidebar-primary: #88c0d0;
-  --sidebar-primary-foreground: #2e3440;
-  --sidebar-accent: #3b4252;
-  --sidebar-accent-foreground: #eceff4;
-  --sidebar-border: #434c5e;
-  --sidebar-ring: #88c0d0;
-}
-
-/* ── 5. Paper ── warm editorial off-white ── */
-[data-theme="paper"] {
-  --bg-color: #f5f0e8;
-  --main-color: #b5451b;
-  --sub-color: #9a8c7a;
-  --sub-alt-color: #e8e0d0;
-  --text-color: #3d2b1f;
-  --error-color: #c0392b;
-  --border-color: #d4c8b8;
-  --hover-color: #ddd5c5;
-  --input-bg: #ede8de;
-  --focus-ring: #b5451b;
-  --radius: 0.625rem;
-
-  --background: #f5f0e8;
-  --foreground: #3d2b1f;
-  --card: #e8e0d0;
-  --card-foreground: #3d2b1f;
-  --popover: #e8e0d0;
-  --popover-foreground: #3d2b1f;
-  --primary: #b5451b;
-  --primary-foreground: #ffffff;
-  --secondary: #d4c8b8;
-  --secondary-foreground: #3d2b1f;
-  --muted: #e8e0d0;
-  --muted-foreground: #9a8c7a;
-  --accent: #ddd5c5;
-  --accent-foreground: #3d2b1f;
-  --destructive: #c0392b;
-  --border: #d4c8b8;
-  --input: #ede8de;
-  --ring: #b5451b;
-  --sidebar: #ede8de;
-  --sidebar-foreground: #3d2b1f;
-  --sidebar-primary: #b5451b;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8e0d0;
-  --sidebar-accent-foreground: #3d2b1f;
-  --sidebar-border: #d4c8b8;
-  --sidebar-ring: #b5451b;
-}
-
-/* ── 6. Midnight ── OLED pure black + indigo ── */
-[data-theme="midnight"] {
-  --bg-color: #09090b;
-  --main-color: #6366f1;
-  --sub-color: #52525b;
-  --sub-alt-color: #111113;
-  --text-color: #fafafa;
-  --error-color: #ef4444;
-  --border-color: #27272a;
-  --hover-color: #27272a;
-  --input-bg: #18181b;
-  --focus-ring: #6366f1;
-  --radius: 0.625rem;
-
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #111113;
-  --card-foreground: #fafafa;
-  --popover: #111113;
-  --popover-foreground: #fafafa;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #111113;
-  --muted-foreground: #52525b;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #ef4444;
-  --border: #27272a;
-  --input: #18181b;
-  --ring: #6366f1;
-  --sidebar: #050507;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #111113;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #6366f1;
-}
-
-:root,
-[data-theme] {
-  --bg: var(--bg-color);
-  --bg-secondary: var(--sub-alt-color);
-  --text-primary: var(--text-color);
-  --text-secondary: var(--sub-color);
-  --accent: var(--main-color);
-  --accent-hover: color-mix(in srgb, var(--main-color) 82%, #000);
-  --error: var(--error-color);
-  --success: #4caf50;
-  --border: var(--border-color);
-}
 
 /* ─── Base layer ─────────────────────────────────────────────────────────── */
 @layer base {
@@ -634,7 +388,7 @@ samp,
   position: relative;
   overflow: hidden;
   border: 1px solid var(--border-color);
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background:
     radial-gradient(
       circle at 24px 24px,
@@ -658,7 +412,7 @@ samp,
   right: 1rem;
   z-index: 1;
   border: 1px solid var(--border-color);
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--sub-alt-color) 70%, transparent);
   color: var(--sub-color);
   font-size: 0.65rem;
@@ -675,7 +429,7 @@ samp,
   bottom: 1rem;
   left: 1.55rem;
   width: 0.35rem;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--main-color) 35%, transparent);
   opacity: 0.45;
   pointer-events: none;
@@ -757,7 +511,7 @@ samp,
   background: var(--hover-color);
   color: var(--main-color);
   padding: 0.15em 0.45em;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   border: 1px solid var(--border-color);
 }
 
@@ -765,7 +519,7 @@ samp,
 .tiptap pre {
   background: color-mix(in srgb, var(--bg-color) 82%, black);
   border: 1px solid var(--border-color);
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   padding: 1.25rem 1.45rem;
   margin: 1.2rem 0;
   overflow-x: auto;
@@ -780,7 +534,7 @@ samp,
   padding: 0;
   color: var(--text-color);
   line-height: 1.7;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
 }
 
 /* lowlight token colors — use main-color family */
@@ -852,7 +606,7 @@ samp,
   align-items: center;
   gap: 2px;
   padding: 5px 7px;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--sub-alt-color) 88%, black);
   border: 1px solid var(--border-color);
   box-shadow: 0 18px 50px color-mix(in srgb, black 24%, transparent);
@@ -864,7 +618,7 @@ samp,
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -889,7 +643,7 @@ samp,
 .bubble-link-input {
   height: 28px;
   padding: 0 8px;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   border: 1px solid var(--border-color);
   background: var(--bg-color);
   color: var(--text-color);
@@ -912,7 +666,7 @@ samp,
   align-items: center;
   gap: 4px;
   padding: 5px 8px;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--sub-alt-color) 86%, black);
   border: 1px solid var(--border-color);
   box-shadow: none;
@@ -930,7 +684,7 @@ samp,
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -971,7 +725,7 @@ samp,
   width: 15px;
   height: 15px;
   border: 1.5px solid var(--border-color);
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: transparent;
   cursor: pointer;
   position: relative;
@@ -1030,7 +784,7 @@ samp,
 }
 .tiptap-code-block-wrapper pre {
   margin: 0;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background:
     linear-gradient(
       90deg,
@@ -1050,7 +804,7 @@ samp,
   top: 2rem;
   bottom: 1rem;
   width: 0.3rem;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   background: color-mix(in srgb, var(--main-color) 32%, transparent);
   pointer-events: none;
 }
@@ -1067,7 +821,7 @@ samp,
   background: color-mix(in srgb, var(--main-color) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--main-color) 25%, transparent);
   padding: 2px 8px;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   pointer-events: none;
   z-index: 1;
 }
@@ -1080,7 +834,7 @@ samp,
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
-  border-radius: 0;
+  border-radius: var(--ui-radius, 0);
   border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
   background: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
   color: var(--text-secondary);

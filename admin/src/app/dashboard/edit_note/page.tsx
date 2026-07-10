@@ -15,12 +15,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import NoteForm from "@/components/ui/NoteForm";
 import { api } from "@/lib/api";
 import type { Note } from "@/types/notes";
 
-export default function EditNotePage() {
+function EditNoteContent() {
   // useSearchParams reads URL query params: /edit_note?id=5 → id = '5'
   // (Different from useParams which reads dynamic route segments: /notes/[id])
   const searchParams = useSearchParams();
@@ -118,5 +118,23 @@ export default function EditNotePage() {
       initialPublished={note.is_published}
       initialCommunity={note.is_community}
     />
+  );
+}
+
+// useSearchParams() needs a Suspense boundary so the static shell of this
+// page can prerender while the query-string read stays client-side.
+export default function EditNotePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <p className="text-lg" style={{ color: "var(--sub-color)" }}>
+            Loading note...
+          </p>
+        </div>
+      }
+    >
+      <EditNoteContent />
+    </Suspense>
   );
 }

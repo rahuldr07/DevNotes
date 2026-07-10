@@ -26,7 +26,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { ThemePickerPopover } from "@/components/ThemePickerPopover";
+import { ThemeStudioTrigger } from "@/components/ThemeStudio";
 import { isAuthenticated } from "@/lib/auth";
 
 const FEATURES = [
@@ -118,7 +118,7 @@ export default function Home() {
           >
             start writing
           </Link>
-          <ThemePickerPopover />
+          <ThemeStudioTrigger />
         </nav>
       </header>
 

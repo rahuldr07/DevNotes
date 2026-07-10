@@ -1,71 +1,27 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import {
+  DEFAULT_THEME_ID,
+  getTheme,
+  isThemeId,
+  THEME_STORAGE_KEY,
+  THEMES,
+  type ThemeDefinition,
+  type ThemeId,
+} from "@/lib/themes";
 
-/* ─── Theme definitions ──────────────────────────────────────────────────── */
-
-export type ThemeId =
-  | "catppuccin-mocha"
-  | "catppuccin-latte"
-  | "serika-dark"
-  | "nord"
-  | "paper"
-  | "midnight";
-
-export interface ThemeMeta {
-  id: ThemeId;
-  name: string;
-  isDark: boolean;
-  /** 4 preview swatch colors: [bg, main, sub-alt, text] */
-  swatches: [string, string, string, string];
-}
-
-export const THEMES: ThemeMeta[] = [
-  {
-    id: "catppuccin-mocha",
-    name: "Catppuccin Mocha",
-    isDark: true,
-    swatches: ["#1e1e2e", "#cba6f7", "#313244", "#cdd6f4"],
-  },
-  {
-    id: "catppuccin-latte",
-    name: "Catppuccin Latte",
-    isDark: false,
-    swatches: ["#eff1f5", "#8839ef", "#dce0e8", "#4c4f69"],
-  },
-  {
-    id: "serika-dark",
-    name: "Serika Dark",
-    isDark: true,
-    swatches: ["#1a1a1a", "#e2b714", "#2a2a2a", "#d1d0c5"],
-  },
-  {
-    id: "nord",
-    name: "Nord",
-    isDark: true,
-    swatches: ["#2e3440", "#88c0d0", "#3b4252", "#eceff4"],
-  },
-  {
-    id: "paper",
-    name: "Paper CLI",
-    isDark: false,
-    swatches: ["#f5f0e8", "#b5451b", "#e8e0d0", "#3d2b1f"],
-  },
-  {
-    id: "midnight",
-    name: "Midnight",
-    isDark: true,
-    swatches: ["#09090b", "#6366f1", "#111113", "#fafafa"],
-  },
-];
+// Re-exported so existing consumers keep a single import site.
+export type { ThemeId, ThemeMeta } from "@/lib/themes";
+export { THEMES } from "@/lib/themes";
 
 /* ─── Context shape ──────────────────────────────────────────────────────── */
 
 interface ThemeContextType {
   theme: ThemeId;
   setTheme: (id: ThemeId) => void;
-  themes: ThemeMeta[];
-  currentThemeMeta: ThemeMeta;
+  themes: ThemeDefinition[];
+  currentThemeMeta: ThemeDefinition;
   /** Whether user has completed the first-launch theme onboarding */
   isOnboarded: boolean;
   setOnboarded: () => void;
@@ -73,23 +29,23 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = "devnotes-theme";
 const ONBOARDED_KEY = "devnotes-onboarded";
-const DEFAULT_THEME: ThemeId = "serika-dark";
 
 /* ─── Provider ───────────────────────────────────────────────────────────── */
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeId>(DEFAULT_THEME);
+  const [theme, setThemeState] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [isOnboarded, setIsOnboarded] = useState(true); // true prevents flash
   const [mounted, setMounted] = useState(false);
 
-  /* On mount: read saved theme + onboarding status from localStorage */
+  /* On mount: read saved theme + onboarding status from localStorage.
+     The inline init script in the root layout already applied the saved
+     theme before first paint — this only syncs React state with it. */
   useEffect(() => {
-    const savedTheme = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
     const savedOnboarded = localStorage.getItem(ONBOARDED_KEY) === "true";
 
-    if (savedTheme && THEMES.some((t) => t.id === savedTheme)) {
+    if (isThemeId(savedTheme)) {
       setThemeState(savedTheme);
     }
 
@@ -103,20 +59,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
 
     const root = document.documentElement;
-    const meta = THEMES.find((t) => t.id === theme);
-    if (!meta) return;
+    const meta = getTheme(theme);
 
-    // Set data-theme attribute — triggers CSS variable theme blocks in globals.css
+    // Set data-theme attribute — triggers the generated CSS variable blocks
     root.setAttribute("data-theme", theme);
 
     // Also toggle .dark class so shadcn components get their dark mode styles
-    if (meta.isDark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.classList.toggle("dark", meta.isDark);
 
-    localStorage.setItem(STORAGE_KEY, theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme, mounted]);
 
   const setTheme = (id: ThemeId) => setThemeState(id);
@@ -126,19 +77,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setIsOnboarded(true);
   };
 
-  const currentThemeMeta = THEMES.find((t) => t.id === theme);
-  if (!currentThemeMeta) return null;
-
-  // Prevent flash of wrong theme — render nothing until localStorage is read
-  if (!mounted) return null;
-
   return (
     <ThemeContext.Provider
       value={{
         theme,
         setTheme,
         themes: THEMES,
-        currentThemeMeta,
+        currentThemeMeta: getTheme(theme),
         isOnboarded,
         setOnboarded,
       }}

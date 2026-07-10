@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { ThemePickerPopover } from "@/components/ThemePickerPopover";
+import { ThemeStudioTrigger } from "@/components/ThemeStudio";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -38,7 +38,7 @@ export function AuthLayout({ children, breadcrumb }: AuthLayoutProps) {
         >
           {breadcrumb}
         </span>
-        <ThemePickerPopover />
+        <ThemeStudioTrigger />
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-8 sm:px-6">

@@ -28,6 +28,7 @@ const SHORTCUT_GROUPS: { title: string; shortcuts: Shortcut[] }[] = [
       { keys: ["g", "e"], label: "explore" },
       { keys: ["g", "a"], label: "ask workspace" },
       { keys: ["g", "p"], label: "settings / profile" },
+      { keys: ["g", "t"], label: "theme studio" },
     ],
   },
   {

@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { ShortcutsDialog } from "@/components/ShortcutsDialog";
 import { useSound } from "@/components/SoundProvider";
-import { ThemePickerPopover } from "@/components/ThemePickerPopover";
+import { openThemeStudio, ThemeStudioTrigger } from "@/components/ThemeStudio";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -194,6 +194,11 @@ export default function DashboardLayout({
       // Second key of a pending g-chord wins over single-key shortcuts.
       if (chordPending) {
         clearChord();
+        if (event.key.toLowerCase() === "t") {
+          event.preventDefault();
+          openThemeStudio();
+          return;
+        }
         const route = CHORD_ROUTES[event.key.toLowerCase()];
         if (route) {
           event.preventDefault();
@@ -358,7 +363,7 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <ThemePickerPopover />
+              <ThemeStudioTrigger />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -453,7 +458,7 @@ export default function DashboardLayout({
                   </Button>
                 </Link>
                 <div className="lg:hidden">
-                  <ThemePickerPopover />
+                  <ThemeStudioTrigger />
                 </div>
                 <Button
                   variant="ghost"

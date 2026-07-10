@@ -102,6 +102,10 @@ export function OnboardingDialog() {
 
   if (isOnboarded) return null;
 
+  // First launch shows a curated set — the full roster lives in the studio.
+  const featured = themes.filter((item) => item.featured);
+  const remaining = themes.length - featured.length;
+
   const applyTheme = (id: ThemeId) => {
     const meta = themes.find((item) => item.id === id);
     if (!meta) return;
@@ -170,7 +174,7 @@ export function OnboardingDialog() {
         </div>
 
         <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
-          {themes.map((meta) => (
+          {featured.map((meta) => (
             <ThemeChoice
               key={meta.id}
               meta={meta}
@@ -181,6 +185,11 @@ export function OnboardingDialog() {
             />
           ))}
         </div>
+
+        <p className="px-6 pb-1 font-mono text-[11px] lowercase text-[var(--text-secondary)]">
+          +{remaining} more colorways in the theme studio — press g then t
+          anytime.
+        </p>
 
         <div
           className="flex items-center justify-between border-t px-6 py-5"
