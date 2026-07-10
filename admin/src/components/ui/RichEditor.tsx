@@ -178,7 +178,8 @@ export default function RichEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ codeBlock: false }),
+      // link: false — StarterKit v3 bundles Link; we configure our own below.
+      StarterKit.configure({ codeBlock: false, link: false }),
 
       CodeBlockLowlight.extend({
         addNodeView() {
@@ -224,10 +225,18 @@ export default function RichEditor({
   });
 
   useEffect(() => {
-    if (!editor) return;
+    // Sync external content (version restore, template) into the editor.
+    // Never while the user is typing, and never emitting update — TipTap v3
+    // defaults emitUpdate to true, and a re-emit here feeds onChange back
+    // into this effect: with markdown serializations that aren't idempotent
+    // (escaping in tiptap-markdown), that cascade loops until React kills it
+    // with "Maximum update depth exceeded".
+    if (!editor || editor.isFocused) return;
     // biome-ignore lint/suspicious/noExplicitAny: TipTap storage is untyped
     const current = (editor.storage as any).markdown.getMarkdown();
-    if (current !== initialContent) editor.commands.setContent(initialContent);
+    if (current !== initialContent) {
+      editor.commands.setContent(initialContent, { emitUpdate: false });
+    }
   }, [initialContent, editor]);
 
   return (
