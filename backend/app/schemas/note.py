@@ -126,6 +126,8 @@ class PublicNoteResponse(BaseModel):
     share_uuid: str
     is_published: bool = False
     is_community: bool = False
+    author_name: str | None = None
+    author_username: str | None = None
     like_count: int = 0
     view_count: int = 0
     created_at: datetime

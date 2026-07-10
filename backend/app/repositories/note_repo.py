@@ -407,7 +407,12 @@ def get_like_count(db: Session, note_id: int) -> int:
 
 
 def get_public_note_response(db: Session, note: Note) -> dict:
-    return _public_response(note, get_like_count(db, note.id))
+    response = _public_response(note, get_like_count(db, note.id))
+    author = db.query(User).filter(User.id == note.user_id).first()
+    if author:
+        response["author_name"] = author.name
+        response["author_username"] = author.username
+    return response
 
 
 def get_related_public_notes(
