@@ -2,11 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock3, Loader2, RotateCcw, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ReadOnlyEditor } from "@/components/ReadOnlyEditor";
 import { Button } from "@/components/ui/button";
-import { getNoteVersions } from "@/lib/note-api";
-import type { NoteVersion } from "@/types/notes";
+import { normalizeErrorMessage } from "@/lib/errors";
+import { formatDate } from "@/lib/format";
+import { getNoteVersion, getNoteVersions } from "@/lib/note-api";
+import type { NoteVersion, NoteVersionSummary } from "@/types/notes";
 
 interface VersionHistoryDrawerProps {
   open: boolean;
@@ -19,15 +21,6 @@ interface VersionHistoryDrawerProps {
   restoring: boolean;
   onClose: () => void;
   onRestore: (version: NoteVersion) => Promise<void>;
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function TagList({ tags }: { tags: string[] }) {
@@ -56,10 +49,15 @@ export function VersionHistoryDrawer({
   onClose,
   onRestore,
 }: VersionHistoryDrawerProps) {
-  const [versions, setVersions] = useState<NoteVersion[]>([]);
+  const [versions, setVersions] = useState<NoteVersionSummary[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<NoteVersion | null>(null);
   const [loading, setLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
+  // The list endpoint returns summaries only; full snapshots are fetched per
+  // selection and cached here so flipping between versions stays instant.
+  const detailCache = useRef(new Map<number, NoteVersion>());
 
   useEffect(() => {
     if (!open) return;
@@ -67,6 +65,7 @@ export function VersionHistoryDrawer({
     let cancelled = false;
     setLoading(true);
     setError("");
+    detailCache.current.clear();
     getNoteVersions(noteId)
       .then((items) => {
         if (cancelled) return;
@@ -77,9 +76,7 @@ export function VersionHistoryDrawer({
         if (cancelled) return;
         setVersions([]);
         setSelectedId(null);
-        setError(
-          err instanceof Error ? err.message : "Failed to load versions",
-        );
+        setError(normalizeErrorMessage(err, "Failed to load versions"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -91,6 +88,40 @@ export function VersionHistoryDrawer({
   }, [noteId, open]);
 
   useEffect(() => {
+    if (!open || selectedId === null) {
+      setSelected(null);
+      return;
+    }
+
+    const cached = detailCache.current.get(selectedId);
+    if (cached) {
+      setSelected(cached);
+      return;
+    }
+
+    let cancelled = false;
+    setSelected(null);
+    setDetailLoading(true);
+    getNoteVersion(noteId, selectedId)
+      .then((version) => {
+        if (cancelled) return;
+        detailCache.current.set(selectedId, version);
+        setSelected(version);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(normalizeErrorMessage(err, "Failed to load version"));
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [noteId, open, selectedId]);
+
+  useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -100,11 +131,6 @@ export function VersionHistoryDrawer({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose, open]);
-
-  const selected = useMemo(
-    () => versions.find((version) => version.id === selectedId) ?? null,
-    [selectedId, versions],
-  );
 
   return (
     <AnimatePresence>
@@ -175,10 +201,10 @@ export function VersionHistoryDrawer({
                         }}
                       >
                         <div className="text-sm text-[var(--text-primary)]">
-                          v{version.version}
+                          v{version.version_number}
                         </div>
                         <div className="mt-1 text-xs text-[var(--text-secondary)]">
-                          {formatDate(version.created_at)}
+                          {formatDate(version.created_at, "dateTime")}
                         </div>
                       </button>
                     ))}
@@ -190,7 +216,9 @@ export function VersionHistoryDrawer({
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-medium">
-                      {selected ? `previewing v${selected.version}` : "preview"}
+                      {selected
+                        ? `previewing v${selected.version_number}`
+                        : "preview"}
                     </h3>
                     <p className="mt-1 text-xs text-[var(--text-secondary)]">
                       compare the selected version against your current draft
@@ -243,6 +271,11 @@ export function VersionHistoryDrawer({
                         />
                         <ReadOnlyEditor content={selected.content} />
                       </>
+                    ) : detailLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                        <Loader2 size={13} className="animate-spin" />
+                        loading version...
+                      </div>
                     ) : (
                       <p className="text-sm text-[var(--text-secondary)]">
                         choose a version

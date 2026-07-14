@@ -14,10 +14,13 @@
  */
 "use client";
 
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import NoteForm from "@/components/ui/NoteForm";
-import { api } from "@/lib/api";
+import { normalizeErrorMessage } from "@/lib/errors";
+import { getNote } from "@/lib/note-api";
 import type { Note } from "@/types/notes";
 
 function EditNoteContent() {
@@ -48,12 +51,12 @@ function EditNoteContent() {
       try {
         setLoading(true);
         setError("");
-        const response = await api.get<Note>(`/notes/${noteId}`);
+        const response = await getNote(Number(noteId));
         if (!cancelled) setNote(response);
-      } catch (_err) {
+      } catch (err: unknown) {
         if (!cancelled) {
           setNote(null);
-          setError("Failed to fetch note");
+          setError(normalizeErrorMessage(err, "Failed to fetch note"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -79,7 +82,7 @@ function EditNoteContent() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
         <div
           className="p-6 rounded-none"
           style={{
@@ -90,16 +93,33 @@ function EditNoteContent() {
         >
           {error}
         </div>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <ArrowLeft size={15} />
+          back to notes
+        </Link>
       </div>
     );
   }
 
   if (!note) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-lg" style={{ color: "var(--sub-color)" }}>
           Note not found
         </p>
+        <p className="text-sm" style={{ color: "var(--sub-color)" }}>
+          It may have been deleted, or the link is missing its note id.
+        </p>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <ArrowLeft size={15} />
+          back to notes
+        </Link>
       </div>
     );
   }

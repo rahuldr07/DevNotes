@@ -27,10 +27,11 @@ import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { useSettings } from "@/hooks/useSettings";
-import { api } from "@/lib/api";
 import { normalizeErrorMessage } from "@/lib/errors";
+import { createNote, updateNote } from "@/lib/note-api";
 import { normalizeTag, normalizeTags, stripMarkdown } from "@/lib/notes";
-import type { Note, NoteVersion } from "@/types/notes";
+import { countWords, readingTimeMinutes } from "@/lib/reading";
+import type { NoteVersion } from "@/types/notes";
 
 const RichEditor = dynamic(() => import("@/components/ui/RichEditor"), {
   ssr: false,
@@ -129,6 +130,7 @@ export default function NoteForm({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoringVersion, setRestoringVersion] = useState(false);
 
+  const titleRef = useRef<HTMLTextAreaElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
@@ -150,10 +152,8 @@ export default function NoteForm({
     sourceUrl !== savedSnapshot.current.sourceUrl ||
     !sameTags(normalizedTags, savedSnapshot.current.tags);
 
-  const wordCount = content.trim()
-    ? stripMarkdown(content).split(/\s+/).filter(Boolean).length
-    : 0;
-  const readTime = Math.max(1, Math.round(wordCount / 200));
+  const wordCount = content.trim() ? countWords(content) : 0;
+  const readTime = readingTimeMinutes(content);
   const characterCount = stripMarkdown(content).length;
   const lineCount = Math.max(1, content.split("\n").length);
   const codeBlockCount = countCodeBlocks(content);
@@ -219,26 +219,17 @@ export default function NoteForm({
       setSaveStatus("saving");
 
       try {
-        const request =
-          mode === "create"
-            ? api.post<Note>("/notes/create", {
-                title: nextTitle,
-                content,
-                tags: nextTags,
-                note_type: noteType,
-                language: nextLanguage || null,
-                source_url: nextSourceUrl || null,
-              })
-            : api.patch<Note>(`/notes/${noteId}/update`, {
-                title: nextTitle,
-                content,
-                tags: nextTags,
-                note_type: noteType,
-                language: nextLanguage || null,
-                source_url: nextSourceUrl || null,
-              });
-
-        const saved = await request;
+        const payload = {
+          title: nextTitle,
+          content,
+          tags: nextTags,
+          note_type: noteType,
+          language: nextLanguage || null,
+          source_url: nextSourceUrl || null,
+        };
+        const saved = await (mode === "create"
+          ? createNote(payload)
+          : updateNote(noteId as number, payload));
         if (!quiet) {
           gooeyToast.success(mode === "create" ? "Note created" : "Saved");
         }
@@ -316,6 +307,15 @@ export default function NoteForm({
     triggerAutoSave();
   }, [triggerAutoSave]);
 
+  // Long titles wrap instead of clipping: grow the textarea to fit.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rerun on every title change so the resize happens after the DOM reflects the new text.
+  useEffect(() => {
+    const element = titleRef.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }, [title]);
+
   useEffect(
     () => () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -341,9 +341,7 @@ export default function NoteForm({
       const previousUuid = shareUuid;
       setIsPublished(checked);
       try {
-        const updated = await api.patch<Note>(`/notes/${noteId}/update`, {
-          is_published: checked,
-        });
+        const updated = await updateNote(noteId, { is_published: checked });
         setIsPublished(Boolean(updated.is_published));
         setShareUuid(updated.share_uuid ?? previousUuid);
         gooeyToast.success(checked ? "Published" : "Unpublished");
@@ -362,9 +360,7 @@ export default function NoteForm({
       const previous = isCommunity;
       setIsCommunity(checked);
       try {
-        await api.patch<Note>(`/notes/${noteId}/update`, {
-          is_community: checked,
-        });
+        await updateNote(noteId, { is_community: checked });
         gooeyToast.success(
           checked ? "Added to explore" : "Removed from explore",
         );
@@ -384,7 +380,7 @@ export default function NoteForm({
       setLoading(true);
       setSaveStatus("saving");
       try {
-        const restored = await api.patch<Note>(`/notes/${noteId}/update`, {
+        const restored = await updateNote(noteId, {
           title: version.title,
           content: version.content,
           tags: nextTags,
@@ -405,11 +401,12 @@ export default function NoteForm({
           sourceUrl,
         );
         setHistoryOpen(false);
-        gooeyToast.success(`Restored v${version.version}`);
+        gooeyToast.success(`Restored v${version.version_number}`);
       } catch (err: unknown) {
         setSaveStatus("error");
-        const message = err instanceof Error ? err.message : "Restore failed";
-        gooeyToast.error(message);
+        gooeyToast.error("Restore failed", {
+          description: normalizeErrorMessage(err, "Could not restore."),
+        });
       } finally {
         setLoading(false);
         setRestoringVersion(false);
@@ -556,15 +553,19 @@ export default function NoteForm({
                   </span>
                 )}
               </div>
-              <input
-                type="text"
+              <textarea
+                ref={titleRef}
                 value={title}
+                rows={1}
                 onChange={(event) => {
-                  setTitle(event.target.value);
+                  setTitle(event.target.value.replace(/[\r\n]+/g, " "));
                   if (titleError) setTitleError("");
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.preventDefault();
+                }}
                 placeholder="untitled"
-                className="w-full border-none bg-transparent text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0 sm:text-5xl"
+                className="w-full resize-none overflow-hidden border-none bg-transparent text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0 sm:text-5xl"
                 aria-invalid={Boolean(titleError)}
               />
               {titleError && (
