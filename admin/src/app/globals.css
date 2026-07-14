@@ -379,6 +379,16 @@ samp,
 ::-webkit-scrollbar-thumb {
   background: var(--text-secondary);
 }
+
+/* Opt-out for swipeable strips (mobile tab nav) — content scrolls, no bar.
+   Must live here unlayered: the `*` rule above outranks layered utilities. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 /* ─── TipTap Editor ──────────────────────────────────────────────────────── */
 /* All scoped to .tiptap — TipTap's own class applied to the editor element   */
 

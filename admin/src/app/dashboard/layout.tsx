@@ -11,15 +11,12 @@ import {
   Settings,
   Sparkles,
   UserCircle,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { ShortcutsDialog } from "@/components/ShortcutsDialog";
-import { useSound } from "@/components/SoundProvider";
 import { openThemeStudio, ThemeStudioTrigger } from "@/components/ThemeStudio";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,8 +26,9 @@ import {
 } from "@/components/ui/tooltip";
 import { ApiError, api } from "@/lib/api";
 import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
+import { getMe } from "@/lib/auth-api";
 import { getUserNotesPage } from "@/lib/note-api";
-import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { Note } from "@/types/notes";
 
 // g-chord targets: press g, then one of these keys, to jump anywhere.
@@ -92,7 +90,6 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { soundEnabled, toggleSound } = useSound();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const clearUser = useAuthStore((state) => state.clearUser);
@@ -100,12 +97,18 @@ export default function DashboardLayout({
   const [searchNotes, setSearchNotes] = useState<Note[]>([]);
   const [searchHydrated, setSearchHydrated] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [isMacPlatform, setIsMacPlatform] = useState(false);
   const [chordPending, setChordPending] = useState(false);
   const chordTimerRef = useRef<number | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
   const openSearch = useCallback(() => {
     setSearchOpen(true);
+  }, []);
+
+  // Resolved after mount so SSR and first client render agree.
+  useEffect(() => {
+    setIsMacPlatform(/Mac|iPhone|iPad|iPod/i.test(navigator.platform));
   }, []);
 
   useEffect(() => {
@@ -124,8 +127,7 @@ export default function DashboardLayout({
 
     window.addEventListener("devnotes:auth-expired", redirectToLogin);
 
-    api
-      .get<AuthUser>("/auth/me")
+    getMe()
       .then(setUser)
       .catch((error: unknown) => {
         if (error instanceof ApiError && error.status === 401) {
@@ -369,31 +371,6 @@ export default function DashboardLayout({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={toggleSound}
-                    className="h-9 w-9"
-                    style={{
-                      color: soundEnabled
-                        ? "var(--accent)"
-                        : "var(--text-secondary)",
-                    }}
-                    aria-label={soundEnabled ? "Mute sounds" : "Enable sounds"}
-                  >
-                    {soundEnabled ? (
-                      <Volume2 size={16} />
-                    ) : (
-                      <VolumeX size={16} />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>{soundEnabled ? "Mute sounds" : "Enable sounds"}</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
                     onClick={handleLogout}
                     className="h-9 w-9 text-[var(--text-secondary)]"
                     aria-label="Logout"
@@ -443,7 +420,7 @@ export default function DashboardLayout({
                   Search notes, snippets, tags
                 </span>
                 <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                  ⌘K
+                  {isMacPlatform ? "⌘K" : "ctrl K"}
                 </kbd>
                 <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
                   /
@@ -472,7 +449,7 @@ export default function DashboardLayout({
               </div>
             </div>
 
-            <nav className="mt-3 flex gap-2 overflow-x-auto lg:hidden">
+            <nav className="scrollbar-none mt-3 flex gap-2 overflow-x-auto lg:hidden">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = item.matcher(pathname);
@@ -494,11 +471,16 @@ export default function DashboardLayout({
             </nav>
           </header>
 
+          {/* Top padding lives on the inner wrapper, not the scroll container:
+              sticky children pin to the scrollport's content edge, so padding
+              here would leave a see-through gap above stuck toolbars. */}
           <main
             ref={mainRef}
-            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 lg:px-7 lg:py-5"
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6 lg:px-7 lg:pb-5"
           >
-            <div className="mx-auto max-w-[1180px]">{children}</div>
+            <div className="mx-auto max-w-[1180px] pt-4 lg:pt-5">
+              {children}
+            </div>
           </main>
 
           <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
