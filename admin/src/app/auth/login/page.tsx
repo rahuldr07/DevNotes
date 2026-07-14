@@ -28,16 +28,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-import { saveRefreshToken, saveToken } from "@/lib/auth";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { getCurrentUserAfterAuth } from "@/lib/session";
 import { useAuthStore } from "@/stores/useAuthStore";
-
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  refresh_token?: string;
-}
 
 const labelStyle = {
   color: "var(--text-secondary)",
@@ -89,7 +82,9 @@ export default function LoginPage() {
       try {
         setLoading(true);
         setServerError("");
-        const response = await api.post<LoginResponse>("/auth/login", {
+        // Tokens land in HttpOnly cookies set by the /api proxy — nothing to
+        // store client-side. remember_me controls the refresh cookie lifetime.
+        await api.post("/auth/login", {
           email,
           password,
           remember_me: rememberMe,
@@ -97,10 +92,6 @@ export default function LoginPage() {
 
         localStorage.setItem("devnotes-login-email", email);
 
-        // Save token (session cookie only; staying signed in comes from the
-        // HttpOnly refresh cookie, whose lifetime remember_me controls)
-        saveToken(response.access_token, { remember: false });
-        saveRefreshToken(response.refresh_token);
         const user = await getCurrentUserAfterAuth(email);
         setUser(user);
         router.push("/dashboard");

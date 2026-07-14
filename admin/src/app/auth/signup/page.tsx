@@ -25,25 +25,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-import { saveRefreshToken, saveToken } from "@/lib/auth";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { getCurrentUserAfterAuth } from "@/lib/session";
 import { useAuthStore } from "@/stores/useAuthStore";
-
-interface SignupResponse {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  created_at: string;
-  updated_at: string | null;
-}
-
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  refresh_token?: string;
-}
 
 const labelStyle = {
   color: "var(--text-secondary)",
@@ -98,17 +82,16 @@ export default function SignUpPage() {
       try {
         setLoading(true);
         setServerError("");
-        await api.post<SignupResponse>("/auth/register", {
+        await api.post("/auth/register", {
           name,
           email,
           password,
         });
-        const login = await api.post<LoginResponse>("/auth/login", {
+        // Login sets the HttpOnly auth cookies via the /api proxy.
+        await api.post("/auth/login", {
           email,
           password,
         });
-        saveToken(login.access_token, { remember: false });
-        saveRefreshToken(login.refresh_token);
         const user = await getCurrentUserAfterAuth(email);
         setUser(user);
         router.push("/dashboard");

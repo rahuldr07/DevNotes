@@ -12,14 +12,6 @@
  *
  * This eliminates CORS issues and hides the backend URL from the browser.
  */
-import Cookies from "js-cookie";
-import {
-  getRefreshToken,
-  removeRefreshToken,
-  removeToken,
-  saveRefreshToken,
-  saveToken,
-} from "@/lib/auth";
 import {
   type ApiErrorDetail,
   formatValidationDetails,
@@ -37,13 +29,7 @@ import {
  */
 const API_BASE_URL = "/api";
 
-interface TokenResponse {
-  access_token: string;
-  refresh_token?: string;
-  token_type: string;
-}
-
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
 /**
  * Shape of API errors thrown by the client.
@@ -111,39 +97,24 @@ async function parseErrorResponse(response: Response) {
   return { message: friendlyStatusMessage(response.status) };
 }
 
-function clearLocalAuth() {
-  removeToken();
-  removeRefreshToken();
+function notifyAuthExpired() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("devnotes:auth-expired"));
   }
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-
+/**
+ * Tokens live in HttpOnly cookies owned by the /api proxy. The refresh
+ * cookie rides this same-origin request automatically and the proxy sets the
+ * rotated cookies from the backend response — nothing is stored in JS.
+ */
+async function refreshAccessToken(): Promise<boolean> {
   if (!refreshPromise) {
-    const headers: HeadersInit = {};
-    let body: BodyInit | undefined;
-
-    if (refreshToken) {
-      headers["Content-Type"] = "application/json";
-      body = JSON.stringify({ refresh_token: refreshToken });
-    }
-
     refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
-      headers,
-      body,
     })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const tokens = (await response.json()) as TokenResponse;
-        saveToken(tokens.access_token, { remember: false });
-        saveRefreshToken(tokens.refresh_token);
-        return tokens.access_token;
-      })
-      .catch(() => null)
+      .then((response) => response.ok)
+      .catch(() => false)
       .finally(() => {
         refreshPromise = null;
       });
@@ -184,21 +155,12 @@ class ApiClient {
     options: RequestInit = {},
     allowRefresh = true,
   ): Promise<T> {
-    // Read the JWT token from the browser cookie (set during login)
-    // This is undefined if the user is not logged in
-    const token = Cookies.get("auth_token");
-
-    // Set default headers — Content-Type for JSON, plus any custom headers
+    // Auth rides the HttpOnly auth_token cookie; the /api proxy converts it
+    // to an Authorization header before forwarding to FastAPI.
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...options.headers,
     };
-
-    // If user is authenticated, attach the Bearer token
-    // The proxy (route.ts) forwards this header to FastAPI
-    if (token) {
-      Object.assign(headers, { Authorization: `Bearer ${token}` });
-    }
 
     // Make the actual fetch call to /api/* (same origin)
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -220,13 +182,13 @@ class ApiClient {
         allowRefresh &&
         endpoint !== "/auth/refresh"
       ) {
-        const refreshedToken = await refreshAccessToken();
-        if (refreshedToken) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
           return this.request<T>(endpoint, options, false);
         }
-        clearLocalAuth();
+        notifyAuthExpired();
       } else if (response.status === 401) {
-        clearLocalAuth();
+        notifyAuthExpired();
       }
       throw new ApiError(message, response.status, details);
     }

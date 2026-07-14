@@ -5,11 +5,8 @@
  *
  * Guests see the product story: hero, editor preview, feature grid,
  * the knowledge loop, and CTAs into signup/login.
- * Authenticated users are redirected straight to /dashboard,
- * preserving the previous behavior of this route.
- *
- * 'use client' — uses hooks (useEffect, useRouter) and reads cookies
- * (isAuthenticated uses js-cookie, a browser-only library).
+ * Authenticated users are redirected straight to /dashboard by the
+ * middleware (src/proxy.ts), which can read the HttpOnly auth cookie.
  */
 "use client";
 
@@ -24,10 +21,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { ThemeStudioTrigger } from "@/components/ThemeStudio";
-import { isAuthenticated } from "@/lib/auth";
 
 const FEATURES = [
   {
@@ -77,16 +71,10 @@ const LOOP_STEPS = [
   "grow",
 ];
 
+// Signed-in users skip the marketing page and land in their cockpit — the
+// middleware (src/proxy.ts) handles that redirect, since the auth cookie is
+// HttpOnly and unreadable from client JS.
 export default function Home() {
-  const router = useRouter();
-
-  // Signed-in users skip the marketing page and land in their cockpit
-  useEffect(() => {
-    if (isAuthenticated()) {
-      router.replace("/dashboard");
-    }
-  }, [router]);
-
   return (
     <div
       className="auth-workbench-shell relative flex min-h-screen flex-col overflow-hidden"

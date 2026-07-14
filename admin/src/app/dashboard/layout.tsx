@@ -25,7 +25,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ApiError, api } from "@/lib/api";
-import { getRefreshToken, removeRefreshToken, removeToken } from "@/lib/auth";
 import { getMe } from "@/lib/auth-api";
 import { getUserNotesPage } from "@/lib/note-api";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -243,16 +242,12 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     try {
-      const refreshToken = getRefreshToken();
-      await api.post(
-        "/auth/logout",
-        refreshToken ? { refresh_token: refreshToken } : undefined,
-      );
+      // The refresh cookie rides along; the proxy clears both auth cookies
+      // from the logout response.
+      await api.post("/auth/logout", undefined);
     } catch {
-      // Clear local auth even if logout fails or the backend is offline.
+      // Continue to the login page even if logout fails or the backend is offline.
     }
-    removeToken();
-    removeRefreshToken();
     clearUser();
     router.push("/auth/login");
   };

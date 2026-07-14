@@ -51,9 +51,8 @@ function buildForwardHeaders(request: NextRequest) {
     const lowerKey = key.toLowerCase();
     if (HOP_BY_HOP_HEADERS.has(lowerKey)) continue;
 
-    // The browser-facing cookie is handled by the client API layer through the
-    // Authorization header today. Avoid leaking Next.js/session cookies to the
-    // FastAPI service until the HttpOnly BFF auth flow is implemented.
+    // Never relay the raw Cookie header — only the whitelisted auth cookies
+    // below reach FastAPI, so Next.js/analytics cookies stay on this origin.
     if (lowerKey === "cookie") continue;
 
     headers.set(key, value);
@@ -63,13 +62,24 @@ function buildForwardHeaders(request: NextRequest) {
     headers.set("accept", "application/json");
   }
 
-  if (!headers.has("authorization")) {
-    const token =
-      request.cookies.get(ACCESS_COOKIE)?.value ??
-      readCookieFromHeader(request, ACCESS_COOKIE);
-    if (token) {
-      headers.set("authorization", `Bearer ${token}`);
-    }
+  const token =
+    request.cookies.get(ACCESS_COOKIE)?.value ??
+    readCookieFromHeader(request, ACCESS_COOKIE);
+  if (!headers.has("authorization") && token) {
+    headers.set("authorization", `Bearer ${token}`);
+  }
+
+  // Forward the refresh cookie so /auth/refresh and /auth/logout can use the
+  // backend's cookie fallback — the browser can't send it in a body anymore
+  // now that it is HttpOnly.
+  const refreshToken =
+    request.cookies.get(REFRESH_COOKIE)?.value ??
+    readCookieFromHeader(request, REFRESH_COOKIE);
+  if (refreshToken) {
+    headers.set(
+      "cookie",
+      `${REFRESH_COOKIE}=${encodeURIComponent(refreshToken)}`,
+    );
   }
 
   return headers;
@@ -83,6 +93,9 @@ function buildResponseHeaders(response: Response) {
     if (HOP_BY_HOP_HEADERS.has(lowerKey)) return;
     if (lowerKey === "content-encoding") return;
     if (lowerKey === "content-length") return;
+    // This proxy is the only writer of browser cookies; relaying the
+    // backend's Set-Cookie would race it with conflicting attributes.
+    if (lowerKey === "set-cookie") return;
     headers.set(key, value);
   });
 
@@ -109,7 +122,7 @@ function applyAuthCookies(
 ) {
   if (tokens.access_token) {
     response.cookies.set(ACCESS_COOKIE, tokens.access_token, {
-      httpOnly: false,
+      httpOnly: true,
       secure: cookieSecure(request),
       sameSite: "lax",
       path: "/",

@@ -44,7 +44,9 @@ export function proxy(request: NextRequest) {
     return redirectWithClearedToken(request, "/auth/login");
   }
 
-  if (isAuthRoute && hasValidToken) {
+  // Signed-in users skip the auth pages and the marketing page. This lives
+  // here because the auth cookie is HttpOnly — client JS can't check it.
+  if ((isAuthRoute || pathname === "/") && hasValidToken) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
