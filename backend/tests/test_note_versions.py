@@ -29,7 +29,7 @@ def test_update_note_snapshots_existing_content_before_change(monkeypatch):
     monkeypatch.setattr(
         note_repo,
         "create_note_version",
-        lambda db, note_id, title, content, tags, version_number: created.update(
+        lambda db, note_id, title, content, tags, version_number, commit=True: created.update(
             {
                 "note_id": note_id,
                 "title": title,
@@ -40,7 +40,12 @@ def test_update_note_snapshots_existing_content_before_change(monkeypatch):
         ),
         raising=False,
     )
-    monkeypatch.setattr(note_repo, "trim_note_versions", lambda db, note_id, max_versions=20: None, raising=False)
+    monkeypatch.setattr(
+        note_repo,
+        "trim_note_versions",
+        lambda db, note_id, max_versions=20, commit=True: None,
+        raising=False,
+    )
     monkeypatch.setattr(
         note_repo,
         "update",
@@ -63,6 +68,39 @@ def test_update_note_snapshots_existing_content_before_change(monkeypatch):
         "tags": ["history"],
         "version_number": 3,
     }
+
+
+def test_publish_toggle_does_not_snapshot_a_version(monkeypatch):
+    """Publish/community toggles leave title, content, and tags untouched —
+    they must not burn one of the capped version slots."""
+    from app.repositories import note_repo
+    from app.services import note_service
+
+    snapshots = []
+
+    monkeypatch.setattr(note_repo, "get_by_note_id", lambda db, note_id: _note())
+    monkeypatch.setattr(
+        note_repo,
+        "create_note_version",
+        lambda db, **kwargs: snapshots.append(kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        note_repo,
+        "update",
+        lambda db, **kwargs: _note(is_published=True, share_uuid=kwargs["share_uuid"]),
+    )
+
+    note_service.update_note(
+        None,
+        user_id=1,
+        note_id=10,
+        title=None,
+        content=None,
+        is_published=True,
+    )
+
+    assert snapshots == []
 
 
 def test_get_note_versions_returns_summary_list(notes_client, monkeypatch):

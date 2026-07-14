@@ -172,7 +172,10 @@ def create_note_version(
     content: str,
     tags: list[str],
     version_number: int,
+    commit: bool = True,
 ) -> NoteVersion:
+    """With commit=False the snapshot only flushes, so it commits (or rolls
+    back) together with the note update it belongs to."""
     version = NoteVersion(
         note_id=note_id,
         title=title,
@@ -181,12 +184,20 @@ def create_note_version(
         version_number=version_number,
     )
     db.add(version)
-    db.commit()
-    db.refresh(version)
+    if commit:
+        db.commit()
+        db.refresh(version)
+    else:
+        db.flush()
     return version
 
 
-def trim_note_versions(db: Session, note_id: int, max_versions: int = 20) -> None:
+def trim_note_versions(
+    db: Session,
+    note_id: int,
+    max_versions: int = 20,
+    commit: bool = True,
+) -> None:
     old_versions = (
         db.query(NoteVersion)
         .filter(NoteVersion.note_id == note_id)
@@ -196,7 +207,7 @@ def trim_note_versions(db: Session, note_id: int, max_versions: int = 20) -> Non
     )
     for version in old_versions:
         db.delete(version)
-    if old_versions:
+    if old_versions and commit:
         db.commit()
 
 

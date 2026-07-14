@@ -97,25 +97,42 @@ def update_note(
     Returns:
         The updated Note model instance, or None if the note does not exist or does not belong to the user.
     """
-    new_note = note_repo.get_by_note_id(db, note_id=note_id) 
+    new_note = note_repo.get_by_note_id(db, note_id=note_id)
     if new_note:
         if new_note.user_id == user_id:
             normalized_tags = normalize_tags(tags) if tags is not None else None
-            version_number = note_repo.get_latest_version_number(db, note_id) + 1
-            note_repo.create_note_version(
-                db,
-                note_id=note_id,
-                title=new_note.title,
-                content=new_note.content,
-                tags=list(new_note.tags or []),
-                version_number=version_number,
+
+            # Snapshot only when the content actually changes — publish and
+            # explore toggles would otherwise burn version slots on identical
+            # copies. commit=False ties the snapshot to the update's commit,
+            # so a failed update can't leave an orphaned version behind.
+            content_changed = (
+                (title is not None and title != new_note.title)
+                or (content is not None and content != new_note.content)
+                or (
+                    normalized_tags is not None
+                    and normalized_tags != list(new_note.tags or [])
+                )
             )
-            note_repo.trim_note_versions(
-                db,
-                note_id=note_id,
-                max_versions=MAX_NOTE_VERSIONS,
-            )
-            
+            if content_changed:
+                version_number = note_repo.get_latest_version_number(db, note_id) + 1
+                note_repo.create_note_version(
+                    db,
+                    note_id=note_id,
+                    title=new_note.title,
+                    content=new_note.content,
+                    tags=list(new_note.tags or []),
+                    version_number=version_number,
+                    commit=False,
+                )
+                note_repo.trim_note_versions(
+                    db,
+                    note_id=note_id,
+                    max_versions=MAX_NOTE_VERSIONS,
+                    commit=False,
+                )
+
+
             # Generate share_uuid if publishing for the first time
             share_uuid = None
             if is_published is True and not new_note.share_uuid:
