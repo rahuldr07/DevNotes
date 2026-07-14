@@ -3,6 +3,7 @@ import type {
   CreateNoteInput,
   Note,
   NoteVersion,
+  NoteVersionSummary,
   PaginatedNotesResponse,
 } from "@/types/notes";
 
@@ -55,6 +56,33 @@ export async function createNote(input: CreateNoteInput) {
     note_type: "note",
     ...input,
   });
+}
+
+export interface UpdateNoteInput {
+  title?: string | null;
+  content?: string | null;
+  tags?: string[] | null;
+  note_type?: string | null;
+  language?: string | null;
+  source_url?: string | null;
+  is_published?: boolean;
+  is_community?: boolean;
+}
+
+export async function getNote(noteId: number) {
+  return api.get<Note>(`/notes/${noteId}`);
+}
+
+export async function updateNote(noteId: number, input: UpdateNoteInput) {
+  return api.patch<Note>(`/notes/${noteId}/update`, input);
+}
+
+export async function deleteNote(noteId: number) {
+  return api.delete<void>(`/notes/${noteId}/delete`);
+}
+
+export async function togglePin(noteId: number) {
+  return api.patch<Note>(`/notes/${noteId}/pin`, {});
 }
 
 export async function getSnippetNotesPage({
@@ -112,5 +140,9 @@ export async function likeNote(noteId: number) {
 }
 
 export async function getNoteVersions(noteId: number) {
-  return api.get<NoteVersion[]>(`/notes/${noteId}/versions`);
+  return api.get<NoteVersionSummary[]>(`/notes/${noteId}/versions`);
+}
+
+export async function getNoteVersion(noteId: number, versionId: number) {
+  return api.get<NoteVersion>(`/notes/${noteId}/versions/${versionId}`);
 }

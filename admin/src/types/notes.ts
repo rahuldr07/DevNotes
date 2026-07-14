@@ -34,13 +34,19 @@ export interface PaginatedNotesResponse {
   next_cursor: number | null;
 }
 
-export interface NoteVersion {
+/** GET /notes/{id}/versions returns summaries only — no content/tags. */
+export interface NoteVersionSummary {
   id: number;
-  version: number;
+  version_number: number;
   title: string;
+  created_at: string;
+}
+
+/** GET /notes/{id}/versions/{version_id} returns the full snapshot. */
+export interface NoteVersion extends NoteVersionSummary {
+  note_id: number;
   content: string;
   tags: string[];
-  created_at: string;
 }
 
 export interface AuthorProfile {

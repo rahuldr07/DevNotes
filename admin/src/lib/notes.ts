@@ -29,6 +29,7 @@ export function stripMarkdown(md: string): string {
       .replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, "$2")
       .replace(/(?<![\w\\])([*_])(?=\S)([^*_\n]*?\S)\1(?!\w)/g, "$2")
       .replace(/~~([\s\S]*?)~~/g, "$1")
+      .replace(/^[-*+] \[[ xX]\] /gm, "")
       .replace(/^[-*+] /gm, "")
       .replace(/^\d+\. /gm, "")
       .replace(/^> /gm, "")
@@ -36,4 +37,15 @@ export function stripMarkdown(md: string): string {
       .replace(/\\([\\`*_{}[\]()#+\-.!~|>])/g, "$1")
       .trim()
   );
+}
+
+// Preview text for note cards. stripMarkdown drops fenced code, so a
+// code-only note would preview as empty — fall back to the code itself.
+export function previewText(md: string): string {
+  const prose = stripMarkdown(md);
+  if (prose) return prose;
+  return md
+    .replace(/^```[^\n]*$/gm, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
