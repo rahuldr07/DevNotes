@@ -19,9 +19,9 @@ export function formatValidationDetails(details: ApiErrorDetail[]) {
     })
     .filter(Boolean);
 
-  return messages.length > 0
-    ? messages.join(" • ")
-    : "Please check the highlighted fields.";
+  // Empty string signals "no usable field messages" so callers can pick
+  // their own fallback (status text, backend detail string, ...).
+  return messages.join(" • ");
 }
 
 export function normalizeErrorMessage(

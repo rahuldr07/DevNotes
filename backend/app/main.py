@@ -68,11 +68,21 @@ configure_rate_limiting(app)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Pydantic v2 puts the raw exception object in ctx for custom validators,
+    # which json.dumps cannot serialize — keep only the JSON-safe fields.
+    errors = [
+        {
+            "loc": [str(part) for part in error.get("loc", [])],
+            "msg": str(error.get("msg", "Invalid value")),
+            "type": str(error.get("type", "value_error")),
+        }
+        for error in exc.errors()
+    ]
     return JSONResponse(
         status_code=422,
         content={
             "detail": "Validation failed",
-            "errors": exc.errors(),
+            "errors": errors,
             "hint": "Check the marked fields and try again.",
         },
     )

@@ -74,15 +74,23 @@ async function parseErrorResponse(response: Response) {
 
     if (Array.isArray(detail)) {
       return {
-        message: formatValidationDetails(detail as ApiErrorDetail[]),
+        message:
+          formatValidationDetails(detail as ApiErrorDetail[]) ||
+          friendlyStatusMessage(response.status),
         details: detail as ApiErrorDetail[],
       };
     }
 
     if (Array.isArray(errors)) {
+      // Field-level messages ("Email: not a valid address") beat the
+      // backend's generic detail string ("Validation failed").
       const description = formatValidationDetails(errors as ApiErrorDetail[]);
+      const fallback =
+        typeof detail === "string" && detail.trim()
+          ? detail
+          : friendlyStatusMessage(response.status);
       return {
-        message: typeof detail === "string" ? detail : description,
+        message: description || fallback,
         details: errors as ApiErrorDetail[],
       };
     }
