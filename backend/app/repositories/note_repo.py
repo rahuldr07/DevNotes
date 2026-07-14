@@ -324,10 +324,17 @@ def get_by_share_uuid(db: Session, share_uuid: str) -> Note | None:
     """Finds a note by its share_uuid."""
     return db.query(Note).filter(Note.share_uuid == share_uuid).first()
 
-def _community_response(note: Note, author_name: str) -> dict:
+def _community_response(
+    note: Note,
+    author_name: str,
+    author_username: str | None = None,
+    liked_by_me: bool = False,
+) -> dict:
     return {
         "id": note.id,
         "author_name": author_name,
+        "author_username": author_username,
+        "liked_by_me": liked_by_me,
         "title": note.title,
         "content": note.content,
         "tags": note.tags,
@@ -367,23 +374,33 @@ def get_community_notes(
     db: Session,
     cursor: int | None = None,
     limit: int = 20,
+    viewer_id: int | None = None,
 ) -> list[dict]:
-    """Fetches published community notes only."""
+    """Fetches published community notes only, with the viewer's like state."""
     like_count = func.count(NoteLike.id).label("like_count")
+    liked_by_me = func.coalesce(
+        func.bool_or(NoteLike.user_id == viewer_id), False
+    ).label("liked_by_me")
     query = (
-        db.query(Note, User.name)
+        db.query(Note, User.name, User.username)
         .join(User, Note.user_id == User.id)
         .outerjoin(NoteLike, NoteLike.note_id == Note.id)
         .filter(Note.is_community == True, Note.is_published == True)
-        .group_by(Note.id, User.name)
-        .add_columns(like_count)
+        .group_by(Note.id, User.name, User.username)
+        .add_columns(like_count, liked_by_me)
     )
     if cursor is not None:
         query = query.filter(Note.id < cursor)
     rows = query.order_by(Note.id.desc()).limit(limit).all()
     return [
-        _community_response(note, author_name) | {"like_count": like_count}
-        for note, author_name, like_count in rows
+        _community_response(
+            note,
+            author_name,
+            author_username=author_username,
+            liked_by_me=bool(liked),
+        )
+        | {"like_count": like_count}
+        for note, author_name, author_username, like_count, liked in rows
     ]
 
 

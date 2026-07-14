@@ -27,7 +27,7 @@ def test_community_response_includes_like_and_view_counts(notes_client, monkeypa
     monkeypatch.setattr(
         note_service,
         "get_community_notes",
-        lambda db, cursor=None, limit=20: {
+        lambda db, cursor=None, limit=20, viewer_id=None: {
             "data": [_community_note()],
             "next_cursor": None,
         },

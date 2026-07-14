@@ -98,6 +98,8 @@ class NoteResponse(BaseModel):
 class CommunityNoteResponse(BaseModel):
     id: int
     author_name: str
+    author_username: str | None = None
+    liked_by_me: bool = False
     title: str
     content: str
     tags: list[str] = Field(default_factory=list)

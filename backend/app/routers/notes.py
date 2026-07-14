@@ -131,6 +131,7 @@ def get_community_notes(
         db,
         cursor=cursor,
         limit=_clamp_limit(limit),
+        viewer_id=user.id,
     )
 
 

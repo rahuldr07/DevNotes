@@ -341,12 +341,14 @@ def get_community_notes(
     db: Session,
     cursor: int | None = None,
     limit: int = 20,
+    viewer_id: int | None = None,
 ) -> dict:
     """Retrieves all community notes."""
     notes = note_repo.get_community_notes(
         db,
         cursor=cursor,
         limit=limit + 1,
+        viewer_id=viewer_id,
     )
     paginated = _paginate(notes, limit)
     note_ids = [_item_id(note) for note in paginated["data"]]
