@@ -3,6 +3,8 @@
 import { Check, Clipboard } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { gooeyToast } from "@/components/ui/goey-toaster";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface CopyContentButtonProps {
   content: string;
@@ -21,12 +23,14 @@ export function CopyContentButton({
 
   const copy = async () => {
     if (!content.trim()) return;
-    try {
-      await navigator.clipboard.writeText(content);
+    if (await copyToClipboard(content)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
-    } catch {
+    } else {
       setCopied(false);
+      gooeyToast.error("Copy failed", {
+        description: "Clipboard access was blocked by the browser.",
+      });
     }
   };
 

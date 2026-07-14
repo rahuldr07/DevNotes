@@ -16,19 +16,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  type Ref,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type Ref, useCallback, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInfiniteNotes } from "@/hooks/useInfiniteNotes";
+import { normalizeErrorMessage } from "@/lib/errors";
+import { formatNoteDate } from "@/lib/format";
 import { getCommunityNotesPage, likeNote } from "@/lib/note-api";
-import { stripMarkdown } from "@/lib/notes";
+import { previewText, stripMarkdown } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
 
@@ -41,18 +37,6 @@ const PUBLISHING_STEPS = [
   "Add focused tags so Explore can route it.",
   "Publish from the editor when it is reusable.",
 ];
-
-function appendUniqueNotes(current: Note[], incoming: Note[]) {
-  const seen = new Set(current.map((note) => note.id));
-  return [...current, ...incoming.filter((note) => !seen.has(note.id))];
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function authorName(note: Note) {
   return note.author_name || note.author_username || "anonymous";
@@ -93,7 +77,7 @@ function ExploreEmptyState({
   return (
     <section className="relative overflow-hidden rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-md shadow-black/5 sm:p-8">
       <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] shadow-lg shadow-black/5">
+      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)] shadow-lg shadow-black/5">
         <Sparkles size={28} />
       </div>
       <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
@@ -106,7 +90,7 @@ function ExploreEmptyState({
       </p>
 
       <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-none border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <Tags size={14} className="text-[var(--accent)]" /> starter topics
           </div>
@@ -130,7 +114,7 @@ function ExploreEmptyState({
             ))}
           </div>
         </div>
-        <div className="rounded-none border border-[var(--border)] bg-[var(--bg-primary)]/65 p-4">
+        <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
             <PenLine size={14} className="text-[var(--accent)]" /> publish path
           </div>
@@ -159,7 +143,7 @@ function ExploreEmptyState({
         </Link>
         <Link
           href="/dashboard/snippets"
-          className="inline-flex h-10 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+          className="inline-flex h-10 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
         >
           <Code2 size={15} /> capture snippet first
         </Link>
@@ -180,7 +164,7 @@ function ExploreNote({
   observeRef?: Ref<HTMLElement>;
 }) {
   const router = useRouter();
-  const preview = stripMarkdown(note.content);
+  const preview = previewText(note.content);
   const openNote = () => {
     if (note.share_uuid) router.push(`/s/${note.share_uuid}`);
   };
@@ -314,7 +298,7 @@ function ExploreNote({
           </p>
         </div>
         <span className="shrink-0 text-xs text-[var(--text-secondary)]">
-          {formatDate(note.updated_at ?? note.created_at)}
+          {formatNoteDate(note, "monthDay")}
         </span>
       </div>
 
@@ -346,70 +330,26 @@ function ExploreNote({
   );
 }
 
+function fetchCommunityPage(cursor: number | null) {
+  return getCommunityNotesPage({ limit: 20, cursor });
+}
+
 export default function ExplorePage() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const {
+    notes,
+    setNotes,
+    loading,
+    loadingMore,
+    nextCursor,
+    error,
+    lastNoteRef,
+  } = useInfiniteNotes(fetchCommunityPage, {
+    errorFallback: "Failed to load explore",
+  });
   const [search, setSearch] = useState("");
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("trending");
   const [view, setView] = useState<ViewMode>("grid");
-  const [error, setError] = useState("");
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  const fetchFirstPage = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const page = await getCommunityNotesPage({ limit: 20 });
-      setNotes(page.items);
-      setNextCursor(page.next_cursor);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load explore";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchFirstPage();
-  }, [fetchFirstPage]);
-
-  const fetchNextPage = useCallback(async () => {
-    if (loading || loadingMore || nextCursor === null) return;
-    try {
-      setLoadingMore(true);
-      const page = await getCommunityNotesPage({
-        limit: 20,
-        cursor: nextCursor,
-      });
-      setNotes((prev) => appendUniqueNotes(prev, page.items));
-      setNextCursor(page.next_cursor);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load more notes";
-      setError(message);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loading, loadingMore, nextCursor]);
-
-  const lastNoteRef = useCallback(
-    (node: HTMLElement | null) => {
-      if (loading || loadingMore) return;
-      if (observerRef.current) observerRef.current.disconnect();
-      if (!node || nextCursor === null) return;
-
-      observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0]?.isIntersecting) fetchNextPage();
-      });
-      observerRef.current.observe(node);
-    },
-    [fetchNextPage, loading, loadingMore, nextCursor],
-  );
 
   const handleLike = useCallback(
     async (id: number) => {
@@ -446,12 +386,12 @@ export default function ExplorePage() {
         setNotes((prev) =>
           prev.map((note) => (note.id === id ? previous : note)),
         );
-        const message =
-          err instanceof Error ? err.message : "Could not like note";
-        gooeyToast.error(message);
+        gooeyToast.error("Like failed", {
+          description: normalizeErrorMessage(err, "Could not like the note."),
+        });
       }
     },
-    [notes],
+    [notes, setNotes],
   );
 
   const visibleNotes = useMemo(() => {
@@ -584,7 +524,7 @@ export default function ExplorePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 self-end border border-[var(--border)] bg-[var(--bg-primary)]/35">
+          <div className="grid grid-cols-2 self-end border border-[var(--border)] bg-[var(--bg)]/35">
             {exploreStats.map((stat) => (
               <div
                 key={stat.label}
@@ -606,13 +546,13 @@ export default function ExplorePage() {
         <div className="inline-flex items-center gap-2 px-2 text-xs text-[var(--text-secondary)]">
           <Flame size={15} className="text-[var(--accent)]" />
           {selectedTopic ? `Topic: #${selectedTopic}` : "Trending now"}
-          <span className="rounded-none bg-[var(--bg-primary)] px-2 py-0.5">
+          <span className="rounded-none bg-[var(--bg)] px-2 py-0.5">
             {visibleNotes.length} shown
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-9 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
+          <div className="flex h-9 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text-secondary)] transition-colors focus-within:border-[var(--accent)]">
             <Search size={14} />
             <input
               value={search}
@@ -621,7 +561,7 @@ export default function ExplorePage() {
               className="w-48 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
             />
           </div>
-          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)] p-1">
             {(["trending", "recent"] as SortKey[]).map((key) => (
               <button
                 key={key}
@@ -637,7 +577,7 @@ export default function ExplorePage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg-primary)] p-1">
+          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)] p-1">
             <button
               type="button"
               onClick={() => setView("grid")}
@@ -686,7 +626,7 @@ export default function ExplorePage() {
               {featuredNote.title || "untitled"}
             </h2>
             <p className="mt-1 line-clamp-1 text-sm text-[var(--text-secondary)]">
-              {stripMarkdown(featuredNote.content) || "empty note"}
+              {previewText(featuredNote.content) || "empty note"}
             </p>
           </div>
           <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">

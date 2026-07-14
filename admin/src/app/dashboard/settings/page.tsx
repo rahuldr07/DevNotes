@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
-import { api } from "@/lib/api";
+import { updateProfile } from "@/lib/auth-api";
+import { normalizeErrorMessage } from "@/lib/errors";
 import { type AuthUser, useAuthStore } from "@/stores/useAuthStore";
 
 interface ProfileForm {
@@ -47,15 +48,15 @@ export default function SettingsPage() {
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<AuthUser>("/auth/profile", form);
+      const updated = await updateProfile(form);
       setUser(updated);
       gooeyToast.success("Profile updated", {
         description: "Your public DevNotes identity is now fresh.",
       });
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Profile update failed";
-      gooeyToast.error(message);
+      gooeyToast.error("Profile update failed", {
+        description: normalizeErrorMessage(error, "Could not save changes."),
+      });
     } finally {
       setSaving(false);
     }

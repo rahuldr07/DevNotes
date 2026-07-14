@@ -15,7 +15,8 @@ import { notFound } from "next/navigation";
 import { CopyContentButton } from "@/components/CopyContentButton";
 import { ReadOnlyEditor } from "@/components/ReadOnlyEditor";
 import { backendFetch } from "@/lib/backend";
-import { stripMarkdown } from "@/lib/notes";
+import { formatNoteDate } from "@/lib/format";
+import { previewText } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
 
@@ -48,14 +49,6 @@ async function getRelatedNotes(shareUuid: string): Promise<Note[]> {
   }
 }
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function authorName(note: Note) {
   return note.author_name || note.author_username || "DevNotes author";
 }
@@ -69,7 +62,7 @@ export async function generateMetadata({
   const note = await getPublicNote(share_uuid);
   if (!note) return { title: "Note not found" };
 
-  const description = stripMarkdown(note.content).slice(0, 155);
+  const description = previewText(note.content).slice(0, 155);
 
   return {
     title: `${note.title || "Untitled note"} · DevNotes`,
@@ -96,7 +89,7 @@ export default async function PublicNotePage({
   if (!note) notFound();
 
   const author = authorName(note);
-  const publishedAt = formatDate(note.updated_at ?? note.created_at);
+  const publishedAt = formatNoteDate(note, "long");
   const minutes = readingTimeMinutes(note.content);
   const kind = noteKindLabel(note.note_type);
 
@@ -227,7 +220,7 @@ export default async function PublicNotePage({
                       {related.title || "untitled"}
                     </h2>
                     <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
-                      {stripMarkdown(related.content) ||
+                      {previewText(related.content) ||
                         "Read this related note."}
                     </p>
                     {related.tags.length > 0 && (

@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface SharePopoverProps {
   noteId: number;
@@ -38,8 +39,13 @@ export function SharePopover({
 
   const copyLink = async () => {
     if (!publicUrl) return;
-    await navigator.clipboard.writeText(publicUrl);
-    gooeyToast.success("Link copied");
+    if (await copyToClipboard(publicUrl)) {
+      gooeyToast.success("Link copied");
+    } else {
+      gooeyToast.error("Copy failed", {
+        description: "Clipboard access was blocked by the browser.",
+      });
+    }
   };
 
   const openPublicLink = () => {

@@ -19,6 +19,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Skeleton } from "@/components/ui/skeleton";
+import { copyToClipboard } from "@/lib/clipboard";
+import { normalizeErrorMessage } from "@/lib/errors";
+import { formatNoteDate } from "@/lib/format";
 import { getSnippetNotesPage } from "@/lib/note-api";
 import type { Note } from "@/types/notes";
 
@@ -29,29 +32,28 @@ function normalizeLanguage(language?: string | null) {
   return language?.trim().toLowerCase() || UNKNOWN_LANGUAGE;
 }
 
-/** Markdown fence markers are authoring syntax — drop them so cards and the
- *  clipboard get the runnable code, not ```lang wrappers. */
-function stripCodeFences(content: string) {
+/** Cards and the clipboard want runnable code. When the note has fenced
+ *  blocks, use only their contents (surrounding prose stays in the editor);
+ *  otherwise treat the whole note as code, minus any stray fence markers. */
+function extractSnippetCode(content: string) {
+  const fenced = Array.from(content.matchAll(/```[^\n]*\n([\s\S]*?)```/g))
+    .map((match) => match[1].trimEnd())
+    .filter(Boolean);
+  if (fenced.length > 0) return fenced.join("\n\n").trim();
   return content.replace(/^```[^\n]*\n?/gm, "").trim();
 }
 
 function snippetPreview(content: string) {
-  const trimmed = stripCodeFences(content);
+  const trimmed = extractSnippetCode(content);
   return trimmed.length > 420 ? `${trimmed.slice(0, 420)}...` : trimmed;
 }
 
 function snippetLineCount(content: string) {
-  return Math.max(1, content.split("\n").length);
+  return Math.max(1, extractSnippetCode(content).split("\n").length);
 }
 
 function formatSnippetDate(note: Note) {
-  return new Date(note.updated_at ?? note.created_at).toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-    },
-  );
+  return formatNoteDate(note, "monthDay");
 }
 
 function groupByLanguage(snippets: Note[]) {
@@ -84,16 +86,17 @@ function SnippetCard({ note }: { note: Note }) {
   const lines = snippetLineCount(note.content);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(stripCodeFences(note.content));
+    if (await copyToClipboard(extractSnippetCode(note.content))) {
       setCopied(true);
       setCopyCount((count) => count + 1);
       gooeyToast.success("Snippet copied", {
         description: `${note.title || language} is ready on your clipboard.`,
       });
       window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      gooeyToast.error("Copy failed");
+    } else {
+      gooeyToast.error("Copy failed", {
+        description: "Clipboard access was blocked by the browser.",
+      });
     }
   };
 
@@ -215,7 +218,7 @@ export default function SnippetsPage() {
       const page = await getSnippetNotesPage({ limit: 80 });
       setSnippets(page.items);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load snippets");
+      setError(normalizeErrorMessage(err, "Failed to load snippets"));
     } finally {
       setLoading(false);
     }

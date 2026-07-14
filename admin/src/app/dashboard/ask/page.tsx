@@ -24,8 +24,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CopyContentButton } from "@/components/CopyContentButton";
 import { Reveal } from "@/components/motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatDate } from "@/lib/format";
 import { searchNotes } from "@/lib/note-api";
-import { stripMarkdown } from "@/lib/notes";
+import { previewText } from "@/lib/notes";
 import type { Note } from "@/types/notes";
 
 const RECENT_QUESTIONS_KEY = "devnotes-ask-recent";
@@ -65,7 +66,7 @@ function buildExcerpt(
   terms: string[],
   windowSize = 260,
 ): ExcerptSegment[] {
-  const plain = stripMarkdown(content).replace(/\s+/g, " ").trim();
+  const plain = previewText(content).replace(/\s+/g, " ").trim();
   if (!plain) return [];
 
   const lower = plain.toLowerCase();
@@ -107,13 +108,8 @@ function buildExcerpt(
   return segments;
 }
 
-function formatDate(date: string | null) {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+function formatSourceDate(date: string | null) {
+  return formatDate(date) || "—";
 }
 
 export default function AskWorkspacePage() {
@@ -406,7 +402,9 @@ export default function AskWorkspacePage() {
                       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-2.5">
                         <span className="font-mono text-[11px] text-[var(--text-secondary)]">
                           updated{" "}
-                          {formatDate(source.updated_at ?? source.created_at)}
+                          {formatSourceDate(
+                            source.updated_at ?? source.created_at,
+                          )}
                         </span>
                         <div className="flex items-center gap-1">
                           <CopyContentButton

@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Markdown } from "tiptap-markdown";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const lowlight = createLowlight(common);
 
@@ -97,11 +98,10 @@ function CodeBlockView({ node }: ReactNodeViewProps) {
   const copyCode = async () => {
     const text = node.textContent;
     if (!text.trim()) return;
-    try {
-      await navigator.clipboard.writeText(text);
+    if (await copyToClipboard(text)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
-    } catch {
+    } else {
       setCopied(false);
     }
   };

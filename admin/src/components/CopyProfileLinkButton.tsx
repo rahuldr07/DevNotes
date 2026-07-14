@@ -2,17 +2,21 @@
 
 import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
+import { gooeyToast } from "@/components/ui/goey-toaster";
+import { copyToClipboard } from "@/lib/clipboard";
 
 export function CopyProfileLinkButton() {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
+    if (await copyToClipboard(window.location.href)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
-    } catch {
+    } else {
       setCopied(false);
+      gooeyToast.error("Copy failed", {
+        description: "Clipboard access was blocked by the browser.",
+      });
     }
   };
 

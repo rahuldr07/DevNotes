@@ -14,7 +14,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyProfileLinkButton } from "@/components/CopyProfileLinkButton";
 import { backendFetch } from "@/lib/backend";
-import { stripMarkdown } from "@/lib/notes";
+import { formatDate, formatNoteDate } from "@/lib/format";
+import { previewText } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { AuthorProfile, Note } from "@/types/notes";
 
@@ -34,20 +35,7 @@ async function getAuthorProfile(
 }
 
 function formatJoined(date: string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatNoteDate(note: Note) {
-  return new Date(note.updated_at ?? note.created_at).toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-    },
-  );
+  return formatDate(date, "monthYear");
 }
 
 function getTopTags(notes: Note[]) {
@@ -239,7 +227,7 @@ export default async function AuthorProfilePage({
               className="group block rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 transition-colors hover:border-[var(--accent)]/50"
             >
               <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
-                <span>{formatNoteDate(featuredNote)}</span>
+                <span>{formatNoteDate(featuredNote, "monthDay")}</span>
                 <span>·</span>
                 <span className="capitalize">
                   {noteKindLabel(featuredNote.note_type)}
@@ -261,7 +249,7 @@ export default async function AuthorProfilePage({
                 {featuredNote.title || "untitled"}
               </h2>
               <p className="mt-3 line-clamp-2 text-sm leading-6 text-[var(--text-secondary)]">
-                {stripMarkdown(featuredNote.content) || "empty note"}
+                {previewText(featuredNote.content) || "empty note"}
               </p>
             </Link>
           </section>
@@ -328,7 +316,8 @@ export default async function AuthorProfilePage({
               >
                 <div className="mb-4 flex items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
                   <span className="capitalize">
-                    {noteKindLabel(note.note_type)} · {formatNoteDate(note)}
+                    {noteKindLabel(note.note_type)} ·{" "}
+                    {formatNoteDate(note, "monthDay")}
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Eye size={13} /> {note.view_count ?? 0}
@@ -353,7 +342,7 @@ export default async function AuthorProfilePage({
                 )}
 
                 <p className="mt-4 line-clamp-3 text-sm leading-6 text-[var(--text-secondary)]">
-                  {stripMarkdown(note.content) || "empty note"}
+                  {previewText(note.content) || "empty note"}
                 </p>
 
                 <div className="mt-5 flex items-center justify-between text-xs text-[var(--text-secondary)]">
