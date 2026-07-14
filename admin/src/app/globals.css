@@ -445,6 +445,14 @@ samp,
   pointer-events: none;
 }
 
+/* Read-only markdown viewer reuses the editor frame + .tiptap typography,
+   but sizes to its content — a one-paragraph public note shouldn't carry
+   the editor's 64vh writing canvas. */
+.markdown-viewer,
+.markdown-viewer .tiptap {
+  min-height: 0;
+}
+
 /* ── Placeholder ── */
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -464,6 +472,12 @@ samp,
   font-size: 1.02rem;
   min-height: 62vh;
   padding: 3rem 1.35rem 3rem 4.5rem;
+}
+
+/* Unframed viewer (version previews inside cards): no editor gutter. */
+.tiptap.markdown-inline {
+  min-height: 0;
+  padding: 0;
 }
 
 .tiptap h1 {

@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyContentButton } from "@/components/CopyContentButton";
-import { ReadOnlyEditor } from "@/components/ReadOnlyEditor";
+import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { backendFetch } from "@/lib/backend";
 import { formatNoteDate } from "@/lib/format";
 import { previewText } from "@/lib/notes";
@@ -189,7 +189,7 @@ export default async function PublicNotePage({
           </section>
 
           <section className="rounded-none border border-[var(--border)] bg-[var(--bg)]/70 p-4 backdrop-blur-xl sm:p-7 lg:p-9">
-            <ReadOnlyEditor content={note.content} />
+            <MarkdownViewer content={note.content} />
           </section>
 
           {relatedNotes.length > 0 && (

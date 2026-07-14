@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock3, Loader2, RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ReadOnlyEditor } from "@/components/ReadOnlyEditor";
+import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { Button } from "@/components/ui/button";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -252,7 +252,7 @@ export function VersionHistoryDrawer({
                       className="my-4"
                       style={{ borderTop: "1px solid var(--border)" }}
                     />
-                    <ReadOnlyEditor content={current.content} />
+                    <MarkdownViewer content={current.content} framed={false} />
                   </article>
 
                   <article className="min-w-0 rounded-none bg-[var(--bg-secondary)] p-4">
@@ -269,7 +269,10 @@ export function VersionHistoryDrawer({
                           className="my-4"
                           style={{ borderTop: "1px solid var(--border)" }}
                         />
-                        <ReadOnlyEditor content={selected.content} />
+                        <MarkdownViewer
+                          content={selected.content}
+                          framed={false}
+                        />
                       </>
                     ) : detailLoading ? (
                       <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
