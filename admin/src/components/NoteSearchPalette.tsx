@@ -26,8 +26,12 @@ import {
   useRef,
   useState,
 } from "react";
+import { gooeyToast } from "@/components/ui/goey-toaster";
+import { copyToClipboard } from "@/lib/clipboard";
+import { normalizeErrorMessage } from "@/lib/errors";
+import { formatDate } from "@/lib/format";
 import { searchNotes as searchNotesApi } from "@/lib/note-api";
-import { stripMarkdown } from "@/lib/notes";
+import { previewText } from "@/lib/notes";
 import type { Note } from "@/types/notes";
 
 type SearchMode = "local" | "full";
@@ -97,14 +101,6 @@ const COMMANDS: PaletteCommand[] = [
   },
 ];
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function highlightText(text: string, indices: readonly [number, number][]) {
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -154,7 +150,7 @@ function titleTermIndices(text: string, query: string) {
 }
 
 function buildSnippet(content: string, query: string, fallbackLength = 130) {
-  const plain = stripMarkdown(content).replace(/\s+/g, " ").trim();
+  const plain = previewText(content).replace(/\s+/g, " ").trim();
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const lower = plain.toLowerCase();
   const firstHit = terms
@@ -234,7 +230,7 @@ export function NoteSearchPalette({
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setFullResults([]);
-        setFullError(err instanceof Error ? err.message : "Search failed");
+        setFullError(normalizeErrorMessage(err, "Search failed"));
       } finally {
         setFullLoading(false);
       }
@@ -309,6 +305,10 @@ export function NoteSearchPalette({
     [onClose, query, rememberSearch, router],
   );
 
+  // Reset/load state only when `open` flips. Keeping this apart from the
+  // keydown effect matters: setRecentSearches produces a new array, which
+  // feeds paletteItems — if that effect also depended on paletteItems it
+  // would re-run itself forever.
   useEffect(() => {
     if (!open) {
       setQuery("");
@@ -331,6 +331,10 @@ export function NoteSearchPalette({
     } catch {
       setRecentSearches([]);
     }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -365,12 +369,14 @@ export function NoteSearchPalette({
     event: MouseEvent<HTMLButtonElement>,
   ) => {
     event.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(note.content);
+    if (await copyToClipboard(note.content)) {
       setCopiedId(note.id);
       window.setTimeout(() => setCopiedId(null), 1500);
-    } catch {
+    } else {
       setCopiedId(null);
+      gooeyToast.error("Copy failed", {
+        description: "Clipboard access was blocked by the browser.",
+      });
     }
   };
 
