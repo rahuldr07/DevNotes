@@ -18,6 +18,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { NoteReadView } from "@/components/NoteReadView";
 import NoteForm from "@/components/ui/NoteForm";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { getNote } from "@/lib/note-api";
@@ -25,12 +26,15 @@ import type { Note } from "@/types/notes";
 
 function EditNoteContent() {
   // useSearchParams reads URL query params: /edit_note?id=5 → id = '5'
-  // (Different from useParams which reads dynamic route segments: /notes/[id])
+  // (Different from useParams which reads dynamic route segments: [id])
   const searchParams = useSearchParams();
   const noteId = searchParams.get("id");
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Existing notes open in the reading view (Obsidian-style); editing is an
+  // explicit action. `?edit=1` deep-links straight into the editor.
+  const [editing, setEditing] = useState(searchParams.get("edit") === "1");
 
   // Fetch note data when the component mounts or noteId changes
   useEffect(() => {
@@ -124,6 +128,10 @@ function EditNoteContent() {
     );
   }
 
+  if (!editing) {
+    return <NoteReadView note={note} onEdit={() => setEditing(true)} />;
+  }
+
   return (
     <NoteForm
       mode="edit"
@@ -137,6 +145,16 @@ function EditNoteContent() {
       initialShareUuid={note.share_uuid}
       initialPublished={note.is_published}
       initialCommunity={note.is_community}
+      onView={async () => {
+        // Re-fetch so the reading view reflects what autosave just wrote.
+        try {
+          const fresh = await getNote(note.id);
+          setNote(fresh);
+        } catch {
+          // Fall back to the last loaded copy.
+        }
+        setEditing(false);
+      }}
     />
   );
 }
