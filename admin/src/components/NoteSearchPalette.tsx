@@ -57,7 +57,54 @@ interface PaletteCommand {
 type PaletteItem =
   | { type: "command"; command: PaletteCommand }
   | { type: "note"; result: SearchResult }
-  | { type: "recent"; query: string };
+  | { type: "deep-note"; result: SearchResult }
+  | { type: "recent"; query: string }
+  | { type: "create" };
+
+/** Inline filter operators, GitHub-style: `tag:react type:snippet lang:sql`.
+    They map straight onto the backend search params and pre-filter the
+    local Fuse corpus. */
+interface ParsedQuery {
+  text: string;
+  noteType?: string;
+  tag?: string;
+  language?: string;
+}
+
+function parseQuery(raw: string): ParsedQuery {
+  let text = raw;
+  const take = (key: string) => {
+    const match = text.match(new RegExp(`(?:^|\\s)${key}:(\\S+)`, "i"));
+    if (!match) return undefined;
+    text = text.replace(match[0], " ");
+    return match[1].toLowerCase();
+  };
+  const noteType = take("type");
+  const tag = take("tag")?.replace(/^#/, "");
+  const language = take("lang") ?? take("language");
+  return { text: text.replace(/\s+/g, " ").trim(), noteType, tag, language };
+}
+
+function matchesFilters(note: Note, parsed: ParsedQuery) {
+  if (parsed.noteType && (note.note_type ?? "note") !== parsed.noteType)
+    return false;
+  if (parsed.tag && !note.tags.some((tag) => tag.toLowerCase() === parsed.tag))
+    return false;
+  if (
+    parsed.language &&
+    (note.language ?? "").toLowerCase() !== parsed.language
+  )
+    return false;
+  return true;
+}
+
+const SECTION_LABELS: Record<PaletteItem["type"], string> = {
+  recent: "recent searches",
+  command: "actions",
+  note: "notes",
+  "deep-note": "deep results",
+  create: "no matches",
+};
 
 const RECENT_SEARCHES_KEY = "devnotes-recent-searches";
 
@@ -206,19 +253,36 @@ export function NoteSearchPalette({
     [notes],
   );
 
+  const parsed = useMemo(() => parseQuery(query), [query]);
+  const hasFilters = Boolean(parsed.noteType || parsed.tag || parsed.language);
+
   const localResults: SearchResult[] = useMemo(() => {
-    if (!query.trim()) {
-      return notes.slice(0, 20).map((item) => ({ item }));
+    const corpus = hasFilters
+      ? notes.filter((note) => matchesFilters(note, parsed))
+      : notes;
+    if (!parsed.text) {
+      return corpus.slice(0, 20).map((item) => ({ item }));
     }
-    return fuse.search(query, { limit: 30 });
-  }, [fuse, notes, query]);
+    const hits = fuse.search(parsed.text, { limit: 30 });
+    return hasFilters
+      ? hits.filter((hit) => matchesFilters(hit.item, parsed))
+      : hits;
+  }, [fuse, notes, parsed, hasFilters]);
+
+  // Deep (server FTS) search runs in "deep" mode, and also auto-escalates in
+  // local mode when the loaded index looks thin — users shouldn't have to
+  // discover the toggle to find older notes.
+  const autoEscalate =
+    mode === "local" && parsed.text.length >= 3 && localResults.length < 3;
 
   useEffect(() => {
-    if (!open || mode !== "full") return;
-    const trimmed = query.trim();
+    if (!open || (mode !== "full" && !autoEscalate)) {
+      setFullResults([]);
+      return;
+    }
     setFullError("");
 
-    if (!trimmed) {
+    if (!parsed.text && !hasFilters) {
       setFullResults([]);
       setFullLoading(false);
       return;
@@ -228,7 +292,11 @@ export function NoteSearchPalette({
     const timer = setTimeout(async () => {
       try {
         setFullLoading(true);
-        const results = await searchNotesApi(trimmed, controller.signal);
+        const results = await searchNotesApi(parsed.text, controller.signal, {
+          noteType: parsed.noteType,
+          tag: parsed.tag,
+          language: parsed.language,
+        });
         setFullResults(results.items ?? []);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
@@ -237,29 +305,31 @@ export function NoteSearchPalette({
       } finally {
         setFullLoading(false);
       }
-    }, 300);
+    }, 250);
 
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [mode, open, query]);
+  }, [mode, open, parsed, hasFilters, autoEscalate]);
 
   const results: SearchResult[] =
     mode === "local" ? localResults : fullResults.map((item) => ({ item }));
   const commandResults = useMemo(() => {
     if (mode !== "local") return [];
-    const trimmed = query.trim().toLowerCase();
+    const trimmed = parsed.text.toLowerCase();
     if (!trimmed) return COMMANDS;
-    return COMMANDS.filter((command) => {
+    const matched = COMMANDS.filter((command) => {
       const haystack = [command.title, command.description, ...command.keywords]
         .join(" ")
         .toLowerCase();
       return haystack.includes(trimmed);
     });
-  }, [mode, query]);
-  const paletteItems: PaletteItem[] = useMemo(
-    () => [
+    // With a query present, content should win the palette — cap actions.
+    return matched.slice(0, 3);
+  }, [mode, parsed.text]);
+  const paletteItems: PaletteItem[] = useMemo(() => {
+    const items: PaletteItem[] = [
       ...(mode === "local" && !query.trim()
         ? recentSearches.map((recentQuery) => ({
             type: "recent" as const,
@@ -271,9 +341,36 @@ export function NoteSearchPalette({
         command,
       })),
       ...results.map((result) => ({ type: "note" as const, result })),
-    ],
-    [commandResults, mode, query, recentSearches, results],
-  );
+    ];
+    // Escalated server hits the local index missed, deduped against local.
+    if (mode === "local" && autoEscalate) {
+      const seen = new Set(localResults.map((hit) => hit.item.id));
+      for (const item of fullResults) {
+        if (!seen.has(item.id)) {
+          items.push({ type: "deep-note", result: { item } });
+        }
+      }
+    }
+    // Never dead-end: a typed query with no content hits can become a note.
+    const contentHits = items.some(
+      (item) => item.type === "note" || item.type === "deep-note",
+    );
+    if (parsed.text && !contentHits && !fullLoading) {
+      items.push({ type: "create" });
+    }
+    return items;
+  }, [
+    commandResults,
+    mode,
+    query,
+    recentSearches,
+    results,
+    autoEscalate,
+    localResults,
+    fullResults,
+    fullLoading,
+    parsed.text,
+  ]);
   const showIndexLoading =
     mode === "local" && indexLoading && notes.length === 0;
 
@@ -299,6 +396,9 @@ export function NoteSearchPalette({
         setQuery(item.query);
         setSelectedIndex(0);
         return;
+      } else if (item.type === "create") {
+        rememberSearch(query);
+        router.push("/dashboard/create_note");
       } else {
         rememberSearch(query);
         router.push(`/dashboard/edit_note?id=${item.result.item.id}`);
@@ -447,7 +547,7 @@ export function NoteSearchPalette({
               <Kbd>esc</Kbd>
             </div>
 
-            <div className="border-b border-[var(--border)] bg-[var(--bg)]/30 px-5 py-2 text-[11px] text-[var(--text-secondary)]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--bg)]/30 px-5 py-2 text-[11px] text-[var(--text-secondary)]">
               <span className="inline-flex items-center gap-1.5">
                 <Sparkles size={12} className="text-[var(--accent)]" />
                 {mode === "local"
@@ -456,6 +556,29 @@ export function NoteSearchPalette({
                     : "Fast retrieval across loaded notes"
                   : "ranked full-text retrieval across your complete vault"}
               </span>
+              {hasFilters ? (
+                <span className="inline-flex items-center gap-1.5 font-mono text-[10px]">
+                  {parsed.noteType && (
+                    <span className="rounded-none border border-[var(--accent)]/50 px-1.5 py-0.5 text-[var(--accent)]">
+                      type:{parsed.noteType}
+                    </span>
+                  )}
+                  {parsed.tag && (
+                    <span className="rounded-none border border-[var(--accent)]/50 px-1.5 py-0.5 text-[var(--accent)]">
+                      tag:{parsed.tag}
+                    </span>
+                  )}
+                  {parsed.language && (
+                    <span className="rounded-none border border-[var(--accent)]/50 px-1.5 py-0.5 text-[var(--accent)]">
+                      lang:{parsed.language}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="font-mono text-[10px]">
+                  try tag:react · type:snippet · lang:sql
+                </span>
+              )}
             </div>
 
             <div className="max-h-[62vh] overflow-y-auto p-3">
@@ -467,7 +590,7 @@ export function NoteSearchPalette({
                 <div className="rounded-none border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   type to search every note in your vault with ranked retrieval
                 </div>
-              ) : fullLoading ? (
+              ) : mode === "full" && fullLoading ? (
                 <div className="rounded-none border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   searching your knowledge graph...
                 </div>
@@ -482,41 +605,54 @@ export function NoteSearchPalette({
                 />
               ) : (
                 paletteItems.map((item, index) => {
+                  const prevType =
+                    index > 0 ? paletteItems[index - 1].type : null;
+                  const sectionHeader =
+                    item.type !== prevType && item.type !== "create" ? (
+                      <p
+                        className={`mb-1.5 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--text-secondary)] ${index === 0 ? "" : "mt-3"}`}
+                      >
+                        {SECTION_LABELS[item.type]}
+                      </p>
+                    ) : null;
+
                   if (item.type === "recent") {
                     const isSelected = selectedIndex === index;
                     return (
-                      <button
-                        key={`recent-${item.query}`}
-                        type="button"
-                        onMouseEnter={() => setSelectedIndex(index)}
-                        onClick={() => executeItem(item)}
-                        className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
-                        style={{
-                          backgroundColor: isSelected
-                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
-                            : "transparent",
-                          borderColor: isSelected
-                            ? "var(--accent)"
-                            : "var(--border)",
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
-                            <Search size={16} />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                              {item.query}
+                      <div key={`recent-${item.query}`}>
+                        {sectionHeader}
+                        <button
+                          type="button"
+                          onMouseEnter={() => setSelectedIndex(index)}
+                          onClick={() => executeItem(item)}
+                          className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                          style={{
+                            backgroundColor: isSelected
+                              ? "color-mix(in srgb, var(--accent) 10%, transparent)"
+                              : "transparent",
+                            borderColor: isSelected
+                              ? "var(--accent)"
+                              : "var(--border)",
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
+                              <Search size={16} />
                             </span>
-                            <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
-                              Recent search. Press enter to run it again.
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                                {item.query}
+                              </span>
+                              <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
+                                Recent search. Press enter to run it again.
+                              </span>
                             </span>
-                          </span>
-                          <span className="rounded-none border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                            recent
-                          </span>
-                        </div>
-                      </button>
+                            <span className="rounded-none border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                              recent
+                            </span>
+                          </div>
+                        </button>
+                      </div>
                     );
                   }
 
@@ -524,12 +660,52 @@ export function NoteSearchPalette({
                     const Icon = item.command.icon;
                     const isSelected = selectedIndex === index;
                     return (
+                      <div key={item.command.id}>
+                        {sectionHeader}
+                        <button
+                          type="button"
+                          onMouseEnter={() => setSelectedIndex(index)}
+                          onClick={() => executeItem(item)}
+                          className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                          style={{
+                            backgroundColor: isSelected
+                              ? "color-mix(in srgb, var(--accent) 10%, transparent)"
+                              : "transparent",
+                            borderColor: isSelected
+                              ? "var(--accent)"
+                              : "var(--border)",
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
+                              <Icon size={16} />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                                {item.command.title}
+                              </span>
+                              <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
+                                {item.command.description}
+                              </span>
+                            </span>
+                            <span className="rounded-none border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                              command
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  if (item.type === "create") {
+                    const isSelected = selectedIndex === index;
+                    return (
                       <button
-                        key={item.command.id}
+                        key="create-note"
                         type="button"
                         onMouseEnter={() => setSelectedIndex(index)}
                         onClick={() => executeItem(item)}
-                        className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                        className="group mb-2 w-full rounded-none border border-dashed px-4 py-3 text-left transition-colors"
                         style={{
                           backgroundColor: isSelected
                             ? "color-mix(in srgb, var(--accent) 10%, transparent)"
@@ -541,18 +717,16 @@ export function NoteSearchPalette({
                       >
                         <div className="flex items-center gap-3">
                           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/60 text-[var(--accent)]">
-                            <Icon size={16} />
+                            <FilePlus2 size={16} />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                              {item.command.title}
+                              create a note for “{parsed.text}”
                             </span>
                             <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
-                              {item.command.description}
+                              nothing matched — capture it while it&apos;s
+                              fresh.
                             </span>
-                          </span>
-                          <span className="rounded-none border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                            command
                           </span>
                         </div>
                       </button>
@@ -567,87 +741,97 @@ export function NoteSearchPalette({
                   const contentMatch = result.matches?.find(
                     (match) => match.key === "content",
                   );
-                  const plainPreview = buildSnippet(note.content, query);
+                  const plainPreview = buildSnippet(note.content, parsed.text);
                   const isSelected = selectedIndex === index;
-                  const fullTitleMatch =
-                    mode === "full" ? titleTermIndices(note.title, query) : [];
+                  const isServerHit =
+                    mode === "full" || item.type === "deep-note";
+                  const fullTitleMatch = isServerHit
+                    ? titleTermIndices(note.title, parsed.text)
+                    : [];
 
                   return (
                     // biome-ignore lint/a11y/useSemanticElements: Result row contains a nested copy button, so it cannot be a native button.
-                    <div
-                      key={note.id}
-                      role="button"
-                      tabIndex={0}
-                      onMouseEnter={() => setSelectedIndex(index)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
+                    <div key={`${item.type}-${note.id}`}>
+                      {sectionHeader}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            router.push(`/dashboard/edit_note?id=${note.id}`);
+                            onClose();
+                          }
+                        }}
+                        onClick={() => {
                           router.push(`/dashboard/edit_note?id=${note.id}`);
                           onClose();
-                        }
-                      }}
-                      onClick={() => {
-                        router.push(`/dashboard/edit_note?id=${note.id}`);
-                        onClose();
-                      }}
-                      className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
-                      style={{
-                        backgroundColor: isSelected
-                          ? "color-mix(in srgb, var(--accent) 10%, transparent)"
-                          : "transparent",
-                        borderColor: isSelected
-                          ? "var(--accent)"
-                          : "var(--border)",
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                          {mode === "full" && fullTitleMatch.length > 0
-                            ? highlightText(note.title, fullTitleMatch)
-                            : titleMatch?.indices
-                              ? highlightText(note.title, titleMatch.indices)
-                              : note.title || "untitled"}
+                        }}
+                        className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
+                        style={{
+                          backgroundColor: isSelected
+                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
+                            : "transparent",
+                          borderColor: isSelected
+                            ? "var(--accent)"
+                            : "var(--border)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                            {isServerHit && fullTitleMatch.length > 0
+                              ? highlightText(note.title, fullTitleMatch)
+                              : titleMatch?.indices
+                                ? highlightText(note.title, titleMatch.indices)
+                                : note.title || "untitled"}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                            {note.note_type === "snippet" && (
+                              <button
+                                type="button"
+                                onClick={(event) => copySnippet(note, event)}
+                                className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] px-2 py-1 transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                              >
+                                {copiedId === note.id ? (
+                                  <Check size={11} />
+                                ) : (
+                                  <Clipboard size={11} />
+                                )}
+                                {copiedId === note.id ? "copied" : "copy"}
+                              </button>
+                            )}
+                            <Calendar size={11} />
+                            {formatDate(note.updated_at ?? note.created_at)}
+                          </div>
                         </div>
-                        <div className="flex shrink-0 items-center gap-2 text-[11px] text-[var(--text-secondary)]">
-                          {note.note_type === "snippet" && (
-                            <button
-                              type="button"
-                              onClick={(event) => copySnippet(note, event)}
-                              className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] px-2 py-1 transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                            >
-                              {copiedId === note.id ? (
-                                <Check size={11} />
-                              ) : (
-                                <Clipboard size={11} />
-                              )}
-                              {copiedId === note.id ? "copied" : "copy"}
-                            </button>
-                          )}
-                          <Calendar size={11} />
-                          {formatDate(note.updated_at ?? note.created_at)}
+                        <div className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
+                          {contentMatch?.indices
+                            ? highlightText(note.content, contentMatch.indices)
+                            : plainPreview}
                         </div>
+                        {note.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {note.tags.slice(0, 4).map((tag) => (
+                              <span
+                                key={`${note.id}-${tag}`}
+                                className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[10px] text-[var(--accent)]"
+                              >
+                                <Hash size={10} />
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
-                        {contentMatch?.indices
-                          ? highlightText(note.content, contentMatch.indices)
-                          : plainPreview}
-                      </div>
-                      {note.tags.length > 0 && (
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {note.tags.slice(0, 4).map((tag) => (
-                            <span
-                              key={`${note.id}-${tag}`}
-                              className="inline-flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-2 py-0.5 text-[10px] text-[var(--accent)]"
-                            >
-                              <Hash size={10} />
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   );
                 })
+              )}
+              {mode === "local" && fullLoading && (
+                <p className="px-1 py-2 font-mono text-[10px] text-[var(--text-secondary)]">
+                  searching deeper across your full vault…
+                </p>
               )}
             </div>
           </motion.div>
