@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SharePopover } from "@/components/SharePopover";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { Segmented } from "@/components/ui/segmented";
 import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { useSettings } from "@/hooks/useSettings";
 import { normalizeErrorMessage } from "@/lib/errors";
@@ -49,6 +50,8 @@ interface NoteFormProps {
   initialShareUuid?: string | null;
   initialPublished?: boolean;
   initialCommunity?: boolean;
+  /** Switch back to the reading view (edit mode only). Ctrl+E also fires it. */
+  onView?: () => void;
 }
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
@@ -110,6 +113,7 @@ export default function NoteForm({
   initialShareUuid = null,
   initialPublished = false,
   initialCommunity = false,
+  onView,
 }: NoteFormProps) {
   const router = useRouter();
   const { settings } = useSettings();
@@ -433,15 +437,31 @@ export default function NoteForm({
         return;
       }
 
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "e" &&
+        onView
+      ) {
+        event.preventDefault();
+        onView();
+        return;
+      }
+
       if (event.key === "Escape") {
         event.preventDefault();
-        attemptBack();
+        // Reading view is "closed" state for a note (research: Obsidian's
+        // stuck-in-edit flaw); only fall back to the dashboard without one.
+        if (onView) {
+          onView();
+        } else {
+          attemptBack();
+        }
       }
     };
 
     window.addEventListener("keydown", onShortcut);
     return () => window.removeEventListener("keydown", onShortcut);
-  }, [attemptBack, isPublished, saveNote, togglePublish]);
+  }, [attemptBack, isPublished, saveNote, togglePublish, onView]);
 
   const addTag = useCallback(() => {
     const cleaned = normalizeTag(tagInput);
@@ -485,6 +505,17 @@ export default function NoteForm({
             </div>
 
             <div className="flex items-center gap-1">
+              {onView && (
+                <button
+                  type="button"
+                  onClick={onView}
+                  className="flex h-8 items-center gap-1.5 rounded-none px-2 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                  title="Reading view (Ctrl+E)"
+                >
+                  <BookOpen size={15} />
+                  view
+                </button>
+              )}
               {mode === "edit" && noteId && (
                 <>
                   <button
@@ -572,28 +603,21 @@ export default function NoteForm({
                 <p className="mt-3 text-xs text-[var(--error)]">{titleError}</p>
               )}
 
-              <div className="mt-5 grid gap-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {noteTypes.map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setNoteType(item.value)}
-                      className={`rounded-none border px-3 py-2 text-left transition-colors ${
-                        noteType === item.value
-                          ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]"
-                          : "border-[var(--border)] bg-[var(--bg)]/50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      <span className="block text-xs font-semibold">
-                        {item.label}
-                      </span>
-                      <span className="text-[10px] text-[var(--text-secondary)]">
-                        {item.hint}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[10px] lowercase text-[var(--text-secondary)]">
+                  type
+                </span>
+                <Segmented
+                  options={noteTypes.map((item) => ({
+                    value: item.value,
+                    label: item.label.toLowerCase(),
+                  }))}
+                  value={noteType}
+                  onChange={setNoteType}
+                />
+                <span className="hidden font-mono text-[10px] text-[var(--text-secondary)] sm:inline">
+                  {noteTypes.find((item) => item.value === noteType)?.hint}
+                </span>
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/45 p-2">
