@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Palette, Search, Shuffle } from "lucide-react";
+import { Check, Palette, RotateCcw, Search, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DEFAULT_THEME_ID,
   effectiveStyle,
   FONT_LABELS,
   FONT_STACKS,
@@ -37,7 +38,7 @@ type ModeFilter = "all" | "dark" | "light";
 const FONT_CHOICES: FontSetting[] = ["auto", "sans", "mono", "serif"];
 const RADIUS_CHOICES: RadiusSetting[] = ["auto", "sharp", "soft", "round"];
 
-/* ─── Mini app mock rendered in the candidate settings' own styles ────────
+/* ─── Full app mock rendered in the candidate settings' own styles ─────────
    Everything here uses inline colors from the theme definition, so the
    preview lives entirely inside the dialog — the real app around it keeps
    the applied settings until the user hits apply. */
@@ -52,13 +53,19 @@ function ThemePreviewCard({
   const c = theme.colors;
   const { radius } = style;
   const fontFamily = FONT_STACKS[style.font];
-  const ramp = [25, 50, 75].map(
-    (percent) => `color-mix(in srgb, ${c.main} ${percent}%, ${c.bg})`,
-  );
+  const chipRadius = radius * 0.6;
   const glow =
     style.shadow === "glow"
-      ? `0 0 30px -8px color-mix(in srgb, ${c.main} 50%, transparent)`
+      ? `0 0 34px -8px color-mix(in srgb, ${c.main} 50%, transparent)`
       : undefined;
+
+  const navItems: Array<[string, boolean]> = [
+    ["notes", true],
+    ["snippets", false],
+    ["explore", false],
+    ["ask", false],
+    ["settings", false],
+  ];
 
   return (
     <div
@@ -70,10 +77,12 @@ function ThemePreviewCard({
         borderRadius: radius,
         borderWidth: style.panelBorder ?? 1,
         boxShadow: glow,
+        fontFamily,
       }}
     >
+      {/* window bar */}
       <div
-        className="flex items-center justify-between border-b px-3 py-2"
+        className="flex items-center gap-3 border-b px-3 py-2"
         style={{ borderColor: c.border, backgroundColor: c.subAlt }}
       >
         <span className="flex gap-1.5">
@@ -81,9 +90,27 @@ function ThemePreviewCard({
             <span
               key={`${dot}-${index === 0 ? "e" : index === 1 ? "m" : "s"}`}
               className="h-2 w-2"
-              style={{ backgroundColor: dot, borderRadius: radius * 0.4 }}
+              style={{ backgroundColor: dot, borderRadius: chipRadius }}
             />
           ))}
+        </span>
+        <span
+          className="flex flex-1 items-center gap-1.5 border px-2 py-1 text-[9px] lowercase"
+          style={{
+            borderColor: c.border,
+            backgroundColor: c.bg,
+            color: c.sub,
+            borderRadius: chipRadius,
+          }}
+        >
+          <Search size={9} />
+          search notes, snippets, tags
+          <span
+            className="ml-auto border px-1"
+            style={{ borderColor: c.border, borderRadius: chipRadius * 0.6 }}
+          >
+            ctrl k
+          </span>
         </span>
         <span
           className="font-mono text-[9px] lowercase"
@@ -93,85 +120,186 @@ function ThemePreviewCard({
         </span>
       </div>
 
-      <div className="grid grid-cols-[3.5rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-[6.5rem_minmax(0,1fr)]">
+        {/* sidebar */}
         <div
-          className="space-y-1.5 border-r p-2"
+          className="flex flex-col gap-1 border-r p-2"
           style={{ borderColor: c.border }}
         >
-          <div
-            className="h-1.5 w-8"
-            style={{ backgroundColor: c.main, borderRadius: radius * 0.4 }}
-          />
-          {["w-9", "w-6", "w-8"].map((width) => (
-            <div
-              key={width}
-              className={`h-1.5 ${width}`}
-              style={{
-                backgroundColor: c.sub,
-                opacity: 0.55,
-                borderRadius: radius * 0.4,
-              }}
+          <div className="mb-1 flex items-center gap-1.5 px-1">
+            <span
+              className="h-2.5 w-2.5"
+              style={{ backgroundColor: c.main, borderRadius: chipRadius }}
             />
+            <span
+              className="text-[10px] font-semibold"
+              style={{ color: c.text }}
+            >
+              devnotes
+            </span>
+          </div>
+          {navItems.map(([label, active]) => (
+            <span
+              key={label}
+              className="px-1.5 py-1 text-[9px] lowercase"
+              style={{
+                color: active ? c.main : c.sub,
+                backgroundColor: active
+                  ? `color-mix(in srgb, ${c.main} 12%, transparent)`
+                  : "transparent",
+                borderLeft: `2px solid ${active ? c.main : "transparent"}`,
+                borderRadius: chipRadius * 0.6,
+              }}
+            >
+              {label}
+            </span>
           ))}
-        </div>
-
-        <div className="space-y-2 p-3">
-          <p
-            className="text-sm leading-tight"
-            style={{ color: c.text, fontFamily }}
-          >
-            knowledge, captured.
-          </p>
-          <p
-            className="text-[10px] leading-snug"
-            style={{ color: c.sub, fontFamily }}
-          >
-            colors, type and corners — each dial is yours to mix.
-          </p>
           <div
-            className="border p-2 font-mono text-[9px]"
+            className="mt-auto border p-1.5 text-[8px] lowercase"
             style={{
               borderColor: c.border,
               backgroundColor: c.subAlt,
-              borderRadius: radius * 0.6,
+              color: c.sub,
+              borderRadius: chipRadius,
             }}
           >
-            <span style={{ color: c.main }}>const</span>{" "}
-            <span style={{ color: c.text }}>colorway</span>{" "}
-            <span style={{ color: c.sub }}>=</span>{" "}
-            <span style={{ color: c.main }}>
-              &quot;{theme.name.toLowerCase()}&quot;
-            </span>
+            <span style={{ color: c.main }}>●</span> synced · main
           </div>
-          <div className="flex items-center gap-2">
+        </div>
+
+        {/* editor pane */}
+        <div className="space-y-2.5 p-3.5">
+          <p className="text-[9px] lowercase" style={{ color: c.sub }}>
+            devnotes / notes /{" "}
+            <span style={{ color: c.main }}>fix-n-plus-one.md</span>
+          </p>
+          <p
+            className="text-base font-semibold leading-tight"
+            style={{ color: c.text }}
+          >
+            knowledge, captured beautifully.
+          </p>
+          <div className="flex gap-1.5">
+            {["#postgres", "#performance", "#til"].map((tag) => (
+              <span
+                key={tag}
+                className="border px-1.5 py-0.5 text-[8px]"
+                style={{
+                  borderColor: c.border,
+                  color: c.main,
+                  borderRadius: chipRadius,
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <p className="text-[10px] leading-relaxed" style={{ color: c.sub }}>
+            every surface follows your dials — this typeface, these corners,
+            this colorway. mix until it feels like your editor.
+          </p>
+
+          {/* code block */}
+          <div
+            className="border p-2 font-mono text-[9px] leading-relaxed"
+            style={{
+              borderColor: c.border,
+              backgroundColor: c.subAlt,
+              borderRadius: chipRadius,
+            }}
+          >
+            <div>
+              <span style={{ color: c.main }}>const</span>{" "}
+              <span style={{ color: c.text }}>workspace</span>{" "}
+              <span style={{ color: c.sub }}>=</span>{" "}
+              <span style={{ color: c.main }}>
+                &quot;{theme.name.toLowerCase()}&quot;
+              </span>
+            </div>
+            <div>
+              <span style={{ color: c.main }}>await</span>{" "}
+              <span style={{ color: c.text }}>capture</span>
+              <span style={{ color: c.sub }}>(</span>
+              <span style={{ color: c.text }}>idea</span>
+              <span style={{ color: c.sub }}>,</span>{" "}
+              <span style={{ color: c.sub }}>{"{ publish: true }"}</span>
+              <span style={{ color: c.sub }}>)</span>
+            </div>
+            <div style={{ color: c.sub }}>
+              {`// ships in ${FONT_LABELS[style.font]} · ${radius}px corners`}
+            </div>
+          </div>
+
+          {/* checklist */}
+          <div className="space-y-1">
+            {(
+              [
+                ["pick a colorway", true],
+                ["dial in type and corners", false],
+              ] as const
+            ).map(([item, done]) => (
+              <div key={item} className="flex items-center gap-1.5">
+                <span
+                  className="grid h-2.5 w-2.5 place-items-center border"
+                  style={{
+                    borderColor: done ? c.main : c.border,
+                    backgroundColor: done ? c.main : "transparent",
+                    borderRadius: chipRadius * 0.6,
+                  }}
+                >
+                  {done && (
+                    <Check size={7} style={{ color: theme.accentForeground }} />
+                  )}
+                </span>
+                <span
+                  className="text-[9px] lowercase"
+                  style={{
+                    color: done ? c.sub : c.text,
+                    textDecoration: done ? "line-through" : "none",
+                  }}
+                >
+                  {item}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* actions + ramp */}
+          <div className="flex items-center gap-2 pt-0.5">
             <span
-              className="px-2 py-1 font-mono text-[9px] lowercase"
+              className="px-2.5 py-1 text-[9px] font-semibold lowercase"
               style={{
                 backgroundColor: c.main,
                 color: theme.accentForeground,
-                borderRadius: radius * 0.6,
+                borderRadius: chipRadius,
               }}
             >
               capture
             </span>
             <span
-              className="border px-2 py-1 font-mono text-[9px] lowercase"
+              className="border px-2.5 py-1 text-[9px] lowercase"
               style={{
                 borderColor: c.border,
                 color: c.sub,
-                borderRadius: radius * 0.6,
+                borderRadius: chipRadius,
               }}
             >
-              preview
+              publish
             </span>
             <span className="ml-auto flex gap-[3px]">
-              {[...ramp, c.main].map((color) => (
-                <span
-                  key={color}
-                  className="h-2.5 w-2.5"
-                  style={{ backgroundColor: color, borderRadius: radius * 0.4 }}
-                />
-              ))}
+              {[25, 50, 75]
+                .map(
+                  (percent) =>
+                    `color-mix(in srgb, ${c.main} ${percent}%, ${c.bg})`,
+                )
+                .concat(c.main)
+                .map((color) => (
+                  <span
+                    key={color}
+                    className="h-2.5 w-2.5"
+                    style={{ backgroundColor: color, borderRadius: chipRadius }}
+                  />
+                ))}
             </span>
           </div>
         </div>
@@ -188,12 +316,18 @@ function AxisPicker<Choice extends string>({
   value,
   display,
   onChange,
+  chipFont,
+  chipGlyphRadius,
 }: {
   label: string;
   choices: Choice[];
   value: Choice;
   display: (choice: Choice) => string;
   onChange: (choice: Choice) => void;
+  /** Render each chip's label in this font stack (font axis). */
+  chipFont?: (choice: Choice) => string | undefined;
+  /** Show a small square glyph with this radius (corner axis). */
+  chipGlyphRadius?: (choice: Choice) => number | undefined;
 }) {
   return (
     <div>
@@ -203,20 +337,31 @@ function AxisPicker<Choice extends string>({
       <div className="flex flex-wrap gap-1.5">
         {choices.map((choice) => {
           const active = choice === value;
+          const glyphRadius = chipGlyphRadius?.(choice);
           return (
             <button
               key={choice}
               type="button"
               onClick={() => onChange(choice)}
-              className="rounded-none border px-2 py-1 font-mono text-[10px] lowercase transition-colors"
+              className="flex items-center gap-1.5 rounded-none border px-2 py-1 text-[10px] lowercase transition-colors"
               style={{
                 color: active ? "var(--accent)" : "var(--text-secondary)",
                 borderColor: active ? "var(--accent)" : "var(--border)",
                 backgroundColor: active
                   ? "color-mix(in srgb, var(--accent) 8%, transparent)"
                   : "transparent",
+                fontFamily: chipFont?.(choice) ?? "var(--font-jetbrains-mono)",
               }}
             >
+              {glyphRadius !== undefined && (
+                <span
+                  className="h-3 w-3 border"
+                  style={{
+                    borderColor: "currentcolor",
+                    borderRadius: glyphRadius,
+                  }}
+                />
+              )}
               {display(choice)}
             </button>
           );
@@ -287,6 +432,13 @@ export function ThemeStudio() {
     setOpen(false);
   };
 
+  /** Back to stock: flagship colorway, both dials on auto (drafts only). */
+  const resetDials = () => {
+    setHighlighted(DEFAULT_THEME_ID);
+    setDraftFont("auto");
+    setDraftRadius("auto");
+  };
+
   const moveHighlight = (delta: number) => {
     if (filtered.length === 0) return;
     const index = filtered.findIndex((item) => item.id === highlighted);
@@ -338,6 +490,13 @@ export function ThemeStudio() {
         value={draftFont}
         display={fontDisplay}
         onChange={setDraftFont}
+        chipFont={(choice) =>
+          FONT_STACKS[
+            choice === "auto"
+              ? highlightedMeta.style.font
+              : (choice as ThemeFont)
+          ]
+        }
       />
       <AxisPicker
         label="corners"
@@ -345,13 +504,18 @@ export function ThemeStudio() {
         value={draftRadius}
         display={radiusDisplay}
         onChange={setDraftRadius}
+        chipGlyphRadius={(choice) =>
+          (choice === "auto"
+            ? highlightedMeta.style.radius
+            : RADIUS_PRESETS[choice as keyof typeof RADIUS_PRESETS]) * 0.35
+        }
       />
     </>
   );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="onboarding-dialog gap-0 overflow-hidden p-0 sm:max-w-4xl lg:max-w-5xl">
+      <DialogContent className="onboarding-dialog flex max-h-[92vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl lg:max-w-6xl">
         <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
             <Palette size={14} className="text-[var(--accent)]" />
@@ -369,7 +533,7 @@ export function ThemeStudio() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid sm:grid-cols-[18rem_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 overflow-y-auto sm:grid-cols-[16.5rem_minmax(0,1fr)]">
           {/* left — search, filters, list */}
           <div className="flex min-h-0 flex-col border-b border-[var(--border)] sm:border-b-0 sm:border-r">
             <div className="border-b border-[var(--border)] p-3">
@@ -487,7 +651,9 @@ export function ThemeStudio() {
           <div className="hidden min-w-0 flex-col gap-3 p-4 sm:flex">
             <ThemePreviewCard theme={highlightedMeta} style={previewStyle} />
 
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid gap-3 lg:grid-cols-2">{axisPickers}</div>
+
+            <div className="mt-auto flex flex-wrap items-center gap-1.5">
               {(
                 [
                   ["bg", highlightedMeta.colors.bg],
@@ -508,36 +674,36 @@ export function ThemeStudio() {
                   {label} {color.startsWith("#") ? color : "auto"}
                 </span>
               ))}
-            </div>
-
-            <div className="grid gap-3">{axisPickers}</div>
-
-            <div className="mt-auto flex flex-wrap gap-1.5">
-              {(
-                [
-                  ["type", FONT_LABELS[previewStyle.font]],
-                  ["radius", `${previewStyle.radius}px`],
-                  ["shadow", previewStyle.shadow],
-                  ["border", `${previewStyle.panelBorder ?? 1}px`],
-                ] as const
-              ).map(([label, value]) => (
-                <span
-                  key={label}
-                  className="rounded-none border border-[var(--border)] px-1.5 py-0.5 font-mono text-[9px] lowercase text-[var(--text-secondary)]"
-                >
-                  {label} ·{" "}
-                  <span className="text-[var(--accent)]">{value}</span>
+              <span className="ml-auto rounded-none border border-[var(--border)] px-1.5 py-0.5 font-mono text-[9px] lowercase text-[var(--text-secondary)]">
+                shadow ·{" "}
+                <span className="text-[var(--accent)]">
+                  {previewStyle.shadow}
                 </span>
-              ))}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-2.5">
-          <span className="hidden font-mono text-[10px] text-[var(--text-secondary)] sm:inline">
+          <span className="hidden font-mono text-[10px] text-[var(--text-secondary)] lg:inline">
             ↑↓ browse · enter apply · esc close without changes
           </span>
-          <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+          <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+            {isDirty && (
+              <span className="hidden font-mono text-[10px] lowercase text-[var(--text-secondary)] sm:inline">
+                next · {highlightedMeta.name.toLowerCase()} ·{" "}
+                {FONT_LABELS[previewStyle.font]} · {previewStyle.radius}px
+              </span>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={resetDials}
+              className="h-8 gap-2 rounded-none border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
+            >
+              <RotateCcw size={13} />
+              reset
+            </Button>
             <Button
               type="button"
               variant="ghost"
