@@ -12,10 +12,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  effectiveStyle,
+  FONT_LABELS,
   FONT_STACKS,
+  type FontSetting,
   getTheme,
+  RADIUS_PRESETS,
+  type RadiusSetting,
   type ThemeDefinition,
+  type ThemeFont,
   type ThemeId,
+  type ThemeStyle,
 } from "@/lib/themes";
 
 export const OPEN_THEME_STUDIO_EVENT = "devnotes:open-theme-studio";
@@ -27,24 +34,29 @@ export function openThemeStudio() {
 
 type ModeFilter = "all" | "dark" | "light";
 
-/** Apply a theme to <html> directly — used for instant live preview. */
-function previewTheme(id: ThemeId) {
-  const meta = getTheme(id);
-  document.documentElement.setAttribute("data-theme", id);
-  document.documentElement.classList.toggle("dark", meta.isDark);
-}
+const FONT_CHOICES: FontSetting[] = ["auto", "sans", "mono", "serif"];
+const RADIUS_CHOICES: RadiusSetting[] = ["auto", "sharp", "soft", "round"];
 
-/* ─── Mini app mock rendered in the highlighted theme's own colors ───────── */
+/* ─── Mini app mock rendered in the candidate settings' own styles ────────
+   Everything here uses inline colors from the theme definition, so the
+   preview lives entirely inside the dialog — the real app around it keeps
+   the applied settings until the user hits apply. */
 
-function ThemePreviewCard({ theme }: { theme: ThemeDefinition }) {
+function ThemePreviewCard({
+  theme,
+  style,
+}: {
+  theme: ThemeDefinition;
+  style: ThemeStyle;
+}) {
   const c = theme.colors;
-  const { radius } = theme.style;
-  const fontFamily = FONT_STACKS[theme.style.font];
+  const { radius } = style;
+  const fontFamily = FONT_STACKS[style.font];
   const ramp = [25, 50, 75].map(
     (percent) => `color-mix(in srgb, ${c.main} ${percent}%, ${c.bg})`,
   );
   const glow =
-    theme.style.shadow === "glow"
+    style.shadow === "glow"
       ? `0 0 30px -8px color-mix(in srgb, ${c.main} 50%, transparent)`
       : undefined;
 
@@ -56,7 +68,7 @@ function ThemePreviewCard({ theme }: { theme: ThemeDefinition }) {
         backgroundColor: c.bg,
         color: c.text,
         borderRadius: radius,
-        borderWidth: theme.style.panelBorder ?? 1,
+        borderWidth: style.panelBorder ?? 1,
         boxShadow: glow,
       }}
     >
@@ -114,7 +126,7 @@ function ThemePreviewCard({ theme }: { theme: ThemeDefinition }) {
             className="text-[10px] leading-snug"
             style={{ color: c.sub, fontFamily }}
           >
-            every surface — type, corners, shadows — follows the colorway.
+            colors, type and corners — each dial is yours to mix.
           </p>
           <div
             className="border p-2 font-mono text-[9px]"
@@ -168,15 +180,65 @@ function ThemePreviewCard({ theme }: { theme: ThemeDefinition }) {
   );
 }
 
+/* ─── Small chip-row picker used for the font/corner axes ─────────────────── */
+
+function AxisPicker<Choice extends string>({
+  label,
+  choices,
+  value,
+  display,
+  onChange,
+}: {
+  label: string;
+  choices: Choice[];
+  value: Choice;
+  display: (choice: Choice) => string;
+  onChange: (choice: Choice) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 font-mono text-[10px] lowercase text-[var(--text-secondary)]">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {choices.map((choice) => {
+          const active = choice === value;
+          return (
+            <button
+              key={choice}
+              type="button"
+              onClick={() => onChange(choice)}
+              className="rounded-none border px-2 py-1 font-mono text-[10px] lowercase transition-colors"
+              style={{
+                color: active ? "var(--accent)" : "var(--text-secondary)",
+                borderColor: active ? "var(--accent)" : "var(--border)",
+                backgroundColor: active
+                  ? "color-mix(in srgb, var(--accent) 8%, transparent)"
+                  : "transparent",
+              }}
+            >
+              {display(choice)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Studio dialog ──────────────────────────────────────────────────────── */
 
 export function ThemeStudio() {
-  const { theme, setTheme, themes } = useTheme();
+  const { theme, setTheme, font, setFont, radius, setRadius, themes } =
+    useTheme();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ModeFilter>("all");
+  // Draft settings — everything below previews inside the dialog only and
+  // reaches the real app exclusively through apply().
   const [highlighted, setHighlighted] = useState<ThemeId>(theme);
-  const applyingRef = useRef(false);
+  const [draftFont, setDraftFont] = useState<FontSetting>(font);
+  const [draftRadius, setDraftRadius] = useState<RadiusSetting>(radius);
   const rowRefs = useRef(new Map<ThemeId, HTMLButtonElement>());
 
   const filtered = useMemo(() => {
@@ -197,12 +259,13 @@ export function ThemeStudio() {
   );
 
   const openStudio = useCallback(() => {
-    applyingRef.current = false;
     setQuery("");
     setFilter("all");
     setHighlighted(theme);
+    setDraftFont(font);
+    setDraftRadius(radius);
     setOpen(true);
-  }, [theme]);
+  }, [theme, font, radius]);
 
   useEffect(() => {
     const onOpen = () => openStudio();
@@ -216,23 +279,12 @@ export function ThemeStudio() {
     rowRefs.current.get(highlighted)?.scrollIntoView({ block: "nearest" });
   }, [highlighted, open]);
 
-  const highlight = (id: ThemeId) => {
-    setHighlighted(id);
-    previewTheme(id);
-  };
-
-  const apply = (id: ThemeId) => {
-    applyingRef.current = true;
-    previewTheme(id); // instant — provider effect confirms after re-render
-    setTheme(id);
+  /** Commit the drafts — the only moment the main screen changes. */
+  const apply = () => {
+    setTheme(highlighted);
+    setFont(draftFont);
+    setRadius(draftRadius);
     setOpen(false);
-  };
-
-  const handleOpenChange = (next: boolean) => {
-    if (!next && !applyingRef.current) {
-      previewTheme(theme); // closed without applying — revert the preview
-    }
-    setOpen(next);
   };
 
   const moveHighlight = (delta: number) => {
@@ -241,13 +293,13 @@ export function ThemeStudio() {
     const next =
       filtered[(index + delta + filtered.length) % filtered.length] ??
       filtered[0];
-    highlight(next.id);
+    setHighlighted(next.id);
   };
 
   const shuffle = () => {
     const pool = filtered.filter((item) => item.id !== highlighted);
     if (pool.length === 0) return;
-    highlight(pool[Math.floor(Math.random() * pool.length)].id);
+    setHighlighted(pool[Math.floor(Math.random() * pool.length)].id);
   };
 
   const onSearchKeyDown = (event: React.KeyboardEvent) => {
@@ -259,14 +311,46 @@ export function ThemeStudio() {
       moveHighlight(-1);
     } else if (event.key === "Enter") {
       event.preventDefault();
-      apply(highlighted);
+      apply();
     }
   };
 
   const highlightedMeta = getTheme(highlighted);
+  const previewStyle = effectiveStyle(highlightedMeta, draftFont, draftRadius);
+  const isDirty =
+    highlighted !== theme || draftFont !== font || draftRadius !== radius;
+
+  const fontDisplay = (choice: FontSetting) =>
+    choice === "auto"
+      ? `auto · ${FONT_LABELS[highlightedMeta.style.font]}`
+      : FONT_LABELS[choice as ThemeFont];
+
+  const radiusDisplay = (choice: RadiusSetting) =>
+    choice === "auto"
+      ? `auto · ${highlightedMeta.style.radius}px`
+      : `${choice} · ${RADIUS_PRESETS[choice as keyof typeof RADIUS_PRESETS]}px`;
+
+  const axisPickers = (
+    <>
+      <AxisPicker
+        label="typeface"
+        choices={FONT_CHOICES}
+        value={draftFont}
+        display={fontDisplay}
+        onChange={setDraftFont}
+      />
+      <AxisPicker
+        label="corners"
+        choices={RADIUS_CHOICES}
+        value={draftRadius}
+        display={radiusDisplay}
+        onChange={setDraftRadius}
+      />
+    </>
+  );
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="onboarding-dialog gap-0 overflow-hidden p-0 sm:max-w-4xl lg:max-w-5xl">
         <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
@@ -277,12 +361,11 @@ export function ThemeStudio() {
             </span>
           </div>
           <DialogTitle className="text-left text-xl font-medium lowercase text-[var(--text-primary)]">
-            pick your colorway
+            mix your workspace
           </DialogTitle>
           <DialogDescription className="text-left text-sm text-[var(--text-secondary)]">
-            More than colors — each colorway sets its own typeface, corner
-            radius and shadows across every surface. Browse to preview live;
-            Enter to keep, Esc to put it back.
+            Colorway, typeface and corners are separate dials — mix them freely.
+            Everything previews right here; the app only changes when you apply.
           </DialogDescription>
         </DialogHeader>
 
@@ -332,7 +415,7 @@ export function ThemeStudio() {
               </div>
             </div>
 
-            <div className="max-h-[19rem] flex-1 overflow-y-auto p-1.5 sm:max-h-[26rem]">
+            <div className="max-h-[16rem] flex-1 overflow-y-auto p-1.5 sm:max-h-[26rem]">
               {filtered.length === 0 && (
                 <p className="px-2 py-4 font-mono text-[11px] text-[var(--text-secondary)]">
                   no themes match “{query}”
@@ -349,9 +432,7 @@ export function ThemeStudio() {
                       else rowRefs.current.delete(item.id);
                     }}
                     type="button"
-                    onClick={() => apply(item.id)}
-                    onMouseEnter={() => highlight(item.id)}
-                    onFocus={() => highlight(item.id)}
+                    onClick={() => setHighlighted(item.id)}
                     className="flex w-full items-center gap-2.5 rounded-none border px-2 py-1.5 text-left transition-colors"
                     style={{
                       borderColor: isHighlighted
@@ -394,11 +475,17 @@ export function ThemeStudio() {
                 );
               })}
             </div>
+
+            {/* axis pickers surface here on mobile, where the preview column
+                is hidden */}
+            <div className="space-y-3 border-t border-[var(--border)] p-3 sm:hidden">
+              {axisPickers}
+            </div>
           </div>
 
-          {/* right — live mock + palette + actions */}
+          {/* right — in-dialog preview + axis pickers */}
           <div className="hidden min-w-0 flex-col gap-3 p-4 sm:flex">
-            <ThemePreviewCard theme={highlightedMeta} />
+            <ThemePreviewCard theme={highlightedMeta} style={previewStyle} />
 
             <div className="flex flex-wrap gap-1.5">
               {(
@@ -423,20 +510,15 @@ export function ThemeStudio() {
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid gap-3">{axisPickers}</div>
+
+            <div className="mt-auto flex flex-wrap gap-1.5">
               {(
                 [
-                  [
-                    "type",
-                    highlightedMeta.style.font === "sans"
-                      ? "gellix"
-                      : highlightedMeta.style.font === "mono"
-                        ? "jetbrains mono"
-                        : "lora serif",
-                  ],
-                  ["radius", `${highlightedMeta.style.radius}px`],
-                  ["shadow", highlightedMeta.style.shadow],
-                  ["border", `${highlightedMeta.style.panelBorder ?? 1}px`],
+                  ["type", FONT_LABELS[previewStyle.font]],
+                  ["radius", `${previewStyle.radius}px`],
+                  ["shadow", previewStyle.shadow],
+                  ["border", `${previewStyle.panelBorder ?? 1}px`],
                 ] as const
               ).map(([label, value]) => (
                 <span
@@ -448,32 +530,33 @@ export function ThemeStudio() {
                 </span>
               ))}
             </div>
-
-            <div className="mt-auto flex items-center justify-between gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={shuffle}
-                className="h-8 gap-2 rounded-none border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
-              >
-                <Shuffle size={13} />
-                shuffle
-              </Button>
-              <Button
-                type="button"
-                onClick={() => apply(highlighted)}
-                className="h-8 gap-2 rounded-none bg-[var(--accent)] px-4 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]"
-              >
-                <Check size={13} />
-                keep {highlightedMeta.name.toLowerCase()}
-              </Button>
-            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-2.5 font-mono text-[10px] text-[var(--text-secondary)]">
-          <span>↑↓ preview · enter keep · esc revert</span>
-          <span className="hidden sm:inline">g then t opens this anywhere</span>
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-2.5">
+          <span className="hidden font-mono text-[10px] text-[var(--text-secondary)] sm:inline">
+            ↑↓ browse · enter apply · esc close without changes
+          </span>
+          <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={shuffle}
+              className="h-8 gap-2 rounded-none border border-[var(--border)] px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
+            >
+              <Shuffle size={13} />
+              shuffle
+            </Button>
+            <Button
+              type="button"
+              onClick={apply}
+              disabled={!isDirty}
+              className="h-8 gap-2 rounded-none bg-[var(--accent)] px-4 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]"
+            >
+              <Check size={13} />
+              apply {highlightedMeta.name.toLowerCase()}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

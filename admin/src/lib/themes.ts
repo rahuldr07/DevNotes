@@ -104,6 +104,8 @@ export type ThemeMeta = Pick<
 
 export const DEFAULT_THEME_ID: ThemeId = "serika-dark";
 export const THEME_STORAGE_KEY = "devnotes-theme";
+export const FONT_STORAGE_KEY = "devnotes-font";
+export const RADIUS_STORAGE_KEY = "devnotes-radius";
 
 /** UI font stacks — the next/font variables are declared on <html>. */
 export const FONT_STACKS: Record<ThemeFont, string> = {
@@ -111,6 +113,59 @@ export const FONT_STACKS: Record<ThemeFont, string> = {
   mono: "var(--font-jetbrains-mono), var(--font-roboto-mono), ui-monospace, SFMono-Regular, monospace",
   serif: "var(--font-lora), Georgia, 'Times New Roman', serif",
 };
+
+/* ─── Independent style axes ─────────────────────────────────────────────────
+   Font and corner radius are user settings of their own. "auto" means
+   "whatever the colorway's designer picked" (the curated pairing in each
+   theme's style axis); an explicit choice overrides every colorway via the
+   [data-font] / [data-radius] blocks generated below. */
+
+export type FontSetting = "auto" | ThemeFont;
+
+export const RADIUS_PRESETS = {
+  sharp: 0,
+  soft: 8,
+  round: 14,
+} as const;
+
+export type RadiusPreset = keyof typeof RADIUS_PRESETS;
+export type RadiusSetting = "auto" | RadiusPreset;
+
+export const FONT_LABELS: Record<ThemeFont, string> = {
+  sans: "gellix",
+  mono: "jetbrains mono",
+  serif: "lora",
+};
+
+export function isFontSetting(
+  value: string | null | undefined,
+): value is FontSetting {
+  return (
+    value === "auto" ||
+    value === "sans" ||
+    value === "mono" ||
+    value === "serif"
+  );
+}
+
+export function isRadiusSetting(
+  value: string | null | undefined,
+): value is RadiusSetting {
+  return value === "auto" || (value != null && value in RADIUS_PRESETS);
+}
+
+/** The style a theme renders with once user overrides are applied. */
+export function effectiveStyle(
+  theme: ThemeDefinition,
+  font: FontSetting,
+  radius: RadiusSetting,
+): ThemeStyle {
+  return {
+    ...theme.style,
+    font: font === "auto" ? theme.style.font : font,
+    radius: radius === "auto" ? theme.style.radius : RADIUS_PRESETS[radius],
+  };
+}
 
 /** Panel box-shadows. "workbench" is the classic DevNotes inset hairline. */
 const PANEL_SHADOWS: Record<ThemeShadow, string> = {
@@ -684,6 +739,26 @@ function themeBlock(theme: ThemeDefinition): string {
  */
 export function buildThemeCss(): string {
   const blocks = THEMES.map(themeBlock).join("\n\n");
+  // User-chosen font/corner overrides. Emitted AFTER the theme blocks so an
+  // explicit [data-font]/[data-radius] on <html> beats the colorway's own
+  // pairing at equal specificity; when the attribute is absent ("auto") the
+  // theme block's value stands.
+  const fontOverrides = (Object.keys(FONT_STACKS) as ThemeFont[])
+    .map(
+      (font) => `[data-font="${font}"] {
+  --ui-font-sans: ${FONT_STACKS[font]};
+}`,
+    )
+    .join("\n\n");
+  const radiusOverrides = (
+    Object.entries(RADIUS_PRESETS) as [RadiusPreset, number][]
+  )
+    .map(
+      ([preset, px]) => `[data-radius="${preset}"] {
+  --ui-radius: ${px}px;
+}`,
+    )
+    .join("\n\n");
   const alias = `:root,
 [data-theme] {
   --bg: var(--bg-color);
@@ -696,7 +771,7 @@ export function buildThemeCss(): string {
   --success: #4caf50;
   --border: var(--border-color);
 }`;
-  return `${blocks}\n\n${alias}\n`;
+  return `${blocks}\n\n${fontOverrides}\n\n${radiusOverrides}\n\n${alias}\n`;
 }
 
 /**
@@ -708,9 +783,15 @@ export function buildThemeInitScript(): string {
   const darkById = Object.fromEntries(
     THEMES.map((theme) => [theme.id, theme.isDark ? 1 : 0]),
   );
-  return `(function(){var m=${JSON.stringify(darkById)};var t=null;try{t=localStorage.getItem(${JSON.stringify(
+  const fonts = JSON.stringify(Object.keys(FONT_STACKS));
+  const radii = JSON.stringify(Object.keys(RADIUS_PRESETS));
+  return `(function(){var m=${JSON.stringify(darkById)};var t=null,f=null,r=null;try{t=localStorage.getItem(${JSON.stringify(
     THEME_STORAGE_KEY,
+  )});f=localStorage.getItem(${JSON.stringify(
+    FONT_STORAGE_KEY,
+  )});r=localStorage.getItem(${JSON.stringify(
+    RADIUS_STORAGE_KEY,
   )})}catch(e){}if(!t||!(t in m)){t=${JSON.stringify(
     DEFAULT_THEME_ID,
-  )}}var d=document.documentElement;d.setAttribute("data-theme",t);d.classList.toggle("dark",m[t]===1);})();`;
+  )}}var d=document.documentElement;d.setAttribute("data-theme",t);d.classList.toggle("dark",m[t]===1);if(f&&${fonts}.indexOf(f)>-1){d.setAttribute("data-font",f)}if(r&&${radii}.indexOf(r)>-1){d.setAttribute("data-radius",r)}})();`;
 }

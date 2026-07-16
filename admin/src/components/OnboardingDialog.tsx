@@ -20,14 +20,10 @@ function ThemeChoice({
   meta,
   isSelected,
   onSelect,
-  onHover,
-  onLeave,
 }: {
   meta: ThemeMeta;
   isSelected: boolean;
   onSelect: (id: ThemeId) => void;
-  onHover: (id: ThemeId) => void;
-  onLeave: () => void;
 }) {
   const [bg, main, subAlt, text] = meta.swatches;
 
@@ -35,8 +31,6 @@ function ThemeChoice({
     <button
       type="button"
       onClick={() => onSelect(meta.id)}
-      onMouseEnter={() => onHover(meta.id)}
-      onMouseLeave={onLeave}
       className="group relative overflow-hidden rounded-none border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
       style={{ color: isSelected ? "var(--accent)" : "var(--text-secondary)" }}
     >
@@ -106,17 +100,11 @@ export function OnboardingDialog() {
   const featured = themes.filter((item) => item.featured);
   const remaining = themes.length - featured.length;
 
-  const applyTheme = (id: ThemeId) => {
-    const meta = themes.find((item) => item.id === id);
-    if (!meta) return;
-    document.documentElement.setAttribute("data-theme", id);
-    document.documentElement.classList.toggle("dark", meta.isDark);
-  };
-
+  // Selection only re-themes THIS dialog (data-theme scopes the generated
+  // CSS variables to its subtree); the app behind it keeps the current
+  // theme until continue commits the choice.
   const handleSelect = (id: ThemeId) => {
     setSelected(id);
-    setTheme(id);
-    applyTheme(id);
   };
 
   const handleConfirm = () => {
@@ -132,7 +120,13 @@ export function OnboardingDialog() {
   return (
     <Dialog open={!isOnboarded}>
       <DialogContent
+        data-theme={selected}
         className="onboarding-dialog max-w-2xl overflow-hidden p-0"
+        style={{
+          backgroundColor: "var(--bg)",
+          color: "var(--text-primary)",
+          borderColor: "var(--border)",
+        }}
         onInteractOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => event.preventDefault()}
       >
@@ -167,8 +161,8 @@ export function OnboardingDialog() {
               choose your writing surface
             </DialogTitle>
             <DialogDescription>
-              Start with a theme that feels like your editor. Hover to preview,
-              commit when it clicks.
+              Start with a theme that feels like your editor. Pick to preview it
+              here, continue when it clicks.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -180,8 +174,6 @@ export function OnboardingDialog() {
               meta={meta}
               isSelected={selected === meta.id}
               onSelect={handleSelect}
-              onHover={applyTheme}
-              onLeave={() => applyTheme(selected)}
             />
           ))}
         </div>
