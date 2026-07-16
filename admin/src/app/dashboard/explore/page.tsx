@@ -18,8 +18,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type Ref, useCallback, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatTile } from "@/components/ui/stat-tile";
 import { useInfiniteNotes } from "@/hooks/useInfiniteNotes";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatNoteDate } from "@/lib/format";
@@ -75,80 +79,72 @@ function ExploreEmptyState({
   onTopic: (topic: string | null) => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/45 p-6 text-center shadow-md shadow-black/5 sm:p-8">
-      <div className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)] shadow-lg shadow-black/5">
-        <Sparkles size={28} />
-      </div>
-      <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-        {hasNotes ? "No matches for this filter" : "No public knowledge yet"}
-      </p>
-      <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-        {hasNotes
+    <EmptyState
+      icon={<Sparkles size={24} />}
+      title={
+        hasNotes ? "no matches for this filter" : "no public knowledge yet"
+      }
+      description={
+        hasNotes
           ? "Try another topic, switch back to all topics, or clear the search field to rediscover the public library."
-          : "Seed Explore by publishing a reusable note, snippet, guide, or checklist. The best public items are tagged, concise, and useful for another builder."}
-      </p>
-
-      <div className="mx-auto mt-6 grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
-        <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-            <Tags size={14} className="text-[var(--accent)]" /> starter topics
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onTopic(null)}
-              className="rounded-none border border-[var(--accent)] px-3 py-1.5 text-xs text-[var(--accent)] transition-transform hover:-translate-y-0.5"
-            >
-              all topics
-            </button>
-            {STARTER_TOPICS.map((topic) => (
-              <button
-                key={topic}
-                type="button"
-                onClick={() => onTopic(topic)}
-                className="rounded-none border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-              >
-                #{topic}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-            <PenLine size={14} className="text-[var(--accent)]" /> publish path
-          </div>
-          <div className="grid gap-2 text-xs text-[var(--text-secondary)] sm:grid-cols-3">
-            {PUBLISHING_STEPS.map((step, index) => (
-              <div
-                key={step}
-                className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
-              >
-                <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--accent)] text-[var(--accent-foreground)]">
-                  {index + 1}
-                </span>
-                <p className="leading-5">{step}</p>
+          : "Seed Explore by publishing a reusable note, snippet, guide, or checklist. The best public items are tagged, concise, and useful for another builder."
+      }
+      action={
+        <div className="flex flex-col items-center gap-4">
+          <div className="grid max-w-4xl gap-3 text-left md:grid-cols-[1fr_1.15fr]">
+            <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+              <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <Tags size={14} className="text-[var(--accent)]" /> starter
+                topics
               </div>
-            ))}
+              <div className="flex flex-wrap gap-2">
+                <Chip active onClick={() => onTopic(null)}>
+                  all topics
+                </Chip>
+                {STARTER_TOPICS.map((topic) => (
+                  <Chip key={topic} onClick={() => onTopic(topic)}>
+                    #{topic}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/65 p-4">
+              <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                <PenLine size={14} className="text-[var(--accent)]" /> publish
+                path
+              </div>
+              <div className="grid gap-2 text-xs text-[var(--text-secondary)] sm:grid-cols-3">
+                {PUBLISHING_STEPS.map((step, index) => (
+                  <div
+                    key={step}
+                    className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-3"
+                  >
+                    <span className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-none bg-[var(--accent)] text-[var(--accent-foreground)]">
+                      {index + 1}
+                    </span>
+                    <p className="leading-5">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link
+              href="/dashboard/create_note"
+              className="inline-flex h-10 items-center gap-2 rounded-none bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
+            >
+              <PenLine size={15} /> create publishable note
+            </Link>
+            <Link
+              href="/dashboard/snippets"
+              className="inline-flex h-10 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+            >
+              <Code2 size={15} /> capture snippet first
+            </Link>
           </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <Link
-          href="/dashboard/create_note"
-          className="inline-flex h-10 items-center gap-2 rounded-none bg-[var(--accent)] px-4 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
-        >
-          <PenLine size={15} /> create publishable note
-        </Link>
-        <Link
-          href="/dashboard/snippets"
-          className="inline-flex h-10 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)] px-4 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
-        >
-          <Code2 size={15} /> capture snippet first
-        </Link>
-      </div>
-    </section>
+      }
+    />
   );
 }
 
@@ -475,68 +471,42 @@ export default function ExplorePage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
+              <Chip
+                active={!selectedTopic}
                 onClick={() => setSelectedTopic(null)}
-                className="border-b px-1 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                style={{
-                  borderColor: selectedTopic
-                    ? "var(--border)"
-                    : "var(--accent)",
-                  color: selectedTopic
-                    ? "var(--text-secondary)"
-                    : "var(--accent)",
-                }}
               >
                 all topics
-              </button>
+              </Chip>
               {topicCounts.length === 0 &&
                 STARTER_TOPICS.slice(0, 4).map((topic) => (
-                  <button
+                  <Chip
                     key={topic}
-                    type="button"
+                    active={selectedTopic === topic}
                     onClick={() => setSelectedTopic(topic)}
-                    className="border-b border-transparent px-1 py-1.5 text-xs text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   >
                     #{topic}
-                  </button>
+                  </Chip>
                 ))}
               {topicCounts.map(([topic, count]) => (
-                <button
+                <Chip
                   key={topic}
-                  type="button"
+                  active={selectedTopic === topic}
+                  count={count}
                   onClick={() => setSelectedTopic(topic)}
-                  className="border-b px-1 py-1.5 text-xs transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                  style={{
-                    borderColor:
-                      selectedTopic === topic
-                        ? "var(--accent)"
-                        : "var(--border)",
-                    color:
-                      selectedTopic === topic
-                        ? "var(--accent)"
-                        : "var(--text-secondary)",
-                  }}
                 >
-                  #{topic} <span className="opacity-60">{count}</span>
-                </button>
+                  #{topic}
+                </Chip>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 self-end border border-[var(--border)] bg-[var(--bg)]/35">
+          <div className="grid grid-cols-2 gap-2 self-end">
             {exploreStats.map((stat) => (
-              <div
+              <StatTile
                 key={stat.label}
-                className="border-b border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 last:border-r-0"
-              >
-                <div className="type-number text-3xl text-[var(--text-primary)]">
-                  {stat.value}
-                </div>
-                <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                  {stat.label}
-                </div>
-              </div>
+                value={stat.value}
+                label={stat.label}
+              />
             ))}
           </div>
         </div>
@@ -561,48 +531,32 @@ export default function ExplorePage() {
               className="w-48 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
             />
           </div>
-          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)] p-1">
-            {(["trending", "recent"] as SortKey[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSort(key)}
-                className="rounded-none px-3 py-1.5 text-xs transition-colors hover:bg-[var(--bg-secondary)]"
-                style={{
-                  color:
-                    sort === key ? "var(--accent)" : "var(--text-secondary)",
-                }}
-              >
-                {key}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)] p-1">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              className="flex h-8 w-8 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
-              style={{
-                color:
-                  view === "grid" ? "var(--accent)" : "var(--text-secondary)",
-              }}
-              aria-label="Grid view"
-            >
-              <LayoutGrid size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className="flex h-8 w-8 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
-              style={{
-                color:
-                  view === "list" ? "var(--accent)" : "var(--text-secondary)",
-              }}
-              aria-label="List view"
-            >
-              <List size={15} />
-            </button>
-          </div>
+          <Segmented
+            options={[
+              { value: "trending", label: "trending" },
+              { value: "recent", label: "recent" },
+            ]}
+            value={sort}
+            onChange={setSort}
+          />
+          <Segmented
+            options={[
+              {
+                value: "grid",
+                label: "Grid view",
+                icon: <LayoutGrid size={15} />,
+                iconOnly: true,
+              },
+              {
+                value: "list",
+                label: "List view",
+                icon: <List size={15} />,
+                iconOnly: true,
+              },
+            ]}
+            value={view}
+            onChange={setView}
+          />
         </div>
       </div>
 

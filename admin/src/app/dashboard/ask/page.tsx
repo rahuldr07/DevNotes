@@ -24,6 +24,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CopyContentButton } from "@/components/CopyContentButton";
 import { Reveal } from "@/components/motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Chip } from "@/components/ui/chip";
 import { formatDate } from "@/lib/format";
 import { searchNotes } from "@/lib/note-api";
 import { previewText } from "@/lib/notes";
@@ -248,27 +249,16 @@ export default function AskWorkspacePage() {
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {TYPE_FILTERS.map((filter) => (
-                <button
+                <Chip
                   key={filter.value || "all"}
-                  type="button"
+                  active={noteType === filter.value}
                   onClick={() => {
                     setNoteType(filter.value);
                     if (askedQuestion) ask(askedQuestion, filter.value);
                   }}
-                  className="rounded-none border px-3 py-1.5 text-xs lowercase transition-colors hover:-translate-y-0.5"
-                  style={{
-                    color:
-                      noteType === filter.value
-                        ? "var(--accent)"
-                        : "var(--text-secondary)",
-                    borderColor:
-                      noteType === filter.value
-                        ? "var(--accent)"
-                        : "var(--border)",
-                  }}
                 >
                   {filter.label}
-                </button>
+                </Chip>
               ))}
             </div>
           </form>
@@ -465,17 +455,15 @@ export default function AskWorkspacePage() {
                     try
                   </span>
                   {SAMPLE_QUESTIONS.map((sample) => (
-                    <button
+                    <Chip
                       key={sample}
-                      type="button"
                       onClick={() => {
                         setQuestion(sample);
                         ask(sample, noteType);
                       }}
-                      className="dev-chip px-2.5 py-1 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
                     >
                       {sample}
-                    </button>
+                    </Chip>
                   ))}
                 </div>
               </div>

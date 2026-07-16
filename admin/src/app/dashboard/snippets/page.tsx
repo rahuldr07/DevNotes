@@ -5,7 +5,6 @@ import {
   Clipboard,
   Code2,
   ExternalLink,
-  Filter,
   Hash,
   Layers3,
   RefreshCw,
@@ -17,8 +16,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatTile } from "@/components/ui/stat-tile";
 import { copyToClipboard } from "@/lib/clipboard";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatNoteDate } from "@/lib/format";
@@ -178,30 +180,23 @@ function SnippetEmptyState() {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center shadow-sm shadow-black/5">
-      <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
-        <Code2 size={28} />
-      </div>
-      <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-        No snippets yet
-      </p>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--text-secondary)]">
-        Start a reusable vault for commands, configs, stack traces, SQL,
-        regexes, and tiny fixes. Use quick capture above or create a snippet
-        from the editor.
-      </p>
-      <div className="mx-auto mt-5 grid max-w-2xl gap-2 text-left text-xs text-[var(--text-secondary)] md:grid-cols-3">
-        {examples.map((example) => (
-          <div
-            key={example}
-            className="rounded-none border border-[var(--border)] bg-[var(--bg)]/60 p-3 font-mono"
-          >
-            {example}
-          </div>
-        ))}
-      </div>
-    </div>
+    <EmptyState
+      icon={<Code2 size={24} />}
+      title="no snippets yet"
+      description="Start a reusable vault for commands, configs, stack traces, SQL, regexes, and tiny fixes. Use quick capture above or create a snippet from the editor."
+      action={
+        <div className="grid max-w-2xl gap-2 text-left text-xs text-[var(--text-secondary)] md:grid-cols-3">
+          {examples.map((example) => (
+            <div
+              key={example}
+              className="rounded-none border border-[var(--border)] bg-[var(--bg)]/60 p-3 font-mono"
+            >
+              {example}
+            </div>
+          ))}
+        </div>
+      }
+    />
   );
 }
 
@@ -282,22 +277,14 @@ export default function SnippetsPage() {
               Save reusable code blocks and commands for fast recall.
             </p>
           </div>
-          <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
+          <div className="grid grid-cols-2 gap-2">
             {stats.map((stat) => (
-              <div
+              <StatTile
                 key={stat.label}
-                className="border-b border-r border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 last:border-r-0"
-              >
-                <p className="type-number text-2xl text-[var(--text-primary)]">
-                  {loading ? "—" : stat.value}
-                </p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-secondary)]">
-                  {stat.label}
-                </p>
-                <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                  {stat.hint}
-                </p>
-              </div>
+                value={loading ? "—" : stat.value}
+                label={stat.label}
+                sublabel={stat.hint}
+              />
             ))}
           </div>
         </div>
@@ -344,42 +331,22 @@ export default function SnippetsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
+          <Chip
+            active={selectedLanguage === ALL_LANGUAGES}
+            count={snippets.length}
             onClick={() => setSelectedLanguage(ALL_LANGUAGES)}
-            className="rounded-none border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
-            style={{
-              color:
-                selectedLanguage === ALL_LANGUAGES
-                  ? "var(--accent)"
-                  : "var(--text-secondary)",
-              borderColor:
-                selectedLanguage === ALL_LANGUAGES
-                  ? "var(--accent)"
-                  : "var(--border)",
-            }}
           >
-            all · {snippets.length}
-          </button>
+            all
+          </Chip>
           {languages.map(([language, count]) => (
-            <button
+            <Chip
               key={language}
-              type="button"
+              active={selectedLanguage === language}
+              count={count}
               onClick={() => setSelectedLanguage(language)}
-              className="inline-flex items-center gap-2 rounded-none border px-3 py-1.5 text-xs transition-colors hover:-translate-y-0.5"
-              style={{
-                color:
-                  selectedLanguage === language
-                    ? "var(--accent)"
-                    : "var(--text-secondary)",
-                borderColor:
-                  selectedLanguage === language
-                    ? "var(--accent)"
-                    : "var(--border)",
-              }}
             >
-              <Filter size={12} /> {language} · {count}
-            </button>
+              {language}
+            </Chip>
           ))}
         </div>
       </section>
@@ -407,19 +374,19 @@ export default function SnippetsPage() {
       ) : snippets.length === 0 ? (
         <SnippetEmptyState />
       ) : filteredSnippets.length === 0 ? (
-        <div className="rounded-none border border-dashed border-[var(--border)] bg-[var(--bg-secondary)]/35 p-8 text-center">
-          <p className="text-lg font-semibold text-[var(--text-primary)]">
-            No snippets in {selectedLanguage}
-          </p>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setSelectedLanguage(ALL_LANGUAGES)}
-            className="mt-3 text-[var(--accent)]"
-          >
-            show all snippets
-          </Button>
-        </div>
+        <EmptyState
+          title={`no snippets in ${selectedLanguage}`}
+          action={
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setSelectedLanguage(ALL_LANGUAGES)}
+              className="text-[var(--accent)]"
+            >
+              show all snippets
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-6">
           {groupedSnippets.map(([language, items]) => (
