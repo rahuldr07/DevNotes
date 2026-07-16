@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
 
 interface ShortcutsDialogProps {
   open: boolean;
@@ -55,14 +56,6 @@ const SHORTCUT_GROUPS: { title: string; shortcuts: Shortcut[] }[] = [
     ],
   },
 ];
-
-function Kbd({ children }: { children: string }) {
-  return (
-    <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-1.5 py-0.5 font-mono text-[10px] lowercase text-[var(--text-secondary)]">
-      {children}
-    </kbd>
-  );
-}
 
 export function ShortcutsDialog({ open, onClose }: ShortcutsDialogProps) {
   return (

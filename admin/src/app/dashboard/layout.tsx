@@ -19,6 +19,7 @@ import { NoteSearchPalette } from "@/components/NoteSearchPalette";
 import { ShortcutsDialog } from "@/components/ShortcutsDialog";
 import { openThemeStudio, ThemeStudioTrigger } from "@/components/ThemeStudio";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
   TooltipContent,
@@ -414,12 +415,8 @@ export default function DashboardLayout({
                 <span className="min-w-0 flex-1 truncate">
                   Search notes, snippets, tags
                 </span>
-                <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                  {isMacPlatform ? "⌘K" : "ctrl K"}
-                </kbd>
-                <kbd className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                  /
-                </kbd>
+                <Kbd>{isMacPlatform ? "⌘K" : "ctrl K"}</Kbd>
+                <Kbd>/</Kbd>
               </button>
 
               <div className="flex items-center gap-2">

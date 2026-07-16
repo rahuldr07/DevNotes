@@ -26,7 +26,10 @@ import {
   useRef,
   useState,
 } from "react";
+import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { Kbd } from "@/components/ui/kbd";
 import { copyToClipboard } from "@/lib/clipboard";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -424,19 +427,12 @@ export function NoteSearchPalette({
               />
               <div className="flex shrink-0 items-center gap-1">
                 {(["local", "full"] as SearchMode[]).map((item) => (
-                  <button
+                  <Chip
                     key={item}
-                    type="button"
+                    active={mode === item}
                     onClick={() => {
                       setMode(item);
                       setSelectedIndex(0);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-none border border-[var(--border)] px-3 py-1.5 text-[11px] transition-colors hover:bg-[var(--border)]"
-                    style={{
-                      color:
-                        mode === item
-                          ? "var(--accent)"
-                          : "var(--text-secondary)",
                     }}
                   >
                     {item === "local" ? (
@@ -445,12 +441,10 @@ export function NoteSearchPalette({
                       <Database size={11} />
                     )}
                     {item === "local" ? "loaded" : "deep"}
-                  </button>
+                  </Chip>
                 ))}
               </div>
-              <kbd className="rounded bg-[var(--bg)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                esc
-              </kbd>
+              <Kbd>esc</Kbd>
             </div>
 
             <div className="border-b border-[var(--border)] bg-[var(--bg)]/30 px-5 py-2 text-[11px] text-[var(--text-secondary)]">
@@ -482,9 +476,10 @@ export function NoteSearchPalette({
                   {fullError}
                 </div>
               ) : paletteItems.length === 0 ? (
-                <div className="rounded-none border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
-                  no matching commands or notes yet
-                </div>
+                <EmptyState
+                  title="no matching commands or notes yet"
+                  className="py-8"
+                />
               ) : (
                 paletteItems.map((item, index) => {
                   if (item.type === "recent") {

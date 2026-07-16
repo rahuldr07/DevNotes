@@ -3,6 +3,7 @@
 import { Code2, FileText, Loader2, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { createNote } from "@/lib/note-api";
@@ -215,24 +216,14 @@ export function QuickCapture({
                 tpl:
               </span>
               {TEMPLATES.map((item) => (
-                <button
+                <Chip
                   key={item.id}
-                  type="button"
+                  active={template?.id === item.id}
                   onClick={() => applyTemplate(item)}
-                  className="rounded-none border px-2 py-0.5 font-mono text-[10px] lowercase transition-colors hover:-translate-y-px"
-                  style={{
-                    color:
-                      template?.id === item.id
-                        ? "var(--accent)"
-                        : "var(--text-secondary)",
-                    borderColor:
-                      template?.id === item.id
-                        ? "var(--accent)"
-                        : "var(--border)",
-                  }}
+                  className="px-2 py-0.5 text-[10px]"
                 >
                   {item.label}
-                </button>
+                </Chip>
               ))}
             </div>
           </div>
