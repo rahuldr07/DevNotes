@@ -28,8 +28,14 @@ import { AnimatedNumber, Reveal } from "@/components/motion";
 import { QuickCapture } from "@/components/QuickCapture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { gooeyToast } from "@/components/ui/goey-toaster";
+import { Kbd } from "@/components/ui/kbd";
+import { Segmented } from "@/components/ui/segmented";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatTile } from "@/components/ui/stat-tile";
 import {
   Tooltip,
   TooltipContent,
@@ -802,31 +808,20 @@ export default function DashboardPage() {
                 >
                   <Search size={15} />
                   search
-                  <kbd className="dev-chip px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                    /
-                  </kbd>
+                  <Kbd>/</Kbd>
                 </Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 border border-[var(--border)] bg-[var(--bg)]/35">
-              {workspaceStats.map((stat, index) => (
-                <div
+            <div className="grid grid-cols-2 gap-3">
+              {workspaceStats.map((stat) => (
+                <StatTile
                   key={stat.label}
-                  className={`border-[var(--border)] p-3 transition-colors hover:bg-[var(--bg-secondary)]/55 ${
-                    index % 2 === 0 ? "border-r" : ""
-                  } ${index < 2 ? "border-b" : ""}`}
-                >
-                  <p className="type-number text-2xl text-[var(--text-primary)] sm:text-3xl">
-                    {loading ? "—" : <AnimatedNumber value={stat.value} />}
-                  </p>
-                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-                    {stat.label}
-                  </p>
-                  <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                    {stat.hint}
-                  </p>
-                </div>
+                  value={loading ? "—" : <AnimatedNumber value={stat.value} />}
+                  label={stat.label}
+                  sublabel={stat.hint}
+                  className="transition-colors hover:bg-[var(--bg-secondary)]/55"
+                />
               ))}
             </div>
           </div>
@@ -1008,14 +1003,11 @@ export default function DashboardPage() {
             >
               <Search size={14} />
               search
-              <kbd className="rounded bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                /
-              </kbd>
+              <Kbd>/</Kbd>
             </Button>
-            <select
+            <Select
               value={sort}
               onChange={(event) => changeSort(event.target.value as SortKey)}
-              className="h-9 rounded-none border border-[var(--border)] bg-[var(--bg)] px-3 text-xs text-[var(--text-secondary)] outline-none transition-colors hover:bg-[var(--bg-secondary)]"
               aria-label="Sort notes"
             >
               <option value="updated">updated</option>
@@ -1023,47 +1015,31 @@ export default function DashboardPage() {
               <option value="oldest">oldest</option>
               <option value="reading">reading</option>
               <option value="title">a-z</option>
-            </select>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => changeView("grid")}
-                className="flex h-9 w-9 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
-                style={{
-                  color:
-                    view === "grid" ? "var(--accent)" : "var(--text-secondary)",
-                }}
-                aria-label="Grid view"
-              >
-                <LayoutGrid size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => changeView("list")}
-                className="flex h-9 w-9 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
-                style={{
-                  color:
-                    view === "list" ? "var(--accent)" : "var(--text-secondary)",
-                }}
-                aria-label="List view"
-              >
-                <List size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => changeView("compact")}
-                className="flex h-9 w-9 items-center justify-center rounded-none transition-colors hover:bg-[var(--bg-secondary)]"
-                style={{
-                  color:
-                    view === "compact"
-                      ? "var(--accent)"
-                      : "var(--text-secondary)",
-                }}
-                aria-label="Compact view"
-              >
-                <FileText size={15} />
-              </button>
-            </div>
+            </Select>
+            <Segmented
+              options={[
+                {
+                  value: "grid",
+                  label: "Grid view",
+                  icon: <LayoutGrid size={15} />,
+                  iconOnly: true,
+                },
+                {
+                  value: "list",
+                  label: "List view",
+                  icon: <List size={15} />,
+                  iconOnly: true,
+                },
+                {
+                  value: "compact",
+                  label: "Compact view",
+                  icon: <FileText size={15} />,
+                  iconOnly: true,
+                },
+              ]}
+              value={view}
+              onChange={changeView}
+            />
             <Link href="/dashboard/create_note">
               <Button className="gap-2 rounded-none bg-[var(--accent)] px-3 text-xs text-[var(--bg)] hover:bg-[var(--accent-hover)]">
                 <Plus size={14} />
@@ -1076,72 +1052,37 @@ export default function DashboardPage() {
         {!loading && notes.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {libraryFilters.map((filter) => (
-              <button
+              <Chip
                 key={filter.key}
-                type="button"
+                active={libraryFilter === filter.key}
+                count={filter.count}
                 onClick={() => {
                   setLibraryFilter(filter.key);
                   setSelectedNoteId(null);
                 }}
-                className="group inline-flex items-center gap-2 rounded-none border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
-                style={{
-                  color:
-                    libraryFilter === filter.key
-                      ? "var(--accent)"
-                      : "var(--text-secondary)",
-                  borderColor:
-                    libraryFilter === filter.key
-                      ? "var(--accent)"
-                      : "var(--border)",
-                  backgroundColor:
-                    libraryFilter === filter.key
-                      ? "color-mix(in srgb, var(--accent) 12%, transparent)"
-                      : "transparent",
-                }}
               >
-                <span>{filter.label}</span>
-                <span className="rounded-none bg-[var(--bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)]">
-                  {filter.count}
-                </span>
-              </button>
+                {filter.label}
+              </Chip>
             ))}
           </div>
         )}
 
         {!loading && availableTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <button
-              type="button"
+            <Chip
+              active={selectedTag === null}
               onClick={() => setSelectedTag(null)}
-              className="rounded-none border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
-              style={{
-                color:
-                  selectedTag === null
-                    ? "var(--accent)"
-                    : "var(--text-secondary)",
-                borderColor:
-                  selectedTag === null ? "var(--accent)" : "var(--border)",
-              }}
             >
               all
-            </button>
+            </Chip>
             {availableTags.map((tag) => (
-              <button
+              <Chip
                 key={tag}
-                type="button"
+                active={selectedTag === tag}
                 onClick={() => setSelectedTag(tag)}
-                className="rounded-none border px-3 py-1.5 transition-colors hover:text-[var(--accent)]"
-                style={{
-                  color:
-                    selectedTag === tag
-                      ? "var(--accent)"
-                      : "var(--text-secondary)",
-                  borderColor:
-                    selectedTag === tag ? "var(--accent)" : "var(--border)",
-                }}
               >
                 #{tag}
-              </button>
+              </Chip>
             ))}
           </div>
         )}
@@ -1190,24 +1131,19 @@ export default function DashboardPage() {
       )}
 
       {!loading && notes.length === 0 && !error && (
-        <div className="relative overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-6 py-20 text-center shadow-sm shadow-black/5">
-          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-none border border-[var(--border)] bg-[var(--bg)]/70 text-[var(--accent)]">
-            <FileText size={28} />
-          </div>
-          <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-            no notes yet
-          </p>
-          <p className="mx-auto mb-6 mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
-            start with a blank page, then pin, tag, publish, and retrieve your
-            thinking from one workspace
-          </p>
-          <Link href="/dashboard/create_note">
-            <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
-              <Plus size={14} />
-              new note
-            </Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon={<FileText size={28} />}
+          title="no notes yet"
+          description="start with a blank page, then pin, tag, publish, and retrieve your thinking from one workspace"
+          action={
+            <Link href="/dashboard/create_note">
+              <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                <Plus size={14} />
+                new note
+              </Button>
+            </Link>
+          }
+        />
       )}
 
       {!loading && notes.length > 0 && sortedNotes.length === 0 && !error && (
