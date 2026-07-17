@@ -49,7 +49,6 @@ import {
   Minus,
   Quote,
   Strikethrough,
-  Type,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
