@@ -409,21 +409,41 @@ samp,
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
 }
 
-.rich-editor-root::after {
-  content: "markdown.ts";
-  position: absolute;
-  top: 0.75rem;
-  right: 1rem;
-  z-index: 1;
-  border: 1px solid var(--border-color);
-  border-radius: var(--ui-radius, 0);
-  background: color-mix(in srgb, var(--sub-alt-color) 70%, transparent);
-  color: var(--sub-color);
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  padding: 0.2rem 0.55rem;
-  text-transform: uppercase;
-  pointer-events: none;
+/* ── Editor chrome (macOS discipline) ────────────────────────────────────
+   Chrome text is small, non-selectable, and de-emphasized by opacity;
+   groups separate with ~10%-opacity hairlines instead of boxes. */
+.editor-chrome {
+  user-select: none;
+}
+
+.editor-hairline {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
+}
+
+.editor-hairline-top {
+  border-top: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
+}
+
+/* Quiet inspector input: hairline underline only, accent on focus. */
+.editor-quiet-input {
+  border: 0;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--text-color) 12%, transparent);
+  background: transparent;
+  padding: 0.2rem 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--text-color) 85%, transparent);
+  outline: none;
+  transition: border-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.editor-quiet-input::placeholder {
+  color: color-mix(in srgb, var(--text-color) 25%, transparent);
+}
+
+.editor-quiet-input:focus {
+  border-bottom-color: color-mix(in srgb, var(--main-color) 60%, transparent);
 }
 
 /* Read-only markdown viewer reuses the editor frame + .tiptap typography,
@@ -432,6 +452,14 @@ samp,
 .markdown-viewer,
 .markdown-viewer .tiptap {
   min-height: 0;
+}
+
+/* Soft, macOS-style text selection: accent washed into the page background
+   (≈ selectedTextBackgroundColor), text color unchanged. */
+.tiptap ::selection,
+.tiptap::selection {
+  background: color-mix(in srgb, var(--main-color) 25%, var(--bg-color));
+  color: inherit;
 }
 
 /* ── Placeholder ── */

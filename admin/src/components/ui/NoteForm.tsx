@@ -5,17 +5,11 @@ import {
   BookOpen,
   Check,
   Clock3,
-  Code2,
-  FileCode,
   Globe2,
-  Hash,
   History,
-  Link2,
   Loader2,
   Save,
-  Sparkles,
   Tags,
-  Type,
   X,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -501,18 +495,19 @@ export default function NoteForm({
               >
                 <ArrowLeft size={16} />
               </button>
-              <div className="flex h-10 min-w-0 items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 px-4 text-xs text-[var(--text-secondary)] shadow-sm shadow-black/5">
-                <span className="h-2 w-2 rounded-none bg-[var(--accent)]" />
-                <span className="truncate text-[var(--text-primary)]">
+              {/* Window title, macOS-style: plain text, no container. The
+                  dot mirrors the native document-edited indicator. */}
+              <div className="editor-chrome flex min-w-0 items-center gap-2 text-[13px]">
+                <span className="truncate text-[var(--text-primary)]/85">
                   {title.trim() || "untitled"}.md
                 </span>
                 {hasDirtyChanges && (
-                  <span className="text-[var(--accent)]">●</span>
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-secondary)]/60"
+                    title="Unsaved changes"
+                  />
                 )}
               </div>
-              <span className="hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] md:inline-flex">
-                {mode === "create" ? "new file" : "editor workbench"}
-              </span>
             </div>
 
             <div className="flex items-center gap-1">
@@ -687,148 +682,135 @@ export default function NoteForm({
             </div>
           </section>
 
-          <aside className="hidden self-start overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
-            <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-              inspector
-            </p>
-            <div className="space-y-3 text-xs text-[var(--text-secondary)]">
-              <div className="overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/60 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                    <Sparkles size={13} className="text-[var(--accent)]" />{" "}
-                    readiness
+          {/* Inspector, macOS-style: one recessive surface, groups formed by
+              whitespace + hairlines + 11px labels — no bordered tiles. */}
+          <aside className="editor-chrome hidden self-start rounded-none bg-[var(--bg-secondary)]/40 px-5 py-5 backdrop-blur-xl xl:block">
+            <div className="space-y-5 text-[13px] text-[var(--text-secondary)]">
+              <div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[11px] font-medium lowercase text-[var(--text-secondary)]/75">
+                    readiness · {readinessLabel}
                   </span>
-                  <span className="font-semibold text-[var(--accent)]">
+                  <span className="text-[11px] tabular-nums text-[var(--text-secondary)]">
                     {readinessScore}%
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-none bg-[var(--bg-secondary)]">
+                <div className="mt-2 h-1 overflow-hidden rounded-none bg-[var(--text-secondary)]/15">
                   <div
-                    className="h-full rounded-none bg-[var(--accent)] transition-all"
+                    className="h-full rounded-none bg-[var(--accent)]/85 transition-all duration-300"
                     style={{ width: `${readinessScore}%` }}
                   />
                 </div>
-                <p className="mt-3 font-semibold capitalize text-[var(--text-primary)]">
-                  {readinessLabel}
-                </p>
-                <p className="mt-1 leading-5">
-                  Add title, tags, structure, source, and language metadata to
-                  make this easier to reuse and publish.
-                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  {
-                    label: "words",
-                    value: wordCount,
-                    icon: <Type size={13} />,
-                  },
-                  {
-                    label: "read",
-                    value: `${readTime}m`,
-                    icon: <BookOpen size={13} />,
-                  },
-                  {
-                    label: "lines",
-                    value: lineCount,
-                    icon: <FileCode size={13} />,
-                  },
-                  {
-                    label: "code",
-                    value: codeBlockCount,
-                    icon: <Code2 size={13} />,
-                  },
-                ].map((stat) => (
+              <hr className="editor-hairline" />
+
+              <dl className="space-y-1.5">
+                {(
+                  [
+                    ["words", wordCount],
+                    ["reading time", `${readTime} min`],
+                    ["lines", lineCount],
+                    ["code blocks", codeBlockCount],
+                  ] as const
+                ).map(([label, value]) => (
                   <div
-                    key={stat.label}
-                    className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-3"
+                    key={label}
+                    className="flex items-baseline justify-between"
                   >
-                    <div className="mb-2 text-[var(--accent)]">{stat.icon}</div>
-                    <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                      {stat.value}
-                    </p>
-                    <p className="uppercase tracking-[0.14em]">{stat.label}</p>
+                    <dt className="text-[11px] text-[var(--text-secondary)]/75">
+                      {label}
+                    </dt>
+                    <dd className="text-[13px] tabular-nums text-[var(--text-primary)]/85">
+                      {value}
+                    </dd>
                   </div>
                 ))}
-              </div>
+              </dl>
 
-              {noteType === "snippet" && (
-                <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-3">
+              <hr className="editor-hairline" />
+
+              <div className="space-y-4">
+                {noteType === "snippet" && (
+                  <div>
+                    <label
+                      className="text-[11px] text-[var(--text-secondary)]/75"
+                      htmlFor="note-language"
+                    >
+                      language
+                    </label>
+                    <input
+                      id="note-language"
+                      value={language}
+                      onChange={(event) => setLanguage(event.target.value)}
+                      placeholder="tsx, py, sql…"
+                      className="editor-quiet-input mt-1 w-full"
+                    />
+                  </div>
+                )}
+                <div>
                   <label
-                    className="inline-flex items-center gap-2 text-[var(--text-secondary)]"
-                    htmlFor="note-language"
+                    className="text-[11px] text-[var(--text-secondary)]/75"
+                    htmlFor="source-url"
                   >
-                    <Code2 size={13} className="text-[var(--accent)]" />
-                    language
+                    source url
                   </label>
                   <input
-                    id="note-language"
-                    value={language}
-                    onChange={(event) => setLanguage(event.target.value)}
-                    placeholder="tsx, py, sql..."
-                    className="mt-2 w-full rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-2 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    id="source-url"
+                    value={sourceUrl}
+                    onChange={(event) => setSourceUrl(event.target.value)}
+                    placeholder="https://…"
+                    className="editor-quiet-input mt-1 w-full"
                   />
                 </div>
-              )}
-              <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <label
-                  className="inline-flex items-center gap-2 text-[var(--text-secondary)]"
-                  htmlFor="source-url"
-                >
-                  <Link2 size={13} className="text-[var(--accent)]" />
-                  source url
-                </label>
-                <input
-                  id="source-url"
-                  value={sourceUrl}
-                  onChange={(event) => setSourceUrl(event.target.value)}
-                  placeholder="https://..."
-                  className="mt-2 w-full rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/50 px-2 py-2 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                />
               </div>
-              <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <p className="mb-3 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                  <Hash size={13} className="text-[var(--accent)]" /> outline
+
+              <hr className="editor-hairline" />
+
+              <div>
+                <p className="text-[11px] text-[var(--text-secondary)]/75">
+                  outline
                 </p>
                 {outline.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="mt-2 space-y-1.5">
                     {outline.map((item, index) => (
                       <p
                         key={`${item.title}-${index}`}
-                        className="truncate text-[var(--text-primary)]"
+                        className="truncate text-[12px] text-[var(--text-primary)]/80"
                         style={{ paddingLeft: `${(item.level - 1) * 10}px` }}
                       >
-                        {"#".repeat(item.level)} {item.title}
+                        {item.title}
                       </p>
                     ))}
                   </div>
                 ) : (
-                  <p className="leading-5">
+                  <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]/70">
                     Add headings to create a navigable outline.
                   </p>
                 )}
               </div>
-              <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-3">
-                <p className="mb-2 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                  <Globe2 size={13} className="text-[var(--accent)]" />{" "}
+
+              <hr className="editor-hairline" />
+
+              <div>
+                <p className="text-[11px] text-[var(--text-secondary)]/75">
                   visibility
                 </p>
-                <p className="text-[var(--text-primary)]">
+                <p className="mt-1 text-[13px] text-[var(--text-primary)]/85">
                   {isPublished ? "published" : "private"}
                   {isCommunity ? " · explore" : ""}
                 </p>
-                <p className="mt-2 leading-5">
+                <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]/70">
                   {mode === "edit"
-                    ? "Use Share to publish, copy the link, or add it to Explore."
-                    : "Save first, then publish from the editor toolbar."}
+                    ? "Use share to publish or add to explore."
+                    : "Save first, then publish from the toolbar."}
                 </p>
               </div>
             </div>
           </aside>
         </div>
 
-        <div className="mx-auto mt-4 flex max-w-[92rem] flex-col gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 px-4 py-3 text-xs text-[var(--text-secondary)] shadow-lg shadow-black/5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <div className="editor-chrome editor-hairline-top mx-auto mt-4 flex max-w-[92rem] flex-col gap-2 px-1 pt-2.5 text-[11px] text-[var(--text-secondary)]/80 sm:flex-row sm:items-center sm:justify-between">
           <span>
             {wordCount > 0
               ? `${noteType} · ${wordCount} words · ${characterCount} chars · ${readTime} min`
