@@ -399,19 +399,13 @@ samp,
   overflow: hidden;
   border: 1px solid var(--border-color);
   border-radius: var(--ui-radius, 0);
+  /* Calm canvas: one soft corner glow, no gutter lines through the text. */
   background:
     radial-gradient(
       circle at 24px 24px,
-      color-mix(in srgb, var(--main-color) 9%, transparent),
+      color-mix(in srgb, var(--main-color) 7%, transparent),
       transparent 34px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--border-color) 42%, transparent) 0 1px,
-      transparent 1px 100%
-    )
-    0 0 / 3.25rem 100% no-repeat,
-    color-mix(in srgb, var(--bg-color) 84%, transparent);
+    ), color-mix(in srgb, var(--bg-color) 84%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
 }
 
@@ -429,19 +423,6 @@ samp,
   letter-spacing: 0.12em;
   padding: 0.2rem 0.55rem;
   text-transform: uppercase;
-  pointer-events: none;
-}
-
-.rich-editor-root::before {
-  content: "";
-  position: absolute;
-  top: 1rem;
-  bottom: 1rem;
-  left: 1.55rem;
-  width: 0.35rem;
-  border-radius: var(--ui-radius, 0);
-  background: color-mix(in srgb, var(--main-color) 35%, transparent);
-  opacity: 0.45;
   pointer-events: none;
 }
 
@@ -471,7 +452,10 @@ samp,
   line-height: 1.85;
   font-size: 1.02rem;
   min-height: 62vh;
-  padding: 3rem 1.35rem 3rem 4.5rem;
+  /* Comfortable measure: ~50–75 characters per line, centered. */
+  max-width: 72ch;
+  margin-inline: auto;
+  padding: 2.75rem 1.5rem 3rem;
 }
 
 /* Unframed viewer (version previews inside cards): no editor gutter. */

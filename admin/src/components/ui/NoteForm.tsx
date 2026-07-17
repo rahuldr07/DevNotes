@@ -437,6 +437,18 @@ export default function NoteForm({
         return;
       }
 
+      // Ctrl+1–4 switches the note type without leaving the keyboard.
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        ["1", "2", "3", "4"].includes(event.key)
+      ) {
+        event.preventDefault();
+        const next = noteTypes[Number(event.key) - 1];
+        if (next) setNoteType(next.value);
+        return;
+      }
+
       if (
         (event.metaKey || event.ctrlKey) &&
         event.key.toLowerCase() === "e" &&
@@ -569,21 +581,6 @@ export default function NoteForm({
           <section className="min-w-0 overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/78 shadow-md shadow-black/5 backdrop-blur-xl">
             <div className="relative border-b border-[var(--border)] bg-[var(--bg-secondary)]/38 px-5 py-6 sm:px-7">
               <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
-              <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-                <span className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
-                  <FileCode size={12} className="text-[var(--accent)]" />
-                  {noteType}
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1">
-                  <ShieldCheck size={12} className="text-[var(--accent)]" />
-                  {readinessLabel} · {readinessScore}%
-                </span>
-                {isPublished && (
-                  <span className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-[var(--accent)]">
-                    <Globe2 size={12} /> public
-                  </span>
-                )}
-              </div>
               <textarea
                 ref={titleRef}
                 value={title}
@@ -603,10 +600,9 @@ export default function NoteForm({
                 <p className="mt-3 text-xs text-[var(--error)]">{titleError}</p>
               )}
 
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="font-mono text-[10px] lowercase text-[var(--text-secondary)]">
-                  type
-                </span>
+              {/* One quiet properties strip (Obsidian-style): type + tags +
+                  status, off the writing surface but one interaction away. */}
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--border)]/70 pt-3">
                 <Segmented
                   options={noteTypes.map((item) => ({
                     value: item.value,
@@ -615,12 +611,7 @@ export default function NoteForm({
                   value={noteType}
                   onChange={setNoteType}
                 />
-                <span className="hidden font-mono text-[10px] text-[var(--text-secondary)] sm:inline">
-                  {noteTypes.find((item) => item.value === noteType)?.hint}
-                </span>
-              </div>
-
-              <div className="mt-5 flex flex-wrap items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/45 p-2">
+                <span className="h-4 w-px bg-[var(--border)]" />
                 {tags.map((tag) => (
                   <button
                     key={tag}
@@ -628,10 +619,10 @@ export default function NoteForm({
                     onClick={() =>
                       setTags((prev) => prev.filter((item) => item !== tag))
                     }
-                    className="rounded-none border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]/50"
+                    className="rounded-none font-mono text-[11px] lowercase text-[var(--accent)] transition-colors hover:text-[var(--error)]"
                     title="Remove tag"
                   >
-                    #{tag} ×
+                    #{tag}
                   </button>
                 ))}
                 <input
@@ -652,9 +643,14 @@ export default function NoteForm({
                     }
                   }}
                   onBlur={addTag}
-                  placeholder={tags.length ? "add tag" : "add tags"}
-                  className="min-w-28 flex-1 border-none bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:ring-0"
+                  placeholder={tags.length ? "+ tag" : "+ add tags"}
+                  className="min-w-24 flex-1 border-none bg-transparent font-mono text-[11px] lowercase text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]/70 focus:ring-0"
                 />
+                {isPublished && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[10px] lowercase text-[var(--accent)]">
+                    <Globe2 size={11} /> public
+                  </span>
+                )}
               </div>
             </div>
 
