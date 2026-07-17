@@ -452,7 +452,7 @@ function WorkspacePanel({
 function SelectedNotePreview({ note }: { note: Note | null }) {
   if (!note) {
     return (
-      <aside className="sticky top-20 hidden self-start border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-4 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
+      <aside className="sticky top-20 hidden self-start rounded-none border border-dashed border-[var(--border)] bg-[var(--bg)]/45 p-4 text-sm text-[var(--text-secondary)] backdrop-blur-xl xl:block">
         <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-none border border-[var(--border)] text-[var(--accent)]">
           <Eye size={18} />
         </div>
@@ -466,7 +466,7 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
   }
 
   return (
-    <aside className="sticky top-20 hidden self-start overflow-hidden border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
+    <aside className="sticky top-20 hidden self-start overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/55 shadow-md shadow-black/5 backdrop-blur-xl xl:block">
       <div className="border-b border-[var(--border)] p-5">
         <div className="mb-3 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
           <span className="inline-flex items-center gap-2">
@@ -843,7 +843,7 @@ export default function DashboardPage() {
             actionLabel="capture"
           >
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.privateCount}
                 </p>
@@ -859,7 +859,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.publishCandidates.length}
                 </p>
@@ -879,7 +879,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <div className="border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
+              <div className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 p-4">
                 <p className="type-number text-3xl text-[var(--text-primary)]">
                   {workspaceInsights.guideCount}
                 </p>
@@ -1116,7 +1116,7 @@ export default function DashboardPage() {
             view === "grid"
               ? "columns-1 gap-4 md:columns-2 lg:columns-3"
               : view === "compact"
-                ? "overflow-hidden border border-[var(--border)] bg-[var(--bg)]/45"
+                ? "overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/45"
                 : "space-y-1"
           }
         >
@@ -1175,7 +1175,7 @@ export default function DashboardPage() {
               view === "grid"
                 ? "columns-1 gap-4 md:columns-2 2xl:columns-3"
                 : view === "compact"
-                  ? "overflow-hidden border border-[var(--border)] bg-[var(--bg)]/45"
+                  ? "overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/45"
                   : "space-y-1"
             }
           >

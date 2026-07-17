@@ -310,7 +310,7 @@ export function KnowledgeHeatmap() {
           </div>
         </div>
 
-        <div className="grid shrink-0 grid-cols-2 gap-px self-start border border-[var(--border)] bg-[var(--border)] lg:w-64">
+        <div className="grid shrink-0 grid-cols-2 gap-px self-start overflow-hidden rounded-none border border-[var(--border)] bg-[var(--border)] lg:w-64">
           {statTiles.map((tile) => (
             <div key={tile.label} className="bg-[var(--bg)] p-3">
               <p className="type-number text-2xl text-[var(--text-primary)]">

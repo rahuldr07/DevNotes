@@ -326,7 +326,7 @@ export default function SnippetsPage() {
               Filter by language or runtime.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-2 text-xs text-[var(--text-secondary)]">
+          <div className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/45 px-3 py-2 text-xs text-[var(--text-secondary)]">
             <Search size={14} /> snippets indexed
           </div>
         </div>
@@ -391,7 +391,7 @@ export default function SnippetsPage() {
         <div className="space-y-6">
           {groupedSnippets.map(([language, items]) => (
             <section key={language} className="space-y-3">
-              <div className="flex flex-col gap-3 border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/35 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-none border border-[var(--border)] bg-[var(--bg)]/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                     <Code2 size={13} className="text-[var(--accent)]" />

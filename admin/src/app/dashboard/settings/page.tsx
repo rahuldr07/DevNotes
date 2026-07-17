@@ -78,7 +78,7 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex h-12 items-end gap-1 border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2">
+            <div className="flex h-12 items-end gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2">
               {[10, 16, 22, 14].map((height) => (
                 <span
                   key={height}

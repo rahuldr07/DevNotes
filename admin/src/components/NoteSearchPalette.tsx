@@ -750,9 +750,9 @@ export function NoteSearchPalette({
                     : [];
 
                   return (
-                    // biome-ignore lint/a11y/useSemanticElements: Result row contains a nested copy button, so it cannot be a native button.
                     <div key={`${item.type}-${note.id}`}>
                       {sectionHeader}
+                      {/* biome-ignore lint/a11y/useSemanticElements: Result row contains a nested copy button, so it cannot be a native button. */}
                       <div
                         role="button"
                         tabIndex={0}

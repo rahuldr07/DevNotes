@@ -274,7 +274,7 @@ export default function DashboardLayout({
         <aside className="hidden h-screen min-h-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg)]/84 p-3 backdrop-blur-xl lg:flex lg:flex-col">
           <Link
             href="/dashboard"
-            className="group mb-4 flex items-center gap-3 border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-2"
+            className="group mb-4 flex items-center gap-3 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-2"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-none border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent)] shadow-sm shadow-black/10 transition-transform group-hover:scale-105">
               <LayoutDashboard size={18} />
@@ -294,7 +294,7 @@ export default function DashboardLayout({
             <span className="text-[var(--accent)]">main</span>
           </div>
 
-          <nav className="border border-[var(--border)] bg-[var(--bg-secondary)]/28 p-1.5">
+          <nav className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/28 p-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.matcher(pathname);
@@ -318,7 +318,7 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="relative mt-4 overflow-hidden border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-3">
+          <div className="relative mt-4 overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-3">
             <div className="mb-3 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
               <span className="inline-flex items-center gap-2 text-[var(--accent)]">
                 <Sparkles size={13} /> Runtime
@@ -346,7 +346,7 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="mt-auto space-y-2 border border-[var(--border)] bg-[var(--bg-secondary)]/40 p-3">
+          <div className="mt-auto space-y-2 rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/40 p-3">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-none bg-[var(--bg)] text-[var(--accent)]">
                 <UserCircle size={16} />

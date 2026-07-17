@@ -221,7 +221,7 @@ export default function AskWorkspacePage() {
               ask(question, noteType);
             }}
           >
-            <div className="flex items-center gap-3 border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1.5 transition-colors focus-within:border-[var(--accent)]/60">
+            <div className="flex items-center gap-3 rounded-none border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-1.5 transition-colors focus-within:border-[var(--accent)]/60">
               <Search size={16} className="shrink-0 text-[var(--accent)]" />
               <input
                 ref={inputRef}
@@ -336,7 +336,7 @@ export default function AskWorkspacePage() {
                   return (
                     <li
                       key={source.id}
-                      className="group border border-[var(--border)] bg-[var(--bg)]/45 p-4 transition-colors hover:border-[var(--accent)]/50"
+                      className="group rounded-none border border-[var(--border)] bg-[var(--bg)]/45 p-4 transition-colors hover:border-[var(--accent)]/50"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-[11px] text-[var(--accent)]">
@@ -425,7 +425,7 @@ export default function AskWorkspacePage() {
                 <p className="type-eyebrow text-[var(--text-secondary)]">
                   how it works
                 </p>
-                <div className="grid gap-px border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
+                <div className="grid gap-px overflow-hidden rounded-none border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
                   {[
                     [
                       "01 · ask",

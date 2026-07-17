@@ -200,7 +200,7 @@ export default function Home() {
               ))}
             </div>
             <pre
-              className="mt-4 overflow-x-auto border p-4 text-[0.78rem] leading-6"
+              className="mt-4 overflow-x-auto rounded-none border p-4 text-[0.78rem] leading-6"
               style={{
                 borderColor: "var(--border)",
                 background: "color-mix(in srgb, var(--bg-color) 84%, black)",
@@ -259,7 +259,7 @@ export default function Home() {
           <h2 className="type-page-title mt-3 text-2xl text-[var(--text-primary)] sm:text-3xl">
             Everything between “I fixed this once” and “found it, shipped it.”
           </h2>
-          <div className="mt-8 grid gap-px border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-px overflow-hidden rounded-none border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((feature) => (
               <div
                 key={feature.title}

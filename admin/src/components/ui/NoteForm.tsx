@@ -13,7 +13,6 @@ import {
   Link2,
   Loader2,
   Save,
-  ShieldCheck,
   Sparkles,
   Tags,
   Type,
