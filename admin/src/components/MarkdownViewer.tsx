@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
+import { MarkdownCodeBlock } from "@/components/MarkdownCodeBlock";
 
 interface MarkdownViewerProps {
   content: string;
@@ -23,6 +24,7 @@ export function MarkdownViewer({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
+        components={{ pre: MarkdownCodeBlock }}
       >
         {content}
       </ReactMarkdown>

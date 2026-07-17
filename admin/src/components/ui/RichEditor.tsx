@@ -388,69 +388,90 @@ export default function RichEditor({
         </BubbleMenu>
       )}
 
-      {/* ── Floating menu ────────────────────────────────────────── */}
+      {/* ── Floating block menu — vertical macOS-style popover that also
+             teaches the markdown shortcut for each block ─────────────── */}
       {editor && editable && (
         <FloatingMenu editor={editor} className="floating-menu">
-          <span className="floating-label">+</span>
+          <p className="floating-header">insert block</p>
           <FBtn
             onClick={() =>
               editor.chain().focus().toggleHeading({ level: 1 }).run()
             }
             title="Heading 1"
+            hint="#"
           >
             <Heading1 size={14} />
-            <span>H1</span>
+            <span>heading 1</span>
           </FBtn>
           <FBtn
             onClick={() =>
               editor.chain().focus().toggleHeading({ level: 2 }).run()
             }
             title="Heading 2"
+            hint="##"
           >
             <Heading2 size={14} />
-            <span>H2</span>
+            <span>heading 2</span>
           </FBtn>
+          <FBtn
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 3 }).run()
+            }
+            title="Heading 3"
+            hint="###"
+          >
+            <Heading3 size={14} />
+            <span>heading 3</span>
+          </FBtn>
+          <div className="floating-sep" />
           <FBtn
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             title="Bullet list"
+            hint="-"
           >
             <List size={14} />
-            <span>List</span>
+            <span>bullet list</span>
+          </FBtn>
+          <FBtn
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            title="Numbered list"
+            hint="1."
+          >
+            <ListOrdered size={14} />
+            <span>numbered list</span>
           </FBtn>
           <FBtn
             onClick={() => editor.chain().focus().toggleTaskList().run()}
             title="Task list"
+            hint="[ ]"
           >
             <CheckSquare size={14} />
-            <span>Tasks</span>
+            <span>task list</span>
           </FBtn>
+          <div className="floating-sep" />
           <FBtn
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
             title="Code block"
+            hint="```"
           >
             <FileCode size={14} />
-            <span>Code</span>
+            <span>code block</span>
           </FBtn>
           <FBtn
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             title="Blockquote"
+            hint=">"
           >
             <Quote size={14} />
-            <span>Quote</span>
-          </FBtn>
-          <FBtn
-            onClick={() => editor.chain().focus().setParagraph().run()}
-            title="Text"
-          >
-            <Type size={14} />
-            <span>Text</span>
+            <span>quote</span>
           </FBtn>
           <FBtn
             onClick={() => editor.chain().focus().setHorizontalRule().run()}
             title="Divider"
+            hint="---"
           >
             <Minus size={14} />
-            <span>Line</span>
+            <span>divider</span>
           </FBtn>
         </FloatingMenu>
       )}
@@ -489,10 +510,12 @@ function BBtn({
 function FBtn({
   onClick,
   title,
+  hint,
   children,
 }: {
   onClick: () => void;
   title: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -506,6 +529,7 @@ function FBtn({
       title={title}
     >
       {children}
+      {hint && <span className="floating-hint">{hint}</span>}
     </button>
   );
 }
