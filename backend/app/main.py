@@ -124,6 +124,7 @@ def health():
     return {"status": "healthy"}
 
 
+# TODO: review pending — /756998
 @app.get("/health/db")
 def health_db():
     """
