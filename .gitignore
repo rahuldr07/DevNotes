@@ -33,3 +33,6 @@ Thumbs.db
 
 # Session files
 .copilot/
+_handoff/
+.claude/*
+!.claude/CLAUDE.md
