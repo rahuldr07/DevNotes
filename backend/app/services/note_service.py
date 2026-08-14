@@ -363,16 +363,26 @@ def toggle_like(db: Session, user_id: int, note_id: int) -> dict:
     if not note.is_published or not note.is_community:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    with transaction(db):
-        existing_like = note_repo.get_like(db, note_id=note_id, user_id=user_id)
-        if existing_like:
-            note_repo.delete_like(db, existing_like)
-            liked = False
-        else:
-            note_repo.create_like(db, note_id=note_id, user_id=user_id)
-            liked = True
+    try:
+        with transaction(db):
+            existing_like = note_repo.get_like(db, note_id=note_id, user_id=user_id)
+            if existing_like:
+                note_repo.delete_like(db, existing_like)
+                liked = False
+            else:
+                note_repo.create_like(db, note_id=note_id, user_id=user_id)
+                liked = True
 
+            return {
+                "liked": liked,
+                "like_count": note_repo.get_like_count(db, note_id=note_id),
+            }
+    except IntegrityError:
+        # Double-click (or two tabs): the unique constraint on
+        # (note_id, user_id) fired because the like already landed. That is
+        # the state the caller asked for, so report it instead of letting the
+        # SQLAlchemyError handler answer "database temporarily unavailable".
         return {
-            "liked": liked,
+            "liked": True,
             "like_count": note_repo.get_like_count(db, note_id=note_id),
         }

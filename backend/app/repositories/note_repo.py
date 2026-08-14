@@ -132,23 +132,34 @@ def update(
     Updates an existing note's title and/or content.
 
     Only updates fields that are not None/empty (partial update support).
-    The flush triggers SQLAlchemy's onupdate=func.now() on updated_at;
-    db.refresh() reloads the note to read the new timestamp.
+
+    `updated_at` is set here rather than by a column-level onupdate, so that
+    visibility switches (publish, explore) do not reorder the note in
+    "recently touched" views. Only a change to what the note *says* counts.
     """
     oNote = db.query(Note).filter(Note.id == note_id).first()
     if oNote:
-        if title is not None:
+        content_touched = False
+        if title is not None and title != oNote.title:
             oNote.title = title
-        if content is not None:
+            content_touched = True
+        if content is not None and content != oNote.content:
             oNote.content = content
-        if tags is not None:
+            content_touched = True
+        if tags is not None and list(tags) != list(oNote.tags or []):
             oNote.tags = tags
-        if note_type is not None:
+            content_touched = True
+        if note_type is not None and note_type != oNote.note_type:
             oNote.note_type = note_type
-        if language is not None:
+            content_touched = True
+        if language is not None and (language or None) != oNote.language:
             oNote.language = language or None
-        if source_url is not None:
+            content_touched = True
+        if source_url is not None and (source_url or None) != oNote.source_url:
             oNote.source_url = source_url or None
+            content_touched = True
+        if content_touched:
+            oNote.updated_at = func.now()
         if is_published is not None:
             oNote.is_published = is_published
             if is_published is False:

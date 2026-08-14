@@ -42,4 +42,8 @@ class Note(Base):
         nullable=True,
     )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # No onupdate= here on purpose: it fires for *any* UPDATE, so flipping a
+    # publish or explore switch would bump the note to the top of "recently
+    # touched". note_repo.update sets this explicitly when the note's content
+    # actually changes.
+    updated_at = Column(DateTime(timezone=True))
