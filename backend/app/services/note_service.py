@@ -217,6 +217,16 @@ def _item_id(item) -> int:
     return item.id
 
 
+def _paginate_by_offset(items: list, limit: int, offset: int) -> dict:
+    """Offset pagination for rank-ordered results (see search_notes)."""
+    data = items[:limit]
+    has_more = len(items) > limit
+    return {
+        "data": data,
+        "next_cursor": offset + len(data) if has_more else None,
+    }
+
+
 def _paginate(items: list, limit: int) -> dict:
     data = items[:limit]
     next_cursor = _item_id(data[-1]) if len(items) > limit and data else None
@@ -311,19 +321,27 @@ def search_notes(
     tag: str | None = None,
     language: str | None = None,
 ) -> dict:
+    """Relevance-ordered search.
+
+    `cursor` is an offset here, not a note id: results are ranked, and rank
+    does not track id, so an id-keyed cursor silently dropped and repeated
+    rows between pages. The next cursor is simply how many rows have been
+    returned so far.
+    """
     if not query.strip():
         return {"data": [], "next_cursor": None}
+    offset = max(0, cursor or 0)
     notes = note_repo.search_notes(
         db,
         user_id=user_id,
         search_query=query,
-        cursor=cursor,
+        offset=offset,
         limit=limit + 1,
         note_type=note_type,
         tag=_normalize_filter(tag),
         language=_normalize_filter(language),
     )
-    return _paginate(notes, limit)
+    return _paginate_by_offset(notes, limit, offset)
 
 def get_public_note(db: Session, share_uuid: str) -> Note:
     """

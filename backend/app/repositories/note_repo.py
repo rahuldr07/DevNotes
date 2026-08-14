@@ -285,7 +285,7 @@ def search_notes(
     db: Session,
     user_id: int,
     search_query: str,
-    cursor: int | None = None,
+    offset: int | None = None,
     limit: int = 20,
     note_type: str | None = None,
     tag: str | None = None,
@@ -300,8 +300,12 @@ def search_notes(
         base_query = base_query.filter(Note.note_type == note_type)
     if language:
         base_query = base_query.filter(func.lower(Note.language) == language.lower())
-    if cursor is not None:
-        base_query = base_query.filter(Note.id < cursor)
+
+    # Search paginates by offset, not by `id < cursor`. Results are ordered by
+    # relevance, and relevance has no relationship to id — filtering by id
+    # would drop every lower-ranked row that happens to have a higher id, and
+    # repeat rows that do not. `offset` is the number of rows already shown.
+    skip = max(0, offset or 0)
 
     if db.bind and db.bind.dialect.name == "postgresql":
         if tag:
@@ -313,6 +317,7 @@ def search_notes(
         return (
             base_query.filter(Note.search_vector.op("@@")(ts_query))
             .order_by(desc(rank), Note.id.desc())
+            .offset(skip)
             .limit(limit)
             .all()
         )
@@ -322,7 +327,9 @@ def search_notes(
         pattern = f"%{term}%"
         ilike_filters.extend([Note.title.ilike(pattern), Note.content.ilike(pattern)])
 
-    candidates = base_query.filter(or_(*ilike_filters)).limit(max(limit * 4, 40)).all()
+    candidates = (
+        base_query.filter(or_(*ilike_filters)).limit(max((skip + limit) * 4, 40)).all()
+    )
     if tag:
         wanted = tag.lower()
         candidates = [
@@ -336,7 +343,7 @@ def search_notes(
         if (score := _fallback_search_score(note, terms)) > 0
     ]
     ranked.sort(key=lambda item: (item[0], item[1].id), reverse=True)
-    return [note for _, note in ranked[:limit]]
+    return [note for _, note in ranked[skip : skip + limit]]
 
 def toggle_pin(db: Session, note_id: int) -> Note:
     """Flips is_pinned on a note and returns the updated note."""

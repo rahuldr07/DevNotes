@@ -41,9 +41,18 @@ class Note(Base):
     is_listed = Column(Boolean, default=False, nullable=False, server_default="false")
     is_community = Column(Boolean, default=False, nullable=False)
     view_count = Column(Integer, nullable=False, server_default="0", default=0)
+    # Tags are part of the vector: a note tagged `docker` should be findable
+    # by searching for "docker" even when the prose never says it. coalesce
+    # keeps a NULL member from nulling the whole vector.
     search_vector = Column(
         TSVECTOR,
-        Computed("to_tsvector('english', title || ' ' || content)", persisted=True),
+        Computed(
+            "to_tsvector('english', "
+            "coalesce(title, '') || ' ' || "
+            "coalesce(content, '') || ' ' || "
+            "coalesce(array_to_string(tags, ' '), ''))",
+            persisted=True,
+        ),
         nullable=True,
     )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
