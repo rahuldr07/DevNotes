@@ -22,6 +22,27 @@ export interface Note {
   liked_by_me?: boolean;
 }
 
+/**
+ * A note as it appears in a public *list* (profile cards, related reading).
+ * The body stays on the note's own page — shipping every body to render a
+ * two-line preview made a busy profile megabytes of payload.
+ */
+export interface PublicNoteSummary {
+  id?: number;
+  title: string;
+  preview: string;
+  reading_minutes: number;
+  share_uuid: string;
+  tags: string[];
+  note_type?: "note" | "snippet" | "guide" | "checklist";
+  language?: string | null;
+  source_url?: string | null;
+  like_count?: number;
+  view_count?: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
 export interface CreateNoteInput {
   title: string;
   content: string;
@@ -61,5 +82,5 @@ export interface AuthorProfile {
   twitter_url?: string | null;
   avatar_url?: string | null;
   created_at: string;
-  public_notes: Note[];
+  public_notes: PublicNoteSummary[];
 }

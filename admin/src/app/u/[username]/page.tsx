@@ -15,9 +15,8 @@ import { notFound } from "next/navigation";
 import { CopyProfileLinkButton } from "@/components/CopyProfileLinkButton";
 import { backendFetch } from "@/lib/backend";
 import { formatDate, formatNoteDate } from "@/lib/format";
-import { previewText } from "@/lib/notes";
-import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
-import type { AuthorProfile, Note } from "@/types/notes";
+import { noteKindLabel } from "@/lib/reading";
+import type { AuthorProfile, PublicNoteSummary } from "@/types/notes";
 
 async function getAuthorProfile(
   username: string,
@@ -38,7 +37,7 @@ function formatJoined(date: string) {
   return formatDate(date, "monthYear");
 }
 
-function getTopTags(notes: Note[]) {
+function getTopTags(notes: PublicNoteSummary[]) {
   const counts = new Map<string, number>();
   for (const note of notes) {
     for (const tag of note.tags) {
@@ -50,7 +49,7 @@ function getTopTags(notes: Note[]) {
     .slice(0, 8);
 }
 
-function notesForTag(notes: Note[], tag: string) {
+function notesForTag(notes: PublicNoteSummary[], tag: string) {
   return notes.filter((note) => note.tags.includes(tag)).slice(0, 2);
 }
 
@@ -233,7 +232,7 @@ export default async function AuthorProfilePage({
                   {noteKindLabel(featuredNote.note_type)}
                 </span>
                 <span>·</span>
-                <span>{readingTimeMinutes(featuredNote.content)} min read</span>
+                <span>{featuredNote.reading_minutes} min read</span>
                 {featuredNote.language && (
                   <>
                     <span>·</span>
@@ -249,7 +248,7 @@ export default async function AuthorProfilePage({
                 {featuredNote.title || "untitled"}
               </h2>
               <p className="mt-3 line-clamp-2 text-sm leading-6 text-[var(--text-secondary)]">
-                {previewText(featuredNote.content) || "empty note"}
+                {featuredNote.preview || "empty note"}
               </p>
             </Link>
           </section>
@@ -342,14 +341,14 @@ export default async function AuthorProfilePage({
                 )}
 
                 <p className="mt-4 line-clamp-3 text-sm leading-6 text-[var(--text-secondary)]">
-                  {previewText(note.content) || "empty note"}
+                  {note.preview || "empty note"}
                 </p>
 
                 <div className="mt-5 flex items-center justify-between text-xs text-[var(--text-secondary)]">
                   <span className="inline-flex items-center gap-1">
                     <Heart size={13} /> {note.like_count ?? 0}
                   </span>
-                  <span>{readingTimeMinutes(note.content)} min read</span>
+                  <span>{note.reading_minutes} min read</span>
                   <span className="text-[var(--accent)]">Read note →</span>
                 </div>
               </Link>

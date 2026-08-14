@@ -24,6 +24,7 @@ from app.models.note import Note
 from app.models.note_like import NoteLike
 from app.models.note_version import NoteVersion
 from app.models.user import User
+from app.services.text import preview_text, reading_minutes
 
 
 def _search_terms(search_query: str) -> list[str]:
@@ -454,6 +455,24 @@ def increment_view_count(db: Session, note_id: int) -> None:
     increment_view_counts(db, [note_id])
 
 
+def get_like_counts(db: Session, note_ids: list[int]) -> dict[int, int]:
+    """Like totals for many notes in one query.
+
+    The related-reading rail used to run a COUNT per card, so rendering a
+    public note issued one query per suggestion on top of the fetch.
+    """
+    if not note_ids:
+        return {}
+    rows = (
+        db.query(NoteLike.note_id, func.count(NoteLike.id))
+        .filter(NoteLike.note_id.in_(note_ids))
+        .group_by(NoteLike.note_id)
+        .all()
+    )
+    counts = {note_id: int(count) for note_id, count in rows}
+    return {note_id: counts.get(note_id, 0) for note_id in note_ids}
+
+
 def get_like_count(db: Session, note_id: int) -> int:
     return db.query(NoteLike).filter(NoteLike.note_id == note_id).count()
 
@@ -498,10 +517,14 @@ def get_related_public_notes(
         return (same_author * 20 + tag_overlap * 8 + same_type * 2, candidate.id)
 
     ranked = sorted(candidates, key=score, reverse=True)[:limit]
+    like_counts = get_like_counts(db, [candidate.id for candidate in ranked])
     return [
         {
             "title": candidate.title,
-            "content": candidate.content,
+            # A related card renders two lines and a duration — the full
+            # markdown body was never displayed, only downloaded.
+            "preview": preview_text(candidate.content),
+            "reading_minutes": reading_minutes(candidate.content),
             "tags": candidate.tags,
             "note_type": candidate.note_type,
             "language": candidate.language,
@@ -509,7 +532,7 @@ def get_related_public_notes(
             "share_uuid": candidate.share_uuid,
             "is_published": candidate.is_published,
             "is_community": candidate.is_community,
-            "like_count": get_like_count(db, candidate.id),
+            "like_count": like_counts.get(candidate.id, 0),
             "view_count": candidate.view_count or 0,
             "created_at": candidate.created_at,
             "updated_at": candidate.updated_at,
@@ -536,7 +559,8 @@ def get_public_notes_for_user(db: Session, user_id: int) -> list[dict]:
         {
             "id": note.id,
             "title": note.title,
-            "content": note.content,
+            "preview": preview_text(note.content),
+            "reading_minutes": reading_minutes(note.content),
             "share_uuid": note.share_uuid,
             "tags": note.tags,
             "note_type": note.note_type,

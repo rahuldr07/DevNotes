@@ -19,7 +19,7 @@ import { backendFetch } from "@/lib/backend";
 import { formatNoteDate } from "@/lib/format";
 import { previewText } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
-import type { Note } from "@/types/notes";
+import type { Note, PublicNoteSummary } from "@/types/notes";
 
 async function getPublicNote(shareUuid: string): Promise<Note | null> {
   try {
@@ -34,7 +34,9 @@ async function getPublicNote(shareUuid: string): Promise<Note | null> {
   }
 }
 
-async function getRelatedNotes(shareUuid: string): Promise<Note[]> {
+async function getRelatedNotes(
+  shareUuid: string,
+): Promise<PublicNoteSummary[]> {
   try {
     const res = await backendFetch(
       `/notes/public/${shareUuid}/related?limit=3`,
@@ -216,14 +218,13 @@ export default async function PublicNotePage({
                     <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">
                       <span>{noteKindLabel(related.note_type)}</span>
                       <span>•</span>
-                      <span>{readingTimeMinutes(related.content)} min</span>
+                      <span>{related.reading_minutes} min</span>
                     </div>
                     <h2 className="line-clamp-2 text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)]">
                       {related.title || "untitled"}
                     </h2>
                     <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
-                      {previewText(related.content) ||
-                        "Read this related note."}
+                      {related.preview || "Read this related note."}
                     </p>
                     {related.tags.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1.5">

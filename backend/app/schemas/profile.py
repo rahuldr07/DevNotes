@@ -4,9 +4,14 @@ from pydantic import BaseModel, Field
 
 
 class PublicProfileNoteResponse(BaseModel):
+    """A profile card. The body stays behind the note's own page — a profile
+    with fifty long notes should not ship all fifty bodies to render
+    two-line previews."""
+
     id: int
     title: str
-    content: str
+    preview: str = ""
+    reading_minutes: int = 1
     share_uuid: str
     tags: list[str] = Field(default_factory=list)
     note_type: str = "note"

@@ -1,6 +1,13 @@
 "use client";
 
-import { Copy, ExternalLink, Globe, Share2, UserSquare, Users } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  Globe,
+  Share2,
+  UserSquare,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -130,9 +137,9 @@ export function SharePopover({
               />
             </div>
             <p className="text-xs leading-5 text-[var(--text-secondary)]">
-              Anyone with the URL can read this note, and nothing else changes
-              — it stays off your profile and out of discovery until you list
-              it below. The link stays stable while published.
+              Anyone with the URL can read this note, and nothing else changes —
+              it stays off your profile and out of discovery until you list it
+              below. The link stays stable while published.
             </p>
 
             {isPublished && (

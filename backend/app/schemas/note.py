@@ -141,8 +141,11 @@ class PublicNoteResponse(BaseModel):
 
 
 class RelatedPublicNoteResponse(BaseModel):
+    """A related-reading card: what the rail renders, not the whole note."""
+
     title: str
-    content: str
+    preview: str = ""
+    reading_minutes: int = 1
     tags: list[str] = Field(default_factory=list)
     note_type: str = "note"
     language: str | None = None
