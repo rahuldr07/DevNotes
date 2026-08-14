@@ -8,6 +8,9 @@ Pattern:  Router → Service (business logic) → Repository (THIS FILE) → Dat
 
 The repository does NOT contain business logic (validation, authorization).
 It just executes queries and returns results.
+
+It also does NOT commit — services own the transaction boundary via
+`database.transaction(db)`.
 """
 from sqlalchemy.orm import Session
 
@@ -52,10 +55,9 @@ def create(
     Creates a new user in the database.
 
     Steps:
-    1. db.add(oUser)    → Stages the object (like git add)
-    2. db.commit()      → Writes to the database (like git commit)
-    3. db.refresh(oUser) → Reloads the object from DB to get generated fields
-                           (id, created_at, which are set by PostgreSQL)
+    1. db.add(oUser)     → Stages the object
+    2. db.flush()        → Sends the INSERT, assigning id
+    3. db.refresh(oUser) → Reads DB-generated fields (created_at)
 
     Note: Receives hashed_password, NOT plain text.
           The service layer hashes it before calling this function.
@@ -67,7 +69,7 @@ def create(
         username=username,
     )
     db.add(oUser)
-    db.commit()
+    db.flush()
     db.refresh(oUser)
     return oUser
 
@@ -75,7 +77,7 @@ def create(
 def update_profile(db: Session, user: User, **fields) -> User:
     for key, value in fields.items():
         setattr(user, key, value)
-    db.commit()
+    db.flush()
     db.refresh(user)
     return user
 
@@ -89,6 +91,6 @@ def update_refresh_token(
     if user is None:
         return None
     user.refresh_token = refresh_token_hash
-    db.commit()
+    db.flush()
     db.refresh(user)
     return user

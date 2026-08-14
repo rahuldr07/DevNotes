@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.models.user_session import UserSession
 
+# Staging only — services own the commit via database.transaction(db).
+
 
 def create(
     db: Session,
@@ -24,7 +26,7 @@ def create(
         ip_address=ip_address,
     )
     db.add(session)
-    db.commit()
+    db.flush()
     db.refresh(session)
     return session
 
@@ -51,14 +53,14 @@ def rotate(
 ) -> UserSession:
     session.refresh_token_hash = refresh_token_hash
     session.expires_at = expires_at
-    db.commit()
+    db.flush()
     db.refresh(session)
     return session
 
 
 def revoke(db: Session, *, session: UserSession) -> UserSession:
     session.revoked_at = datetime.now(timezone.utc)
-    db.commit()
+    db.flush()
     db.refresh(session)
     return session
 
@@ -70,5 +72,5 @@ def revoke_all_for_user(db: Session, *, user_id: int) -> int:
         .filter(UserSession.user_id == user_id, UserSession.revoked_at.is_(None))
         .update({UserSession.revoked_at: now}, synchronize_session=False)
     )
-    db.commit()
+    db.flush()
     return int(updated or 0)

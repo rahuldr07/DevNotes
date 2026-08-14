@@ -8,6 +8,11 @@ Pattern:  Router → Service (business logic) → Repository (THIS FILE) → Dat
 
 The repository does NOT check ownership or authorization.
 That's the service layer's job (note_service.py).
+
+It also does NOT commit. Functions here stage and flush; the service wraps
+related writes in `database.transaction(db)` so one request is one unit of
+work. Flushing (rather than committing) still assigns primary keys and lets
+`db.refresh` read server defaults, so callers see a complete object.
 """
 import re
 
@@ -80,8 +85,10 @@ def create(
 
     Steps:
     1. db.add()     → Stages the Note object for insertion
-    2. db.commit()  → Writes to the database
-    3. db.refresh() → Reloads to get DB-generated fields (id, created_at)
+    2. db.flush()   → Sends the INSERT, assigning id
+    3. db.refresh() → Reads DB-generated fields (created_at, note_type default)
+
+    The enclosing `transaction(db)` in the service commits.
     """
     oNote = Note(
         user_id=user_id,
@@ -93,7 +100,7 @@ def create(
         source_url=source_url,
     )
     db.add(oNote)
-    db.commit()
+    db.flush()
     db.refresh(oNote)
     return oNote
 
@@ -125,8 +132,8 @@ def update(
     Updates an existing note's title and/or content.
 
     Only updates fields that are not None/empty (partial update support).
-    db.commit() triggers SQLAlchemy's onupdate=func.now() on updated_at column.
-    db.refresh() reloads the note to get the new updated_at timestamp.
+    The flush triggers SQLAlchemy's onupdate=func.now() on updated_at;
+    db.refresh() reloads the note to read the new timestamp.
     """
     oNote = db.query(Note).filter(Note.id == note_id).first()
     if oNote:
@@ -150,7 +157,7 @@ def update(
             oNote.is_community = is_community and oNote.is_published
         if share_uuid is not None:
             oNote.share_uuid = share_uuid
-        db.commit()
+        db.flush()
         db.refresh(oNote)
         return oNote
     return None
@@ -172,10 +179,7 @@ def create_note_version(
     content: str,
     tags: list[str],
     version_number: int,
-    commit: bool = True,
 ) -> NoteVersion:
-    """With commit=False the snapshot only flushes, so it commits (or rolls
-    back) together with the note update it belongs to."""
     version = NoteVersion(
         note_id=note_id,
         title=title,
@@ -184,11 +188,7 @@ def create_note_version(
         version_number=version_number,
     )
     db.add(version)
-    if commit:
-        db.commit()
-        db.refresh(version)
-    else:
-        db.flush()
+    db.flush()
     return version
 
 
@@ -196,7 +196,6 @@ def trim_note_versions(
     db: Session,
     note_id: int,
     max_versions: int = 20,
-    commit: bool = True,
 ) -> None:
     old_versions = (
         db.query(NoteVersion)
@@ -207,8 +206,8 @@ def trim_note_versions(
     )
     for version in old_versions:
         db.delete(version)
-    if old_versions and commit:
-        db.commit()
+    if old_versions:
+        db.flush()
 
 
 def get_note_versions(db: Session, note_id: int) -> list[NoteVersion]:
@@ -235,13 +234,13 @@ def delete(db: Session, note_id: int) -> None:
     """
     Permanently deletes a note from the database.
 
-    db.delete() marks it for deletion, db.commit() executes the DELETE query.
+    db.delete() marks it for deletion, the flush issues the DELETE.
     Returns None regardless (the service layer handles error responses).
     """
     oNote = db.query(Note).filter(Note.id == note_id).first()
     if oNote:
         db.delete(oNote)
-        db.commit()
+        db.flush()
     return None
 
 def get_my_notes(
@@ -327,7 +326,7 @@ def toggle_pin(db: Session, note_id: int) -> Note:
     note = db.query(Note).filter(Note.id == note_id).first()
     if note:
         note.is_pinned = not note.is_pinned
-        db.commit()
+        db.flush()
         db.refresh(note)
     return note
 
@@ -423,7 +422,7 @@ def increment_view_counts(db: Session, note_ids: list[int]) -> None:
         .filter(Note.id.in_(note_ids))
         .update({Note.view_count: Note.view_count + 1}, synchronize_session=False)
     )
-    db.commit()
+    db.flush()
 
 
 def increment_view_count(db: Session, note_id: int) -> None:
@@ -533,11 +532,11 @@ def get_like(db: Session, note_id: int, user_id: int) -> NoteLike | None:
 def create_like(db: Session, note_id: int, user_id: int) -> NoteLike:
     like = NoteLike(note_id=note_id, user_id=user_id)
     db.add(like)
-    db.commit()
+    db.flush()
     db.refresh(like)
     return like
 
 
 def delete_like(db: Session, like: NoteLike) -> None:
     db.delete(like)
-    db.commit()
+    db.flush()

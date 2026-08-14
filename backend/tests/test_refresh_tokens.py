@@ -36,7 +36,7 @@ def test_login_returns_refresh_token_and_stores_hash(monkeypatch):
     assert verify_token_hash(result["refresh_token"], saved["refresh_token_hash"])
 
 
-def test_login_creates_session_when_db_available(monkeypatch):
+def test_login_creates_session_when_db_available(monkeypatch, fake_session):
     from app.repositories import session_repo, user_repo
     from app.services import auth_service
     from app.services.security import hash_password, verify_token_hash
@@ -61,7 +61,7 @@ def test_login_creates_session_when_db_available(monkeypatch):
         raising=False,
     )
 
-    result = auth_service.authenticate_user(object(), "ada@example.com", "abc12345")
+    result = auth_service.authenticate_user(fake_session, "ada@example.com", "abc12345")
 
     assert sessions["user_id"] == 1
     assert sessions["session_id"]
@@ -69,7 +69,7 @@ def test_login_creates_session_when_db_available(monkeypatch):
     assert verify_token_hash(result["refresh_token"], saved["refresh_token_hash"])
 
 
-def test_login_remember_me_extends_refresh_session(monkeypatch):
+def test_login_remember_me_extends_refresh_session(monkeypatch, fake_session):
     from datetime import datetime, timedelta, timezone
 
     from app.repositories import session_repo, user_repo
@@ -94,7 +94,7 @@ def test_login_remember_me_extends_refresh_session(monkeypatch):
     )
 
     result = auth_service.authenticate_user(
-        object(), "ada@example.com", "abc12345", remember_me=True
+        fake_session, "ada@example.com", "abc12345", remember_me=True
     )
 
     assert result["remember_me"] is True
@@ -107,7 +107,7 @@ def test_login_remember_me_extends_refresh_session(monkeypatch):
     assert sessions["expires_at"] > now + timedelta(days=29)
 
 
-def test_refresh_preserves_remember_me_duration(monkeypatch):
+def test_refresh_preserves_remember_me_duration(monkeypatch, fake_session):
     from datetime import datetime, timedelta, timezone
 
     from app.repositories import session_repo, user_repo
@@ -146,7 +146,7 @@ def test_refresh_preserves_remember_me_duration(monkeypatch):
         raising=False,
     )
 
-    result = auth_service.refresh_access_token(object(), refresh_token)
+    result = auth_service.refresh_access_token(fake_session, refresh_token)
 
     assert result["remember_me"] is True
     assert result["refresh_expires_in"] == 30 * 24 * 60 * 60
@@ -221,7 +221,7 @@ def test_login_without_remember_me_sets_session_refresh_cookie(auth_client, monk
     assert "Max-Age" not in _refresh_cookie_header(response)
 
 
-def test_refresh_rotates_session_token(monkeypatch):
+def test_refresh_rotates_session_token(monkeypatch, fake_session):
     from app.repositories import session_repo, user_repo
     from app.services import auth_service
     from app.services.security import hash_token, verify_token_hash
@@ -255,14 +255,14 @@ def test_refresh_rotates_session_token(monkeypatch):
         raising=False,
     )
 
-    result = auth_service.refresh_access_token(object(), refresh_token)
+    result = auth_service.refresh_access_token(fake_session, refresh_token)
 
     assert result["refresh_token"] != refresh_token
     assert rotated["session"] is session
     assert verify_token_hash(result["refresh_token"], rotated["refresh_token_hash"])
 
 
-def test_refresh_rejects_stale_token_after_rotation(monkeypatch):
+def test_refresh_rejects_stale_token_after_rotation(monkeypatch, fake_session):
     """Regression: bcrypt truncates at 72 bytes, so same-session JWTs (identical
     prefix) all passed the old hash check and reuse detection never fired."""
     from app.repositories import session_repo, user_repo
@@ -296,7 +296,7 @@ def test_refresh_rejects_stale_token_after_rotation(monkeypatch):
     )
 
     with pytest.raises(HTTPException) as excinfo:
-        auth_service.refresh_access_token(object(), stale_token)
+        auth_service.refresh_access_token(fake_session, stale_token)
 
     assert excinfo.value.status_code == 401
     assert revoked["session"] is session

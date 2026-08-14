@@ -1,5 +1,8 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 from app.config import get_settings
 
 settings = get_settings()
@@ -71,7 +74,46 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine,
+    # Attributes stay loaded after commit, so a handler can serialize the
+    # object it just wrote without the ORM issuing a fresh SELECT per row.
+    expire_on_commit=False,
 )
+
+
+# ============================================
+# TRANSACTION BOUNDARY
+# ============================================
+#
+# Repositories only stage and flush; services decide what a unit of work is.
+# Before this, every repository call committed on its own, so a service that
+# touched two tables (update a note, snapshot its previous version) could
+# leave half the change behind if the second write failed.
+#
+# Usage:
+#     with transaction(db):
+#         note = note_repo.update(db, ...)
+#         note_repo.create_note_version(db, ...)
+#
+# One commit at the end, one rollback if anything raises.
+
+@contextmanager
+def transaction(db: Session | None) -> Iterator[Session | None]:
+    """Commit on clean exit, roll back on any exception.
+
+    `db` may be None: service-layer unit tests inject a null session and
+    monkeypatch the repositories, so there is nothing to commit. Request
+    handlers always receive a real Session from `get_db`.
+    """
+    if db is None:
+        yield db
+        return
+
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 # ============================================

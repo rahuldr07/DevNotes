@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.database import transaction
 from app.repositories import note_repo, user_repo
 from app.models.user import User
 
@@ -28,4 +29,5 @@ def update_my_profile(db: Session, user: User, **fields) -> User:
         existing = user_repo.get_by_username(db, username=username)
         if existing and existing.id != user.id:
             raise HTTPException(status_code=409, detail="Username is already taken")
-    return user_repo.update_profile(db, user, **fields)
+    with transaction(db):
+        return user_repo.update_profile(db, user, **fields)

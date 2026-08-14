@@ -14,6 +14,33 @@ os.environ.setdefault("DB_PASSWORD", "devnotes")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 
 
+class FakeSession:
+    """Stand-in for a Session in service tests that monkeypatch repositories.
+
+    Records the transaction calls so a test can assert that a unit of work
+    committed once, or rolled back, without needing a live database.
+    """
+
+    def __init__(self):
+        self.commits = 0
+        self.rollbacks = 0
+        self.flushes = 0
+
+    def commit(self):
+        self.commits += 1
+
+    def rollback(self):
+        self.rollbacks += 1
+
+    def flush(self):
+        self.flushes += 1
+
+
+@pytest.fixture
+def fake_session():
+    return FakeSession()
+
+
 @pytest.fixture
 def current_user():
     return SimpleNamespace(

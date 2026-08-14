@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
+from app.database import transaction
 from app.repositories import note_repo
 from app.models.note import Note
 
@@ -55,16 +56,17 @@ def create_note(
         The newly created Note model instance.
     """
     normalized_tags = normalize_tags(tags)
-    new_note = note_repo.create(
-        db,
-        user_id=user_id,
-        title=title,
-        content=content,
-        tags=normalized_tags,
-        note_type=note_type,
-        language=language.strip().lower() if language else None,
-        source_url=source_url.strip() if source_url else None,
-    )
+    with transaction(db):
+        new_note = note_repo.create(
+            db,
+            user_id=user_id,
+            title=title,
+            content=content,
+            tags=normalized_tags,
+            note_type=note_type,
+            language=language.strip().lower() if language else None,
+            source_url=source_url.strip() if source_url else None,
+        )
     return new_note
 
 def update_note(
@@ -97,77 +99,68 @@ def update_note(
     Returns:
         The updated Note model instance, or None if the note does not exist or does not belong to the user.
     """
-    new_note = note_repo.get_by_note_id(db, note_id=note_id)
-    if new_note:
-        if new_note.user_id == user_id:
-            normalized_tags = normalize_tags(tags) if tags is not None else None
+    existing = _get_owned_note(db, user_id=user_id, note_id=note_id)
+    normalized_tags = normalize_tags(tags) if tags is not None else None
 
-            # Snapshot only when the content actually changes — publish and
-            # explore toggles would otherwise burn version slots on identical
-            # copies. commit=False ties the snapshot to the update's commit,
-            # so a failed update can't leave an orphaned version behind.
-            content_changed = (
-                (title is not None and title != new_note.title)
-                or (content is not None and content != new_note.content)
-                or (
-                    normalized_tags is not None
-                    and normalized_tags != list(new_note.tags or [])
-                )
-            )
-            if content_changed:
-                version_number = note_repo.get_latest_version_number(db, note_id) + 1
-                note_repo.create_note_version(
-                    db,
-                    note_id=note_id,
-                    title=new_note.title,
-                    content=new_note.content,
-                    tags=list(new_note.tags or []),
-                    version_number=version_number,
-                    commit=False,
-                )
-                note_repo.trim_note_versions(
-                    db,
-                    note_id=note_id,
-                    max_versions=MAX_NOTE_VERSIONS,
-                    commit=False,
-                )
+    # Snapshot only when the content actually changes — publish and explore
+    # toggles would otherwise burn version slots on identical copies.
+    content_changed = (
+        (title is not None and title != existing.title)
+        or (content is not None and content != existing.content)
+        or (
+            normalized_tags is not None
+            and normalized_tags != list(existing.tags or [])
+        )
+    )
+    previous_title = existing.title
+    previous_content = existing.content
+    previous_tags = list(existing.tags or [])
+    needs_share_uuid = is_published is True and not existing.share_uuid
 
-
-            # Generate share_uuid if publishing for the first time
-            share_uuid = None
-            if is_published is True and not new_note.share_uuid:
-                share_uuid = str(uuid.uuid4())
-
-            # Retry loop for the extremely rare UUID collision
-            for attempt in range(MAX_UUID_RETRIES):
-                try:
-                    return note_repo.update(
+    # The snapshot, the trim and the update are one unit of work, so a failed
+    # update cannot leave an orphaned version behind. A share_uuid collision
+    # rolls the whole unit back — including the snapshot — so the retry below
+    # re-creates it rather than silently losing a version.
+    for attempt in range(MAX_UUID_RETRIES):
+        share_uuid = str(uuid.uuid4()) if needs_share_uuid else None
+        try:
+            with transaction(db):
+                if content_changed:
+                    version_number = note_repo.get_latest_version_number(db, note_id) + 1
+                    note_repo.create_note_version(
                         db,
                         note_id=note_id,
-                        title=title,
-                        content=content,
-                        tags=normalized_tags,
-                        note_type=note_type,
-                        language=language.strip().lower() if language else language,
-                        source_url=source_url.strip() if source_url else source_url,
-                        is_published=is_published,
-                        is_community=is_community,
-                        share_uuid=share_uuid,
+                        title=previous_title,
+                        content=previous_content,
+                        tags=previous_tags,
+                        version_number=version_number,
                     )
-                except IntegrityError:
-                    db.rollback()
-                    if share_uuid and attempt < MAX_UUID_RETRIES - 1:
-                        # Regenerate UUID and retry
-                        share_uuid = str(uuid.uuid4())
-                    else:
-                        raise HTTPException(
-                            status_code=500,
-                            detail="Failed to generate unique share link. Please try again."
-                        )
-        else:
-            raise HTTPException(status_code=403, detail="Note does not belong to the user")
-    else:
-        raise HTTPException(status_code=404, detail="Note not found")
+                    note_repo.trim_note_versions(
+                        db,
+                        note_id=note_id,
+                        max_versions=MAX_NOTE_VERSIONS,
+                    )
+
+                return note_repo.update(
+                    db,
+                    note_id=note_id,
+                    title=title,
+                    content=content,
+                    tags=normalized_tags,
+                    note_type=note_type,
+                    language=language.strip().lower() if language else language,
+                    source_url=source_url.strip() if source_url else source_url,
+                    is_published=is_published,
+                    is_community=is_community,
+                    share_uuid=share_uuid,
+                )
+        except IntegrityError:
+            # transaction() already rolled back.
+            if attempt == MAX_UUID_RETRIES - 1:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to save the note. Please try again.",
+                ) from None
 
 
 def _get_owned_note(db: Session, user_id: int, note_id: int) -> Note:
@@ -209,14 +202,9 @@ def delete_note(db: Session, user_id: int, note_id: int) -> None:
     Returns:     None if the note was successfully deleted, or None if the note does not exist or does not belong to the user.
         None
     """
-    note = note_repo.get_by_note_id(db, note_id=note_id)
-    if note:
-        if note.user_id == user_id:
-            note_repo.delete(db, note_id=note_id)
-        else:
-            raise HTTPException(status_code=403, detail="Note does not belong to the user")
-    else:
-        raise HTTPException(status_code=404, detail="Note not found")
+    _get_owned_note(db, user_id=user_id, note_id=note_id)
+    with transaction(db):
+        note_repo.delete(db, note_id=note_id)
     
 def _item_id(item) -> int:
     if isinstance(item, dict):
@@ -295,12 +283,9 @@ def toggle_pin(db: Session, user_id: int, note_id: int) -> Note:
     1. The note must belong to the authenticated user.
     2. Flips is_pinned: True → False, False → True.
     """
-    note = note_repo.get_by_note_id(db, note_id=note_id)
-    if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    if note.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Note does not belong to the user")
-    return note_repo.toggle_pin(db, note_id=note_id)
+    _get_owned_note(db, user_id=user_id, note_id=note_id)
+    with transaction(db):
+        return note_repo.toggle_pin(db, note_id=note_id)
 
 
 def _normalize_filter(value: str | None) -> str | None:
@@ -343,7 +328,8 @@ def get_public_note(db: Session, share_uuid: str) -> Note:
     if not note or not note.is_published:
         # Return 404 even if exists but not published (security)
         raise HTTPException(status_code=404, detail="Note not found")
-    note_repo.increment_view_count(db, note.id)
+    with transaction(db):
+        note_repo.increment_view_count(db, note.id)
     note.view_count = (note.view_count or 0) + 1
     return note_repo.get_public_note_response(db, note)
 
@@ -367,12 +353,7 @@ def get_community_notes(
         limit=limit + 1,
         viewer_id=viewer_id,
     )
-    paginated = _paginate(notes, limit)
-    note_ids = [_item_id(note) for note in paginated["data"]]
-    note_repo.increment_view_counts(db, note_ids)
-    for note in paginated["data"]:
-        note["view_count"] = (note.get("view_count") or 0) + 1
-    return paginated
+    return _paginate(notes, limit)
 
 
 def toggle_like(db: Session, user_id: int, note_id: int) -> dict:
@@ -382,15 +363,16 @@ def toggle_like(db: Session, user_id: int, note_id: int) -> dict:
     if not note.is_published or not note.is_community:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    existing_like = note_repo.get_like(db, note_id=note_id, user_id=user_id)
-    if existing_like:
-        note_repo.delete_like(db, existing_like)
-        liked = False
-    else:
-        note_repo.create_like(db, note_id=note_id, user_id=user_id)
-        liked = True
+    with transaction(db):
+        existing_like = note_repo.get_like(db, note_id=note_id, user_id=user_id)
+        if existing_like:
+            note_repo.delete_like(db, existing_like)
+            liked = False
+        else:
+            note_repo.create_like(db, note_id=note_id, user_id=user_id)
+            liked = True
 
-    return {
-        "liked": liked,
-        "like_count": note_repo.get_like_count(db, note_id=note_id),
-    }
+        return {
+            "liked": liked,
+            "like_count": note_repo.get_like_count(db, note_id=note_id),
+        }

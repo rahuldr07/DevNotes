@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from app.config import get_settings
+from app.database import transaction
 from app.repositories import session_repo, user_repo
 from app.services import login_throttle
 from app.services.security import (
@@ -177,13 +178,14 @@ def register_user(db: Session, email: str, name: str, password: str) -> User:
     username = generate_unique_username(db, name)
 
     # Create the user with hashed password
-    db_user = user_repo.create(
-        db,
-        name=name,
-        email=email,
-        hashed_password=hashed_password,
-        username=username,
-    )
+    with transaction(db):
+        db_user = user_repo.create(
+            db,
+            name=name,
+            email=email,
+            hashed_password=hashed_password,
+            username=username,
+        )
     return db_user       # FastAPI filters this through UserResponse
 
 def authenticate_user(
@@ -244,17 +246,20 @@ def authenticate_user(
         {"sub": str(db_user.id), "sid": session_id, "remember": remember_me},
         expires_days=expire_days,
     )
-    user_repo.update_refresh_token(db, db_user.id, hash_token(refresh_token))
-    if db is not None:
-        session_repo.create(
-            db,
-            session_id=session_id,
-            user_id=db_user.id,
-            refresh_token_hash=hash_token(refresh_token),
-            expires_at=refresh_token_expires_at(expire_days),
-            user_agent=user_agent,
-            ip_address=ip_address,
-        )
+    # One unit of work: the user's token digest and the session row must not
+    # diverge, or a crash between them leaves a session nobody can refresh.
+    with transaction(db):
+        user_repo.update_refresh_token(db, db_user.id, hash_token(refresh_token))
+        if db is not None:
+            session_repo.create(
+                db,
+                session_id=session_id,
+                user_id=db_user.id,
+                refresh_token_hash=hash_token(refresh_token),
+                expires_at=refresh_token_expires_at(expire_days),
+                user_agent=user_agent,
+                ip_address=ip_address,
+            )
 
     return {
         "access_token": access_token,
@@ -286,8 +291,10 @@ def refresh_access_token(db: Session, refresh_token: str) -> dict:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
         if not verify_token_hash(refresh_token, active_session.refresh_token_hash):
             # Reuse detected: a stale (already-rotated) token was presented,
-            # so treat the whole session as compromised.
-            session_repo.revoke(db, session=active_session)
+            # so treat the whole session as compromised. Committed on its own
+            # because the request then fails — the revocation must survive it.
+            with transaction(db):
+                session_repo.revoke(db, session=active_session)
             raise HTTPException(status_code=401, detail="Invalid refresh token")
     else:
         if not verify_token_hash(refresh_token, db_user.refresh_token):
@@ -304,14 +311,15 @@ def refresh_access_token(db: Session, refresh_token: str) -> dict:
         {"sub": str(db_user.id), "sid": next_session_id, "remember": remember_me},
         expires_days=expire_days,
     )
-    user_repo.update_refresh_token(db, db_user.id, hash_token(new_refresh_token))
-    if active_session is not None:
-        session_repo.rotate(
-            db,
-            session=active_session,
-            refresh_token_hash=hash_token(new_refresh_token),
-            expires_at=refresh_token_expires_at(expire_days),
-        )
+    with transaction(db):
+        user_repo.update_refresh_token(db, db_user.id, hash_token(new_refresh_token))
+        if active_session is not None:
+            session_repo.rotate(
+                db,
+                session=active_session,
+                refresh_token_hash=hash_token(new_refresh_token),
+                expires_at=refresh_token_expires_at(expire_days),
+            )
     return {
         "access_token": access_token,
         "refresh_token": new_refresh_token,
@@ -339,10 +347,14 @@ def logout_refresh_token(db: Session, refresh_token: str) -> None:
         if not active_session or active_session.user_id != db_user.id:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
         if not verify_token_hash(refresh_token, active_session.refresh_token_hash):
+            with transaction(db):
+                session_repo.revoke(db, session=active_session)
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        with transaction(db):
             session_repo.revoke(db, session=active_session)
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-        session_repo.revoke(db, session=active_session)
-    else:
-        if not verify_token_hash(refresh_token, db_user.refresh_token):
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-    user_repo.update_refresh_token(db, db_user.id, None)
+            user_repo.update_refresh_token(db, db_user.id, None)
+        return
+    if not verify_token_hash(refresh_token, db_user.refresh_token):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    with transaction(db):
+        user_repo.update_refresh_token(db, db_user.id, None)
