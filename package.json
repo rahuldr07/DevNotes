@@ -5,6 +5,8 @@
   "description": "DevNotes full-stack developer knowledge platform",
   "scripts": {
     "dev:db": "docker compose up -d db",
+    "stack:up": "docker compose up --build",
+    "stack:down": "docker compose down",
     "dev:frontend": "npm --prefix admin run dev",
     "dev:backend": "cd backend && python -m uvicorn app.main:app --reload",
     "db:migrate": "cd backend && python -m alembic upgrade head",

@@ -1,3 +1,10 @@
+# Full stack: database, API, migrations, frontend.
+#
+#   docker compose up            → the whole app on http://localhost:3000
+#   docker compose up -d db      → just PostgreSQL, for running the app locally
+#
+# Migrations run as their own one-shot service so the API never races them,
+# and so `docker compose run --rm migrate` is the way to apply them by hand.
 services:
   db:
     image: postgres:16-alpine
@@ -16,6 +23,57 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  migrate:
+    build:
+      context: ./backend
+    environment: &backend_env
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: devnotes
+      DB_USER: devnotes
+      DB_PASSWORD: devnotes
+      DB_SSL_MODE: disable
+      SECRET_KEY: local-compose-secret-not-for-production-use
+      ENVIRONMENT: development
+      CORS_ORIGINS: http://localhost:3000
+      TRUST_FORWARDED_FOR: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend
+    container_name: devnotes-api
+    restart: unless-stopped
+    environment: *backend_env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ./admin
+    container_name: devnotes-web
+    restart: unless-stopped
+    environment:
+      # The browser only ever talks to this service; it proxies to the API.
+      BACKEND_URL: http://api:8000
+      # Compose is not a trusted reverse proxy, so client-supplied forwarding
+      # headers stay dropped. See TRUST_FORWARDED_FOR in backend/.env.example.
+      TRUSTED_PROXY_HEADERS: "0"
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   devnotes_postgres_data:
