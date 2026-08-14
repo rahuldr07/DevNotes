@@ -1,11 +1,35 @@
 from datetime import datetime
 
 import re
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
-USERNAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$")
+# Single hyphens only: "a--b" reads as a typo and invites homograph-ish
+# lookalikes of another user's handle.
+USERNAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+USERNAME_LENGTH = range(3, 31)
+
+
+def _validate_public_url(value: str | None) -> str | None:
+    """Profile links are rendered as anchors on a public page.
+
+    Note `source_url` has been scheme-checked since it was added; these four
+    fields accepted any string, so a profile could carry `javascript:` or
+    `data:` links. React 19 neutralises those at render time, but relying on
+    a framework's escape hatch to hold a data-integrity rule is backwards —
+    and it still leaves broken links in the database and in API responses.
+    """
+    if value is None:
+        return None
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    parsed = urlparse(cleaned)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("Must be a valid http(s) URL")
+    return cleaned
 
 
 def _validate_password(value: str) -> str:
@@ -94,16 +118,21 @@ class UserProfileUpdate(BaseModel):
         if value is None:
             return value
         cleaned = value.strip().lower()
-        if not USERNAME_RE.fullmatch(cleaned):
+        if len(cleaned) not in USERNAME_LENGTH or not USERNAME_RE.fullmatch(cleaned):
             raise ValueError(
                 "Username must be 3-30 characters using lowercase letters, numbers, and single hyphens"
             )
         return cleaned
 
-    @field_validator("bio", "website_url", "github_url", "twitter_url", "avatar_url")
+    @field_validator("bio")
     @classmethod
     def blank_strings_become_none(cls, value: str | None) -> str | None:
         if value is None:
             return value
         cleaned = value.strip()
         return cleaned or None
+
+    @field_validator("website_url", "github_url", "twitter_url", "avatar_url")
+    @classmethod
+    def links_must_be_http_urls(cls, value: str | None) -> str | None:
+        return _validate_public_url(value)
