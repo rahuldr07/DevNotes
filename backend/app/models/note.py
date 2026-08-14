@@ -44,13 +44,14 @@ class Note(Base):
     # Tags are part of the vector: a note tagged `docker` should be findable
     # by searching for "docker" even when the prose never says it. coalesce
     # keeps a NULL member from nulling the whole vector.
+    # Tags are part of the vector: a note tagged `docker` should be findable
+    # by searching for "docker" even when the prose never says it. The wrapper
+    # function exists because a stored generated column must be IMMUTABLE and
+    # array_to_string is only STABLE — see the migration for the trade-off.
     search_vector = Column(
         TSVECTOR,
         Computed(
-            "to_tsvector('english', "
-            "coalesce(title, '') || ' ' || "
-            "coalesce(content, '') || ' ' || "
-            "coalesce(array_to_string(tags, ' '), ''))",
+            "devnotes_note_search_vector(title, content, tags::text[])",
             persisted=True,
         ),
         nullable=True,

@@ -225,5 +225,7 @@ def test_search_vector_expression_includes_tags():
 
     expression = str(Note.__table__.c.search_vector.computed.sqltext)
 
-    assert "array_to_string(tags" in expression
-    assert "coalesce(title" in expression
+    # The tag text is folded in through the immutable wrapper function; the
+    # expression itself must at least pass tags through.
+    assert "devnotes_note_search_vector" in expression
+    assert "tags" in expression

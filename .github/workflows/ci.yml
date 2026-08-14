@@ -12,6 +12,28 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      # The integration suite runs the migrations and every Postgres-only
+      # query for real. Without a database here they would silently skip,
+      # which is how the FTS path and the migrations went untested.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: devnotes_test
+          POSTGRES_USER: devnotes
+          POSTGRES_PASSWORD: devnotes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U devnotes -d devnotes_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://devnotes:devnotes@localhost:5432/devnotes_test
+      TEST_DB_SSL_MODE: disable
+      # Turns "no database reachable" from a silent skip into a build failure.
+      REQUIRE_INTEGRATION_DB: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
