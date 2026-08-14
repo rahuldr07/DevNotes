@@ -330,10 +330,38 @@ def get_public_note(db: Session, share_uuid: str) -> Note:
     if not note or not note.is_published:
         # Return 404 even if exists but not published (security)
         raise HTTPException(status_code=404, detail="Note not found")
+    # Reading is a read. Counting happens through record_public_view, called
+    # explicitly by the browser — see that function for why.
+    return note_repo.get_public_note_response(db, note)
+
+
+def record_public_view(db: Session, share_uuid: str) -> dict:
+    """Count one read of a public note.
+
+    This is a POST the browser makes after the page renders, not a side effect
+    of fetching the note, because:
+
+    * the public page is server-rendered, so a GET-side increment counted the
+      Next.js server's fetch — including link prefetches and every crawler
+      that never showed the page to a human;
+    * a write on an unauthenticated GET is the one endpoint an anonymous
+      caller can hammer, so it was trivially inflatable and a write
+      amplification vector.
+
+    De-duplication is per browser session, enforced by the caller (see
+    RecordPublicView on the public page). A server-side dedupe key is not
+    available here: requests arrive through the BFF proxy, so the peer address
+    is the same for every reader and hashing it would collapse distinct
+    readers into one.
+    """
+    note = note_repo.get_by_share_uuid(db, share_uuid=share_uuid)
+    if not note or not note.is_published:
+        raise HTTPException(status_code=404, detail="Note not found")
+
     with transaction(db):
         note_repo.increment_view_count(db, note.id)
-    note.view_count = (note.view_count or 0) + 1
-    return note_repo.get_public_note_response(db, note)
+
+    return {"view_count": (note.view_count or 0) + 1}
 
 
 def get_related_public_notes(db: Session, share_uuid: str, limit: int = 3) -> list[dict]:

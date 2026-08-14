@@ -189,6 +189,10 @@ class NoteVersionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ViewCountResponse(BaseModel):
+    view_count: int
+
+
 class LikeToggleResponse(BaseModel):
     liked: bool
     like_count: int

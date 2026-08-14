@@ -14,6 +14,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyContentButton } from "@/components/CopyContentButton";
 import { MarkdownViewer } from "@/components/MarkdownViewer";
+import { RecordPublicView } from "@/components/RecordPublicView";
 import { backendFetch } from "@/lib/backend";
 import { formatNoteDate } from "@/lib/format";
 import { previewText } from "@/lib/notes";
@@ -95,6 +96,7 @@ export default async function PublicNotePage({
 
   return (
     <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+      <RecordPublicView shareUuid={share_uuid} />
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-[-10rem] top-[-14rem] h-96 w-96 rounded-none bg-[var(--accent)]/12 blur-3xl" />
         <div className="absolute bottom-[-12rem] right-[-10rem] h-[28rem] w-[28rem] rounded-none bg-[var(--main-color)]/10 blur-3xl" />

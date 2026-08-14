@@ -30,6 +30,7 @@ from app.schemas.note import (
     NoteUpdate,
     PublicNoteResponse,
     RelatedPublicNoteResponse,
+    ViewCountResponse,
 )
 from app.services import note_service
 
@@ -213,6 +214,27 @@ def pin_note(id: int, user=Depends(get_current_user), db: Session = Depends(get_
 @router.get("/public/{share_uuid}", response_model=PublicNoteResponse, status_code=200)
 def get_public_note(share_uuid: str, db: Session = Depends(get_db)):
     return note_service.get_public_note(db, share_uuid=share_uuid)
+
+
+# ════════════════════════════════════════════
+#  POST /notes/public/{share_uuid}/view — Count a read
+# ════════════════════════════════════════════
+# - Called by the browser once per session after the public page renders.
+# - A POST, not a GET side effect: server-side rendering, link prefetches and
+#   crawlers all issue GETs, and none of them are a human reading the note.
+@router.post(
+    "/public/{share_uuid}/view",
+    response_model=ViewCountResponse,
+    status_code=200,
+)
+@limiter.limit("60/minute")
+def record_public_view(
+    request: Request,
+    response: Response,
+    share_uuid: str,
+    db: Session = Depends(get_db),
+):
+    return note_service.record_public_view(db, share_uuid=share_uuid)
 
 
 @router.get(
