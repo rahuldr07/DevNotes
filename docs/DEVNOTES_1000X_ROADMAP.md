@@ -52,10 +52,10 @@ DevNotes = Notion + Obsidian + GitHub Gists + Hashnode + AI assistant for develo
 
 Recently checked:
 
-- Frontend lint: passed.
+- Frontend lint: passed (Biome, zero warnings).
 - Frontend TypeScript: passed.
-- Backend compile: passed.
-- Backend tests: `21 passed`.
+- Frontend build: passed.
+- Backend tests: `180 passed` — 151 unit, 29 against a real PostgreSQL.
 
 ---
 
@@ -334,11 +334,12 @@ backend/
 
 ## Transaction Safety
 
-### Current Concern
+### Status: done
 
-Repository functions commit directly. This can cause partial writes when a service operation touches multiple tables.
+Repositories stage and flush; services own the boundary through
+`database.transaction(db)`. A test asserts no repository calls `db.commit()`.
 
-### Better Pattern
+### Pattern
 
 - Repositories should only query/mutate.
 - Services should decide commit/rollback.
@@ -357,11 +358,14 @@ with transaction(db):
 
 ## Auth and Session Hardening
 
-### Current Concern
+### Status: done
 
-Auth token is readable by browser JavaScript. This increases XSS impact.
+Both tokens are HttpOnly cookies written only by the `/api` proxy; the access
+token carries an explicit `token_type` so a refresh token cannot be replayed
+as a bearer credential; sessions are stored per device with rotation and
+reuse detection. The design below is what shipped.
 
-### Better Long-Term Design
+### Design
 
 - Server-set HttpOnly secure cookies.
 - Refresh token rotation.
@@ -638,17 +642,23 @@ Features:
 
 ## Phase 1: Scale Foundation
 
-Priority: highest.
+Priority: highest. **Complete.**
 
-- Harden Next API proxy.
-- Move auth toward HttpOnly cookie BFF flow.
-- Add session table.
-- Add root dev scripts.
-- Add Docker Compose for full stack.
-- Add Pydantic v2 config fix.
-- Add backend integration tests with real PostgreSQL and Alembic.
-- Move transaction boundaries out of repositories.
-- Add production environment docs.
+- [x] Harden Next API proxy.
+- [x] Move auth toward HttpOnly cookie BFF flow.
+- [x] Add session table.
+- [x] Add root dev scripts.
+- [x] Add Docker Compose for full stack (`npm run stack:up`).
+- [x] Add Pydantic v2 config fix.
+- [x] Add backend integration tests with real PostgreSQL and Alembic.
+- [x] Move transaction boundaries out of repositories.
+- [x] Add production environment docs (`ENVIRONMENT`, `CORS_ORIGINS`,
+      `TRUST_FORWARDED_FOR`; production refuses placeholder secrets and
+      plaintext database connections).
+
+Not carried over from this phase: Redis-backed rate limiting. The limiter is
+now keyed correctly (per user, per account) but still stores counters in
+process, so budgets are per worker.
 
 ### Success Criteria
 
