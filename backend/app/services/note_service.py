@@ -1,4 +1,6 @@
 import uuid
+from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +12,7 @@ from app.models.note import Note
 
 MAX_UUID_RETRIES = 3  # For the astronomically unlikely UUID collision
 MAX_NOTE_VERSIONS = 20
+MAX_ACTIVITY_WEEKS = 53
 
 
 def normalize_tags(tags: list[str] | None) -> list[str]:
@@ -416,3 +419,28 @@ def toggle_like(db: Session, user_id: int, note_id: int) -> dict:
             "liked": True,
             "like_count": note_repo.get_like_count(db, note_id=note_id),
         }
+
+
+def get_note_stats(db: Session, user_id: int) -> dict:
+    """Workspace counters over every note the user owns.
+
+    The dashboard previously derived these from the notes it had fetched, so
+    each tile reported the first page and climbed as the user scrolled.
+    """
+    return note_repo.get_note_stats(db, user_id=user_id)
+
+
+def get_activity(db: Session, user_id: int, weeks: int = 26) -> dict:
+    """Daily activity for the heatmap, bounded so a caller cannot ask for an
+    unbounded scan."""
+    bounded_weeks = max(1, min(weeks, MAX_ACTIVITY_WEEKS))
+    since = datetime.now(timezone.utc) - timedelta(weeks=bounded_weeks)
+    return {
+        "weeks": bounded_weeks,
+        "since": since.date().isoformat(),
+        "days": note_repo.get_activity(db, user_id=user_id, since=since),
+    }
+
+
+def get_community_stats(db: Session) -> dict:
+    return note_repo.get_community_stats(db)

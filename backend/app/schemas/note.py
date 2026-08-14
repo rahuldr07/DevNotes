@@ -189,6 +189,52 @@ class NoteVersionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TagCountResponse(BaseModel):
+    tag: str
+    count: int
+
+
+class LanguageCountResponse(BaseModel):
+    language: str
+    count: int
+
+
+class NoteStatsResponse(BaseModel):
+    """Counts across the whole workspace, not the currently loaded page."""
+
+    total: int = 0
+    published: int = 0
+    private: int = 0
+    listed: int = 0
+    community: int = 0
+    pinned: int = 0
+    snippets: int = 0
+    guides: int = 0
+    checklists: int = 0
+    views: int = 0
+    tags: list[TagCountResponse] = Field(default_factory=list)
+    languages: list[LanguageCountResponse] = Field(default_factory=list)
+
+
+class ActivityDayResponse(BaseModel):
+    date: str
+    count: int
+
+
+class ActivityResponse(BaseModel):
+    weeks: int
+    since: str
+    days: list[ActivityDayResponse] = Field(default_factory=list)
+
+
+class CommunityStatsResponse(BaseModel):
+    notes: int = 0
+    views: int = 0
+    likes: int = 0
+    authors: int = 0
+    topics: list[TagCountResponse] = Field(default_factory=list)
+
+
 class ViewCountResponse(BaseModel):
     view_count: int
 

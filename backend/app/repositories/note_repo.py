@@ -15,6 +15,7 @@ work. Flushing (rather than committing) still assigns primary keys and lets
 `db.refresh` read server defaults, so callers see a complete object.
 """
 import re
+from datetime import datetime
 
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
@@ -562,3 +563,188 @@ def create_like(db: Session, note_id: int, user_id: int) -> NoteLike:
 def delete_like(db: Session, like: NoteLike) -> None:
     db.delete(like)
     db.flush()
+
+
+# ════════════════════════════════════════════
+#  Aggregates
+# ════════════════════════════════════════════
+#
+# These exist because the dashboard used to count the notes it had loaded.
+# With cursor pagination that meant every tile ("total notes", "published",
+# "tags") reported the first page, and the numbers grew as the user scrolled.
+# Counting belongs in the database.
+
+def get_note_stats(db: Session, user_id: int) -> dict:
+    """One pass over the user's notes for every dashboard counter."""
+    row = (
+        db.query(
+            func.count(Note.id).label("total"),
+            func.count(Note.id).filter(Note.is_published == True).label("published"),
+            func.count(Note.id).filter(Note.is_listed == True).label("listed"),
+            func.count(Note.id).filter(Note.is_community == True).label("community"),
+            func.count(Note.id).filter(Note.is_pinned == True).label("pinned"),
+            func.count(Note.id).filter(Note.note_type == "snippet").label("snippets"),
+            func.count(Note.id).filter(Note.note_type == "guide").label("guides"),
+            func.count(Note.id).filter(Note.note_type == "checklist").label("checklists"),
+            func.coalesce(func.sum(Note.view_count), 0).label("views"),
+        )
+        .filter(Note.user_id == user_id)
+        .one()
+    )
+
+    total = int(row.total or 0)
+    published = int(row.published or 0)
+    return {
+        "total": total,
+        "published": published,
+        "private": total - published,
+        "listed": int(row.listed or 0),
+        "community": int(row.community or 0),
+        "pinned": int(row.pinned or 0),
+        "snippets": int(row.snippets or 0),
+        "guides": int(row.guides or 0),
+        "checklists": int(row.checklists or 0),
+        "views": int(row.views or 0),
+        "tags": get_tag_counts(db, user_id=user_id),
+        "languages": get_language_counts(db, user_id=user_id),
+    }
+
+
+def get_tag_counts(db: Session, user_id: int, limit: int | None = None) -> list[dict]:
+    """Tag histogram across every note the user owns, not just the loaded page."""
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        tag = func.unnest(Note.tags).label("tag")
+        query = (
+            db.query(tag, func.count().label("count"))
+            .filter(Note.user_id == user_id)
+            .group_by(tag)
+            .order_by(desc("count"), "tag")
+        )
+        if limit:
+            query = query.limit(limit)
+        return [{"tag": name, "count": int(count)} for name, count in query.all()]
+
+    # Non-Postgres dev databases have no unnest; fold the arrays in Python.
+    counts: dict[str, int] = {}
+    for (tags,) in db.query(Note.tags).filter(Note.user_id == user_id).all():
+        for name in tags or []:
+            counts[name] = counts.get(name, 0) + 1
+    ordered = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    if limit:
+        ordered = ordered[:limit]
+    return [{"tag": name, "count": count} for name, count in ordered]
+
+
+def get_language_counts(db: Session, user_id: int) -> list[dict]:
+    rows = (
+        db.query(Note.language, func.count(Note.id).label("count"))
+        .filter(
+            Note.user_id == user_id,
+            Note.note_type == "snippet",
+            Note.language.isnot(None),
+        )
+        .group_by(Note.language)
+        .order_by(Note.language)
+        .all()
+    )
+    return [{"language": language, "count": int(count)} for language, count in rows]
+
+
+def get_activity(db: Session, user_id: int, since: datetime) -> list[dict]:
+    """Daily note activity for the knowledge heatmap.
+
+    A note counts on the day it was created, and again on the day it was last
+    updated when that is a different day — the same rule the client used, but
+    over every note instead of the newest hundred.
+    """
+    created_day = func.date(Note.created_at).label("day")
+    updated_day = func.date(Note.updated_at).label("day")
+
+    counts: dict[str, int] = {}
+
+    created_rows = (
+        db.query(created_day, func.count(Note.id))
+        .filter(Note.user_id == user_id, Note.created_at >= since)
+        .group_by(created_day)
+        .all()
+    )
+    for day, count in created_rows:
+        if day is None:
+            continue
+        counts[str(day)] = counts.get(str(day), 0) + int(count)
+
+    updated_rows = (
+        db.query(updated_day, func.count(Note.id))
+        .filter(
+            Note.user_id == user_id,
+            Note.updated_at.isnot(None),
+            Note.updated_at >= since,
+            func.date(Note.updated_at) != func.date(Note.created_at),
+        )
+        .group_by(updated_day)
+        .all()
+    )
+    for day, count in updated_rows:
+        if day is None:
+            continue
+        counts[str(day)] = counts.get(str(day), 0) + int(count)
+
+    return [
+        {"date": day, "count": count}
+        for day, count in sorted(counts.items())
+    ]
+
+
+def get_community_stats(db: Session) -> dict:
+    row = (
+        db.query(
+            func.count(func.distinct(Note.id)).label("notes"),
+            func.coalesce(func.sum(Note.view_count), 0).label("views"),
+        )
+        .filter(Note.is_community == True, Note.is_published == True)
+        .one()
+    )
+    likes = (
+        db.query(func.count(NoteLike.id))
+        .join(Note, Note.id == NoteLike.note_id)
+        .filter(Note.is_community == True, Note.is_published == True)
+        .scalar()
+    )
+    authors = (
+        db.query(func.count(func.distinct(Note.user_id)))
+        .filter(Note.is_community == True, Note.is_published == True)
+        .scalar()
+    )
+    return {
+        "notes": int(row.notes or 0),
+        "views": int(row.views or 0),
+        "likes": int(likes or 0),
+        "authors": int(authors or 0),
+        "topics": get_community_topics(db, limit=12),
+    }
+
+
+def get_community_topics(db: Session, limit: int = 12) -> list[dict]:
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        tag = func.unnest(Note.tags).label("tag")
+        rows = (
+            db.query(tag, func.count().label("count"))
+            .filter(Note.is_community == True, Note.is_published == True)
+            .group_by(tag)
+            .order_by(desc("count"), "tag")
+            .limit(limit)
+            .all()
+        )
+        return [{"tag": name, "count": int(count)} for name, count in rows]
+
+    counts: dict[str, int] = {}
+    rows = (
+        db.query(Note.tags)
+        .filter(Note.is_community == True, Note.is_published == True)
+        .all()
+    )
+    for (tags,) in rows:
+        for name in tags or []:
+            counts[name] = counts.get(name, 0) + 1
+    ordered = sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]
+    return [{"tag": name, "count": count} for name, count in ordered]

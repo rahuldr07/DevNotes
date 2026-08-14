@@ -19,7 +19,10 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db, get_current_user
 from app.rate_limit import limiter
 from app.schemas.note import (
+    ActivityResponse,
     CommunityNoteResponse,
+    CommunityStatsResponse,
+    NoteStatsResponse,
     LikeToggleResponse,
     NoteCreate,
     NoteVersionResponse,
@@ -135,6 +138,32 @@ def get_community_notes(
         limit=_clamp_limit(limit),
         viewer_id=user.id,
     )
+
+
+# ════════════════════════════════════════════
+#  GET /notes/stats — Workspace counters
+# ════════════════════════════════════════════
+# - Declared before /{id} so "stats" is not parsed as a note id.
+@router.get("/stats", response_model=NoteStatsResponse, status_code=200)
+def get_note_stats(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return note_service.get_note_stats(db, user_id=user.id)
+
+
+@router.get("/activity", response_model=ActivityResponse, status_code=200)
+def get_activity(
+    weeks: int = 26,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return note_service.get_activity(db, user_id=user.id, weeks=weeks)
+
+
+@router.get("/community/stats", response_model=CommunityStatsResponse, status_code=200)
+def get_community_stats(
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return note_service.get_community_stats(db)
 
 
 @router.get("/search", response_model=PaginatedNoteResponse, status_code=200)
