@@ -61,7 +61,9 @@ def test_community_notes_returns_paginated_envelope(notes_client, monkeypatch):
 
     calls = {}
 
-    def fake_get_community_notes(db, cursor=None, limit=20, viewer_id=None):
+    def fake_get_community_notes(
+            db, cursor=None, limit=20, viewer_id=None, query=None, tag=None, sort='recent'
+        ):
         calls.update({"cursor": cursor, "limit": limit})
         return {"data": [_community_note(7)], "next_cursor": None}
 

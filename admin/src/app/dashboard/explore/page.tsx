@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type Ref, useCallback, useMemo, useState } from "react";
+import { type Ref, useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -27,8 +27,13 @@ import { StatTile } from "@/components/ui/stat-tile";
 import { useInfiniteNotes } from "@/hooks/useInfiniteNotes";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatNoteDate } from "@/lib/format";
-import { getCommunityNotesPage, likeNote } from "@/lib/note-api";
-import { previewText, stripMarkdown } from "@/lib/notes";
+import {
+  type CommunityStats,
+  getCommunityNotesPage,
+  getCommunityStats,
+  likeNote,
+} from "@/lib/note-api";
+import { previewText } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
 
@@ -326,11 +331,35 @@ function ExploreNote({
   );
 }
 
-function fetchCommunityPage(cursor: number | null) {
-  return getCommunityNotesPage({ limit: 20, cursor });
-}
-
 export default function ExplorePage() {
+  const [search, setSearch] = useState("");
+  // Typing hits the API, so the value the query uses trails the input.
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>("trending");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [stats, setStats] = useState<CommunityStats | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAppliedSearch(search), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  // Search, topic and sort are server-side: Explore paginates, so filtering
+  // in the browser only ever searched the notes already scrolled into view
+  // and reported "no matches" for everything past the first page.
+  const fetchCommunityPage = useCallback(
+    (cursor: number | null) =>
+      getCommunityNotesPage({
+        limit: 20,
+        cursor,
+        query: appliedSearch,
+        tag: selectedTopic,
+        sort,
+      }),
+    [appliedSearch, selectedTopic, sort],
+  );
+
   const {
     notes,
     setNotes,
@@ -342,10 +371,21 @@ export default function ExplorePage() {
   } = useInfiniteNotes(fetchCommunityPage, {
     errorFallback: "Failed to load explore",
   });
-  const [search, setSearch] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortKey>("trending");
-  const [view, setView] = useState<ViewMode>("grid");
+
+  // Feed-wide totals, not a tally of the page that happens to be loaded.
+  useEffect(() => {
+    let cancelled = false;
+    getCommunityStats()
+      .then((next) => {
+        if (!cancelled) setStats(next);
+      })
+      .catch(() => {
+        // Stats are context, not the feed itself — fail quiet.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLike = useCallback(
     async (id: number) => {
@@ -390,47 +430,13 @@ export default function ExplorePage() {
     [notes, setNotes],
   );
 
-  const visibleNotes = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const topicFiltered = selectedTopic
-      ? notes.filter((note) => note.tags.includes(selectedTopic))
-      : notes;
-    const filtered = query
-      ? topicFiltered.filter((note) => {
-          return (
-            note.title.toLowerCase().includes(query) ||
-            stripMarkdown(note.content).toLowerCase().includes(query) ||
-            note.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-            authorName(note).toLowerCase().includes(query)
-          );
-        })
-      : topicFiltered;
+  // The server ranks and filters; the browser renders what it is given.
+  const visibleNotes = notes;
 
-    return [...filtered].sort((left, right) => {
-      if (sort === "trending") {
-        const metric = metricValue(right) - metricValue(left);
-        if (metric !== 0) return metric;
-      }
-      return (
-        new Date(right.created_at).getTime() -
-        new Date(left.created_at).getTime()
-      );
-    });
-  }, [notes, search, selectedTopic, sort]);
-
-  const topicCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    notes.forEach((note) => {
-      note.tags.forEach((tag) => {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1);
-      });
-    });
-    return [...counts.entries()]
-      .sort(
-        (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
-      )
-      .slice(0, 10);
-  }, [notes]);
+  const topicCounts = useMemo<Array<[string, number]>>(
+    () => (stats?.topics ?? []).map((topic) => [topic.tag, topic.count]),
+    [stats],
+  );
 
   const featuredNote = useMemo(
     () =>
@@ -442,18 +448,12 @@ export default function ExplorePage() {
 
   const exploreStats = useMemo(
     () => [
-      { label: "public notes", value: notes.length },
-      { label: "topics", value: topicCounts.length },
-      {
-        label: "views",
-        value: notes.reduce((sum, note) => sum + (note.view_count ?? 0), 0),
-      },
-      {
-        label: "likes",
-        value: notes.reduce((sum, note) => sum + (note.like_count ?? 0), 0),
-      },
+      { label: "public notes", value: stats?.notes ?? 0 },
+      { label: "authors", value: stats?.authors ?? 0 },
+      { label: "views", value: stats?.views ?? 0 },
+      { label: "likes", value: stats?.likes ?? 0 },
     ],
-    [notes, topicCounts.length],
+    [stats],
   );
 
   return (
@@ -626,8 +626,13 @@ export default function ExplorePage() {
 
       {!loading && visibleNotes.length === 0 && !error && (
         <ExploreEmptyState
-          hasNotes={notes.length > 0}
-          onTopic={setSelectedTopic}
+          hasNotes={
+            Boolean(appliedSearch || selectedTopic) || (stats?.notes ?? 0) > 0
+          }
+          onTopic={(topic) => {
+            setSelectedTopic(topic);
+            setSearch("");
+          }}
         />
       )}
 

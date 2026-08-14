@@ -396,14 +396,28 @@ def get_community_notes(
     cursor: int | None = None,
     limit: int = 20,
     viewer_id: int | None = None,
+    query: str | None = None,
+    tag: str | None = None,
+    sort: str = "recent",
 ) -> dict:
-    """Retrieves all community notes."""
+    """Retrieves community notes, optionally filtered by text and tag.
+
+    `sort="trending"` ranks across the whole feed and returns a single
+    bounded page: a leaderboard has a top, and rank order cannot be paged by
+    an id cursor.
+    """
+    normalized_sort = "trending" if sort == "trending" else "recent"
     notes = note_repo.get_community_notes(
         db,
         cursor=cursor,
         limit=limit + 1,
         viewer_id=viewer_id,
+        search_query=query,
+        tag=_normalize_filter(tag),
+        sort=normalized_sort,
     )
+    if normalized_sort == "trending":
+        return {"data": notes[:limit], "next_cursor": None}
     return _paginate(notes, limit)
 
 

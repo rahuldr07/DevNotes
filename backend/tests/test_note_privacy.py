@@ -25,7 +25,7 @@ def test_community_notes_expose_author_name_not_user_id(notes_client, monkeypatc
     monkeypatch.setattr(
         note_service,
         "get_community_notes",
-        lambda db, cursor=None, limit=20, viewer_id=None: {
+        lambda db, cursor=None, limit=20, viewer_id=None, query=None, tag=None, sort='recent': {
             "data": [_note_payload(author_name="Grace Hopper")],
             "next_cursor": None,
         },

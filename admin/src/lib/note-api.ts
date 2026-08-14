@@ -99,14 +99,72 @@ export async function getSnippetNotesPage({
 export async function getCommunityNotesPage({
   limit = 20,
   cursor = null,
+  query,
+  tag,
+  sort,
 }: {
   limit?: number;
   cursor?: number | null;
+  query?: string;
+  tag?: string | null;
+  sort?: "trending" | "recent";
 } = {}) {
-  const response = await api.get<Note[] | PaginatedNotesResponse>(
-    withPagination("/notes/community", limit, cursor),
-  );
+  // Search and tag filtering happen server-side: Explore paginates, so a
+  // client-side filter only ever searched the notes already loaded.
+  let endpoint = withPagination("/notes/community", limit, cursor);
+  if (query?.trim()) {
+    endpoint += `&q=${encodeURIComponent(query.trim())}`;
+  }
+  if (tag) {
+    endpoint += `&tag=${encodeURIComponent(tag)}`;
+  }
+  if (sort) {
+    endpoint += `&sort=${encodeURIComponent(sort)}`;
+  }
+  const response = await api.get<Note[] | PaginatedNotesResponse>(endpoint);
   return normalizePage(response);
+}
+
+export interface CommunityStats {
+  notes: number;
+  views: number;
+  likes: number;
+  authors: number;
+  topics: Array<{ tag: string; count: number }>;
+}
+
+export async function getCommunityStats() {
+  return api.get<CommunityStats>("/notes/community/stats");
+}
+
+export interface NoteStats {
+  total: number;
+  published: number;
+  private: number;
+  listed: number;
+  community: number;
+  pinned: number;
+  snippets: number;
+  guides: number;
+  checklists: number;
+  views: number;
+  tags: Array<{ tag: string; count: number }>;
+  languages: Array<{ language: string; count: number }>;
+}
+
+export async function getNoteStats() {
+  return api.get<NoteStats>("/notes/stats");
+}
+
+export interface ActivityDay {
+  date: string;
+  count: number;
+}
+
+export async function getActivity(weeks = 26) {
+  return api.get<{ weeks: number; since: string; days: ActivityDay[] }>(
+    `/notes/activity?weeks=${weeks}`,
+  );
 }
 
 export interface SearchNotesFilters {

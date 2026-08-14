@@ -129,6 +129,9 @@ def get_my_notes(
 def get_community_notes(
     cursor: int | None = None,
     limit: int = 20,
+    q: str | None = None,
+    tag: str | None = None,
+    sort: str = "recent",
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -137,6 +140,9 @@ def get_community_notes(
         cursor=cursor,
         limit=_clamp_limit(limit),
         viewer_id=user.id,
+        query=q,
+        tag=tag,
+        sort=sort,
     )
 
 

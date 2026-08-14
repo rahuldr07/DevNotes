@@ -411,8 +411,16 @@ def get_community_notes(
     cursor: int | None = None,
     limit: int = 20,
     viewer_id: int | None = None,
+    search_query: str | None = None,
+    tag: str | None = None,
+    sort: str = "recent",
 ) -> list[dict]:
-    """Fetches published community notes only, with the viewer's like state."""
+    """Fetches published community notes only, with the viewer's like state.
+
+    Search and tag filtering run here rather than in the browser: Explore
+    paginates, so a client-side filter only ever searched the notes already
+    scrolled into view and quietly reported "no matches" for everything else.
+    """
     like_count = func.count(NoteLike.id).label("like_count")
     liked_by_me = func.coalesce(
         func.bool_or(NoteLike.user_id == viewer_id), False
@@ -422,12 +430,43 @@ def get_community_notes(
         .join(User, Note.user_id == User.id)
         .outerjoin(NoteLike, NoteLike.note_id == Note.id)
         .filter(Note.is_community == True, Note.is_published == True)
-        .group_by(Note.id, User.name, User.username)
-        .add_columns(like_count, liked_by_me)
     )
-    if cursor is not None:
-        query = query.filter(Note.id < cursor)
-    rows = query.order_by(Note.id.desc()).limit(limit).all()
+
+    if tag:
+        wanted = tag.strip().lower()
+        if db.bind is not None and db.bind.dialect.name == "postgresql":
+            query = query.filter(Note.tags.contains([wanted]))
+        else:
+            query = query.filter(Note.tags.any(wanted))
+
+    if search_query and search_query.strip():
+        cleaned = search_query.strip()
+        if db.bind is not None and db.bind.dialect.name == "postgresql":
+            ts_query = func.websearch_to_tsquery("english", cleaned)
+            query = query.filter(Note.search_vector.op("@@")(ts_query))
+        else:
+            pattern = f"%{cleaned.lower()}%"
+            query = query.filter(
+                or_(Note.title.ilike(pattern), Note.content.ilike(pattern))
+            )
+
+    query = query.group_by(Note.id, User.name, User.username).add_columns(
+        like_count, liked_by_me
+    )
+
+    if sort == "trending":
+        # Ranking is computed over the whole feed, not over the page the
+        # browser happens to hold. Trending is a bounded leaderboard rather
+        # than an endless scroll, so it returns one page and no cursor —
+        # an id cursor cannot page a rank-ordered list (see search_notes).
+        trending_score = (like_count * 3) + func.coalesce(Note.view_count, 0)
+        rows = (
+            query.order_by(desc(trending_score), Note.id.desc()).limit(limit).all()
+        )
+    else:
+        if cursor is not None:
+            query = query.filter(Note.id < cursor)
+        rows = query.order_by(Note.id.desc()).limit(limit).all()
     return [
         _community_response(
             note,

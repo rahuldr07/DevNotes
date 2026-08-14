@@ -109,7 +109,7 @@ def test_browsing_explore_does_not_inflate_view_counts(monkeypatch, fake_session
     monkeypatch.setattr(
         note_service.note_repo,
         "get_community_notes",
-        lambda db, cursor, limit, viewer_id: [
+        lambda db, cursor, limit, viewer_id, search_query=None, tag=None, sort='recent': [
             {"id": 1, "view_count": 3},
             {"id": 2, "view_count": 4},
         ],
