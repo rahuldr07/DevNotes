@@ -109,6 +109,9 @@ def get_my_notes(
     cursor: int | None = None,
     limit: int = 20,
     note_type: str | None = None,
+    library_filter: str | None = None,
+    tag: str | None = None,
+    sort: str = "updated",
     user= Depends(get_current_user),
     db :Session = Depends(get_db),
 ):
@@ -118,6 +121,9 @@ def get_my_notes(
         cursor=cursor,
         limit=_clamp_limit(limit),
         note_type=note_type,
+        library_filter=library_filter,
+        tag=tag,
+        sort=sort,
     )
 
 # ════════════════════════════════════════════

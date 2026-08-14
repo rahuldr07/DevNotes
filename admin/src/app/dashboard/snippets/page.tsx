@@ -21,10 +21,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatTile } from "@/components/ui/stat-tile";
+import { useInfiniteNotes } from "@/hooks/useInfiniteNotes";
 import { copyToClipboard } from "@/lib/clipboard";
-import { normalizeErrorMessage } from "@/lib/errors";
 import { formatNoteDate } from "@/lib/format";
-import { getSnippetNotesPage } from "@/lib/note-api";
+import {
+  getNoteStats,
+  getSnippetNotesPage,
+  type NoteStats,
+} from "@/lib/note-api";
 import type { Note } from "@/types/notes";
 
 const ALL_LANGUAGES = "all";
@@ -201,38 +205,52 @@ function SnippetEmptyState() {
 }
 
 export default function SnippetsPage() {
-  const [snippets, setSnippets] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState(ALL_LANGUAGES);
+  const [stats, setStats] = useState<NoteStats | null>(null);
 
-  const fetchSnippets = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const page = await getSnippetNotesPage({ limit: 80 });
-      setSnippets(page.items);
-    } catch (err: unknown) {
-      setError(normalizeErrorMessage(err, "Failed to load snippets"));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Paginated rather than capped at 80: the old fetch silently truncated a
+  // vault larger than that, and every counter below described the truncation.
+  const fetchSnippetsPage = useCallback(
+    (cursor: number | null) => getSnippetNotesPage({ limit: 20, cursor }),
+    [],
+  );
+
+  const {
+    notes: snippets,
+    setNotes: setSnippets,
+    loading,
+    loadingMore,
+    nextCursor,
+    error,
+    sentinelRef,
+    refetch,
+  } = useInfiniteNotes(fetchSnippetsPage, {
+    errorFallback: "Failed to load snippets",
+  });
+
+  const fetchSnippets = useCallback(() => {
+    refetch();
+    getNoteStats()
+      .then(setStats)
+      .catch(() => {
+        // Counters are context; the vault itself still renders.
+      });
+  }, [refetch]);
 
   useEffect(() => {
-    fetchSnippets();
-  }, [fetchSnippets]);
+    getNoteStats()
+      .then(setStats)
+      .catch(() => {});
+  }, []);
 
-  const languages = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const note of snippets) {
-      const language = normalizeLanguage(note.language);
-      counts.set(language, (counts.get(language) ?? 0) + 1);
-    }
-    return Array.from(counts.entries()).sort(([left], [right]) =>
-      left.localeCompare(right),
-    );
-  }, [snippets]);
+  const languages = useMemo<Array<[string, number]>>(
+    () =>
+      (stats?.languages ?? []).map((entry) => [
+        normalizeLanguage(entry.language),
+        entry.count,
+      ]),
+    [stats],
+  );
 
   const filteredSnippets = useMemo(() => {
     if (selectedLanguage === ALL_LANGUAGES) return snippets;
@@ -246,22 +264,26 @@ export default function SnippetsPage() {
     [filteredSnippets],
   );
 
-  const stats = useMemo(
+  const statTiles = useMemo(
     () => [
-      { label: "snippets", value: snippets.length, hint: "copy-ready items" },
+      {
+        label: "snippets",
+        value: stats?.snippets ?? 0,
+        hint: "copy-ready items",
+      },
       { label: "languages", value: languages.length, hint: "retrieval lanes" },
       {
-        label: "tagged",
-        value: snippets.filter((note) => note.tags.length > 0).length,
-        hint: "tagged snippets",
+        label: "guides",
+        value: stats?.guides ?? 0,
+        hint: "written walkthroughs",
       },
       {
-        label: "sources",
-        value: snippets.filter((note) => note.source_url).length,
-        hint: "linked context",
+        label: "published",
+        value: stats?.published ?? 0,
+        hint: "shareable pages",
       },
     ],
-    [languages.length, snippets],
+    [languages.length, stats],
   );
 
   return (
@@ -278,7 +300,7 @@ export default function SnippetsPage() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {stats.map((stat) => (
+            {statTiles.map((stat) => (
               <StatTile
                 key={stat.label}
                 value={loading ? "—" : stat.value}
@@ -310,6 +332,10 @@ export default function SnippetsPage() {
           onCreated={(note) => {
             if (note.note_type === "snippet") {
               setSnippets((prev) => [note, ...prev]);
+              // The language lanes come from workspace-wide counts.
+              getNoteStats()
+                .then(setStats)
+                .catch(() => {});
             }
           }}
         />
@@ -333,7 +359,7 @@ export default function SnippetsPage() {
         <div className="flex flex-wrap gap-2">
           <Chip
             active={selectedLanguage === ALL_LANGUAGES}
-            count={snippets.length}
+            count={stats?.snippets ?? 0}
             onClick={() => setSelectedLanguage(ALL_LANGUAGES)}
           >
             all
@@ -439,6 +465,15 @@ export default function SnippetsPage() {
             </section>
           ))}
         </div>
+      )}
+
+      {!loading && nextCursor !== null && (
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+      )}
+      {loadingMore && (
+        <p className="py-6 text-center text-xs text-[var(--text-secondary)]">
+          loading...
+        </p>
       )}
     </div>
   );

@@ -3,8 +3,7 @@
 import { Flame } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatedNumber } from "@/components/motion";
-import { getUserNotesPage } from "@/lib/note-api";
-import type { Note } from "@/types/notes";
+import { type ActivityDay, getActivity } from "@/lib/note-api";
 
 const WEEKS = 26;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,24 +43,16 @@ function startOfDay(date: Date): Date {
   return copy;
 }
 
-/** Each note counts its creation day, plus its update day when different. */
-function buildActivity(notes: Note[]): Map<string, number> {
+/**
+ * The server aggregates over every note; this only reshapes the response.
+ * It used to be built from the newest hundred notes, so both the grid and the
+ * streak counters quietly under-reported once a workspace grew past that.
+ */
+function buildActivity(days: ActivityDay[]): Map<string, number> {
   const activity = new Map<string, number>();
-  const bump = (iso: string | null | undefined) => {
-    if (!iso) return;
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return;
-    const key = dayKey(date);
-    activity.set(key, (activity.get(key) ?? 0) + 1);
-  };
-  for (const note of notes) {
-    bump(note.created_at);
-    if (
-      note.updated_at &&
-      dayKey(new Date(note.updated_at)) !== dayKey(new Date(note.created_at))
-    ) {
-      bump(note.updated_at);
-    }
+  for (const day of days) {
+    if (!day?.date) continue;
+    activity.set(day.date, (activity.get(day.date) ?? 0) + day.count);
   }
   return activity;
 }
@@ -164,7 +155,7 @@ function buildStreaks(activity: Map<string, number>): StreakStats {
 }
 
 export function KnowledgeHeatmap() {
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [days, setDays] = useState<ActivityDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [hovered, setHovered] = useState<DayCell | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -179,9 +170,9 @@ export function KnowledgeHeatmap() {
 
   useEffect(() => {
     let cancelled = false;
-    getUserNotesPage({ limit: 100 })
-      .then((page) => {
-        if (!cancelled) setNotes(page.items);
+    getActivity(WEEKS)
+      .then((response) => {
+        if (!cancelled) setDays(response.days);
       })
       .catch(() => {
         // The heatmap is decorative context — fail quiet, render empty.
@@ -194,7 +185,7 @@ export function KnowledgeHeatmap() {
     };
   }, []);
 
-  const activity = useMemo(() => buildActivity(notes), [notes]);
+  const activity = useMemo(() => buildActivity(days), [days]);
   const weeks = useMemo(() => buildWeeks(activity), [activity]);
   const streaks = useMemo(() => buildStreaks(activity), [activity]);
 

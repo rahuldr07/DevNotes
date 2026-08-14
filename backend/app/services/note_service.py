@@ -239,6 +239,9 @@ def get_my_notes(
     cursor: int | None = None,
     limit: int = 20,
     note_type: str | None = None,
+    library_filter: str | None = None,
+    tag: str | None = None,
+    sort: str = "updated",
 ) -> dict:
     """
     Retrieves all notes for the specified user.
@@ -254,14 +257,18 @@ def get_my_notes(
     Returns:
         A list of Note model instances belonging to the user.
     """
+    offset = max(0, cursor or 0)
     notes = note_repo.get_my_notes(
         db,
         user_id=user_id,
-        cursor=cursor,
+        offset=offset,
         limit=limit + 1,
         note_type=note_type,
+        library_filter=_normalize_library_filter(library_filter),
+        tag=_normalize_filter(tag),
+        sort=_normalize_sort(sort),
     )
-    return _paginate(notes, limit)
+    return _paginate_by_offset(notes, limit, offset)
 
 
 def get_note(db: Session, user_id: int, note_id: int) -> Note | None:
@@ -301,6 +308,19 @@ def toggle_pin(db: Session, user_id: int, note_id: int) -> Note:
     _get_owned_note(db, user_id=user_id, note_id=note_id)
     with transaction(db):
         return note_repo.toggle_pin(db, note_id=note_id)
+
+
+def _normalize_library_filter(value: str | None) -> str | None:
+    """Unknown filters mean "no filter" rather than an empty library."""
+    cleaned = _normalize_filter(value)
+    if cleaned in (None, "all"):
+        return None
+    return cleaned if cleaned in note_repo.LIBRARY_FILTERS else None
+
+
+def _normalize_sort(value: str | None) -> str:
+    cleaned = _normalize_filter(value)
+    return cleaned if cleaned in note_repo.LIBRARY_SORTS else "updated"
 
 
 def _normalize_filter(value: str | None) -> str | None:

@@ -59,7 +59,14 @@ export function useInfiniteNotes(
     }
   }, [fetchPage, loading, loadingMore, nextCursor]);
 
-  const lastNoteRef = useCallback(
+  /**
+   * Attach to a standalone sentinel element rendered whenever `nextCursor`
+   * is set — not to the last card. Hanging the observer off the last result
+   * meant that when a view rendered no results (a filter matching nothing in
+   * the pages loaded so far) there was no sentinel, so nothing ever loaded
+   * again and the user saw "no matches" over a library that had them.
+   */
+  const sentinelRef = useCallback(
     (node: HTMLElement | null) => {
       if (loading || loadingMore) return;
       if (observerRef.current) observerRef.current.disconnect();
@@ -82,7 +89,7 @@ export function useInfiniteNotes(
     loadingMore,
     nextCursor,
     error,
-    lastNoteRef,
+    sentinelRef,
     refetch: fetchFirstPage,
   };
 }

@@ -261,25 +261,116 @@ def delete(db: Session, note_id: int) -> None:
         db.flush()
     return None
 
+# A note counts as a draft when it is unpublished and still looks unfinished:
+# short, or never tagged. Mirrors the heuristic the dashboard chip used to
+# apply client-side, but over every note rather than the loaded page.
+DRAFT_MAX_LENGTH = 240
+
+LIBRARY_FILTERS = {"all", "pinned", "private", "public", "snippets", "drafts"}
+LIBRARY_SORTS = {"updated", "newest", "oldest", "title", "reading"}
+
+
+def _library_order(sort: str):
+    """Deterministic ordering for the notes library.
+
+    Every ordering ends in a unique tiebreak (id) so offset pagination cannot
+    skip or repeat a row when two notes share a sort key.
+    """
+    touched = func.coalesce(Note.updated_at, Note.created_at)
+    if sort == "newest":
+        return [Note.created_at.desc(), Note.id.desc()]
+    if sort == "oldest":
+        return [Note.created_at.asc(), Note.id.asc()]
+    if sort == "title":
+        return [func.lower(Note.title).asc(), Note.id.desc()]
+    if sort == "reading":
+        # Length is proportional to reading time and, unlike the stripped
+        # word count, can be ordered by the database.
+        return [func.length(Note.content).desc(), Note.id.desc()]
+    return [touched.desc(), Note.id.desc()]
+
+
 def get_my_notes(
-    db:Session,
+    db: Session,
     user_id: int,
-    cursor: int | None = None,
+    offset: int | None = None,
     limit: int = 20,
     note_type: str | None = None,
+    library_filter: str | None = None,
+    tag: str | None = None,
+    sort: str = "updated",
 ) -> list[Note]:
     """
-    Fetches all notes belonging to a specific user.
+    Fetches notes belonging to a specific user.
 
-    Uses .filter(Note.user_id == user_id) to ensure users
-    only see their own notes (data isolation).
+    Filtering, sorting and pinned-first ordering all happen here. They used
+    to happen in the browser over whatever page had been scrolled into view,
+    which meant "sort by title" sorted twenty of five hundred notes and a
+    filter that matched nothing on page one reported an empty library.
+
+    Paginates by offset because the orderings above are not id-ordered.
     """
     query = db.query(Note).filter(Note.user_id == user_id)
+
     if note_type:
         query = query.filter(Note.note_type == note_type)
-    if cursor is not None:
-        query = query.filter(Note.id < cursor)
-    return query.order_by(Note.id.desc()).limit(limit).all()
+
+    if library_filter == "pinned":
+        query = query.filter(Note.is_pinned == True)
+    elif library_filter == "private":
+        query = query.filter(Note.is_published == False)
+    elif library_filter == "public":
+        query = query.filter(Note.is_published == True)
+    elif library_filter == "snippets":
+        query = query.filter(Note.note_type == "snippet")
+    elif library_filter == "drafts":
+        query = query.filter(
+            Note.is_published == False,
+            or_(
+                func.length(Note.content) < DRAFT_MAX_LENGTH,
+                func.cardinality(Note.tags) == 0,
+            )
+            if db.bind is not None and db.bind.dialect.name == "postgresql"
+            else func.length(Note.content) < DRAFT_MAX_LENGTH,
+        )
+
+    if tag:
+        wanted = tag.strip().lower()
+        if db.bind is not None and db.bind.dialect.name == "postgresql":
+            query = query.filter(Note.tags.contains([wanted]))
+        else:
+            query = query.filter(Note.tags.any(wanted))
+
+    # Pinned notes sort above everything, then the chosen ordering.
+    ordering = [Note.is_pinned.desc(), *_library_order(sort)]
+    return query.order_by(*ordering).offset(max(0, offset or 0)).limit(limit).all()
+
+
+def count_my_notes(
+    db: Session,
+    user_id: int,
+    note_type: str | None = None,
+    library_filter: str | None = None,
+    tag: str | None = None,
+) -> int:
+    query = db.query(func.count(Note.id)).filter(Note.user_id == user_id)
+    if note_type:
+        query = query.filter(Note.note_type == note_type)
+    if library_filter == "pinned":
+        query = query.filter(Note.is_pinned == True)
+    elif library_filter == "private":
+        query = query.filter(Note.is_published == False)
+    elif library_filter == "public":
+        query = query.filter(Note.is_published == True)
+    elif library_filter == "snippets":
+        query = query.filter(Note.note_type == "snippet")
+    if tag:
+        wanted = tag.strip().lower()
+        if db.bind is not None and db.bind.dialect.name == "postgresql":
+            query = query.filter(Note.tags.contains([wanted]))
+        else:
+            query = query.filter(Note.tags.any(wanted))
+    return int(query.scalar() or 0)
 
 
 def search_notes(

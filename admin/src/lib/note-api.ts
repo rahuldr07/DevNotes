@@ -32,21 +32,42 @@ function withPagination(
   return `${endpoint}?${params.toString()}`;
 }
 
+export type LibraryFilter =
+  | "all"
+  | "pinned"
+  | "private"
+  | "public"
+  | "snippets"
+  | "drafts";
+
+export type LibrarySort = "updated" | "newest" | "oldest" | "title" | "reading";
+
 export async function getUserNotesPage({
   limit = 20,
   cursor = null,
   noteType,
+  libraryFilter,
+  tag,
+  sort,
 }: {
   limit?: number;
   cursor?: number | null;
   noteType?: string;
+  libraryFilter?: LibraryFilter;
+  tag?: string | null;
+  sort?: LibrarySort;
 } = {}) {
-  const endpoint = withPagination("/notes/notes", limit, cursor);
-  const response = await api.get<Note[] | PaginatedNotesResponse>(
-    noteType
-      ? `${endpoint}&note_type=${encodeURIComponent(noteType)}`
-      : endpoint,
-  );
+  // Filtering and sorting run server-side. Doing them in the browser meant
+  // "sort by title" sorted the loaded page, and a filter matching nothing on
+  // page one reported an empty library while matches sat unfetched.
+  let endpoint = withPagination("/notes/notes", limit, cursor);
+  if (noteType) endpoint += `&note_type=${encodeURIComponent(noteType)}`;
+  if (libraryFilter && libraryFilter !== "all") {
+    endpoint += `&library_filter=${encodeURIComponent(libraryFilter)}`;
+  }
+  if (tag) endpoint += `&tag=${encodeURIComponent(tag)}`;
+  if (sort) endpoint += `&sort=${encodeURIComponent(sort)}`;
+  const response = await api.get<Note[] | PaginatedNotesResponse>(endpoint);
   return normalizePage(response);
 }
 

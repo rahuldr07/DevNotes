@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type Ref, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { KnowledgeHeatmap } from "@/components/KnowledgeHeatmap";
 import { AnimatedNumber, Reveal } from "@/components/motion";
 import { QuickCapture } from "@/components/QuickCapture";
@@ -45,28 +45,21 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { useInfiniteNotes } from "@/hooks/useInfiniteNotes";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatNoteDate } from "@/lib/format";
-import { deleteNote, getUserNotesPage, togglePin } from "@/lib/note-api";
+import {
+  deleteNote,
+  getNoteStats,
+  getUserNotesPage,
+  type LibraryFilter,
+  type LibrarySort,
+  type NoteStats,
+  togglePin,
+} from "@/lib/note-api";
 import { previewText, stripMarkdown } from "@/lib/notes";
 import { readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
 
-type SortKey = "updated" | "newest" | "oldest" | "reading" | "title";
+type SortKey = LibrarySort;
 type ViewMode = "grid" | "list" | "compact";
-type LibraryFilter =
-  | "all"
-  | "pinned"
-  | "private"
-  | "public"
-  | "snippets"
-  | "drafts";
-
-function getNoteTimestamp(note: Note, field: "created" | "updated") {
-  const value =
-    field === "updated"
-      ? (note.updated_at ?? note.created_at)
-      : note.created_at;
-  return new Date(value).getTime();
-}
 
 function getReadingMinutes(note: Note) {
   return readingTimeMinutes(note.content);
@@ -74,23 +67,6 @@ function getReadingMinutes(note: Note) {
 
 function getNoteKind(note: Note) {
   return note.note_type ?? "note";
-}
-
-function noteMatchesLibraryFilter(note: Note, filter: LibraryFilter) {
-  if (filter === "all") return true;
-  if (filter === "pinned") return Boolean(note.is_pinned);
-  if (filter === "private") return !note.is_published;
-  if (filter === "public") return Boolean(note.is_published);
-  if (filter === "snippets") return note.note_type === "snippet";
-  if (filter === "drafts") {
-    const plainLength = stripMarkdown(note.content).length;
-    return !note.is_published && (plainLength < 240 || note.tags.length === 0);
-  }
-  return true;
-}
-
-function fetchNotesPage(cursor: number | null) {
-  return getUserNotesPage({ limit: 20, cursor });
 }
 
 function NoteCardSkeleton({ view }: { view: ViewMode }) {
@@ -204,14 +180,12 @@ function NoteCard({
   onDelete,
   onPin,
   onSelect,
-  observeRef,
 }: {
   note: Note;
   view: ViewMode;
   onDelete: (id: number) => void;
   onPin: (id: number) => void;
   onSelect?: (id: number) => void;
-  observeRef?: Ref<HTMLElement>;
 }) {
   const router = useRouter();
   const [showActions, setShowActions] = useState(false);
@@ -246,7 +220,6 @@ function NoteCard({
   if (view === "compact") {
     return (
       <article
-        ref={observeRef}
         {...interactiveProps}
         className="group grid cursor-pointer grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-3 py-2 transition-colors hover:bg-[var(--bg-secondary)]/72 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] md:grid-cols-[1rem_minmax(0,1fr)_5rem_6.5rem_auto]"
       >
@@ -289,7 +262,6 @@ function NoteCard({
   if (view === "list") {
     return (
       <article
-        ref={observeRef}
         {...interactiveProps}
         className="group flex cursor-pointer items-center gap-3 rounded-none border border-transparent px-3 py-3 transition-colors hover:border-[var(--border)] hover:bg-[var(--bg-secondary)]/80 hover:shadow-lg hover:shadow-black/5 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
       >
@@ -321,7 +293,6 @@ function NoteCard({
 
   return (
     <article
-      ref={observeRef}
       {...interactiveProps}
       className="group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/58 p-4 shadow-sm shadow-black/5 backdrop-blur transition-colors hover:-translate-y-1 hover:bg-[var(--bg-secondary)]/70 hover:shadow-sm hover:shadow-black/10 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
     >
@@ -539,6 +510,29 @@ function SelectedNotePreview({ note }: { note: Note | null }) {
 }
 
 export default function DashboardPage() {
+  const [sort, setSort] = useState<SortKey>("updated");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
+  const [stats, setStats] = useState<NoteStats | null>(null);
+  const { confirm, ConfirmDialog } = useConfirm();
+
+  // Filtering and sorting are server-side. Doing them here meant "sort by
+  // title" ordered the loaded page rather than the library, and the counts
+  // below described whatever had been scrolled into view.
+  const fetchNotesPage = useCallback(
+    (cursor: number | null) =>
+      getUserNotesPage({
+        limit: 20,
+        cursor,
+        libraryFilter,
+        tag: selectedTag,
+        sort,
+      }),
+    [libraryFilter, selectedTag, sort],
+  );
+
   const {
     notes,
     setNotes,
@@ -546,15 +540,21 @@ export default function DashboardPage() {
     loadingMore,
     nextCursor,
     error,
-    lastNoteRef,
+    sentinelRef,
     refetch,
   } = useInfiniteNotes(fetchNotesPage);
-  const [sort, setSort] = useState<SortKey>("updated");
-  const [view, setView] = useState<ViewMode>("grid");
-  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("all");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
-  const { confirm, ConfirmDialog } = useConfirm();
+
+  const loadStats = useCallback(() => {
+    getNoteStats()
+      .then(setStats)
+      .catch(() => {
+        // Counters are context around the library, not the library itself.
+      });
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   useEffect(() => {
     const savedSort = localStorage.getItem("devnotes-sort") as SortKey | null;
@@ -598,6 +598,7 @@ export default function DashboardPage() {
     try {
       await deleteNote(id);
       setNotes((prev) => prev.filter((item) => item.id !== id));
+      loadStats();
       gooeyToast.success("Note deleted");
     } catch (err: unknown) {
       gooeyToast.error("Delete failed", {
@@ -630,34 +631,8 @@ export default function DashboardPage() {
     [setNotes],
   );
 
-  const sortedNotes = useMemo(() => {
-    const sorted = [...notes].sort((a, b) => {
-      if (sort === "updated") {
-        return getNoteTimestamp(b, "updated") - getNoteTimestamp(a, "updated");
-      }
-      if (sort === "newest") {
-        return getNoteTimestamp(b, "created") - getNoteTimestamp(a, "created");
-      }
-      if (sort === "oldest") {
-        return getNoteTimestamp(a, "created") - getNoteTimestamp(b, "created");
-      }
-      if (sort === "reading") {
-        return getReadingMinutes(b) - getReadingMinutes(a);
-      }
-      return (a.title || "").localeCompare(b.title || "");
-    });
-
-    const pinnedFirst = [
-      ...sorted.filter((note) => note.is_pinned),
-      ...sorted.filter((note) => !note.is_pinned),
-    ];
-
-    return pinnedFirst.filter(
-      (note) =>
-        noteMatchesLibraryFilter(note, libraryFilter) &&
-        (!selectedTag || note.tags.includes(selectedTag)),
-    );
-  }, [libraryFilter, notes, selectedTag, sort]);
+  // The server returns them filtered, sorted and pinned-first.
+  const sortedNotes = notes;
 
   const selectedNote = useMemo(() => {
     if (sortedNotes.length === 0) return null;
@@ -666,73 +641,51 @@ export default function DashboardPage() {
     );
   }, [selectedNoteId, sortedNotes]);
 
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>();
-    notes.forEach((note) => {
-      note.tags.forEach((tag) => {
-        tags.add(tag);
-      });
-    });
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
-  }, [notes]);
+  const availableTags = useMemo(
+    () => (stats?.tags ?? []).map((entry) => entry.tag),
+    [stats],
+  );
 
   const libraryFilters = useMemo(
     () => [
-      { key: "all" as const, label: "all", count: notes.length },
-      {
-        key: "pinned" as const,
-        label: "pinned",
-        count: notes.filter((note) => note.is_pinned).length,
-      },
-      {
-        key: "private" as const,
-        label: "private",
-        count: notes.filter((note) => !note.is_published).length,
-      },
-      {
-        key: "public" as const,
-        label: "public",
-        count: notes.filter((note) => note.is_published).length,
-      },
+      { key: "all" as const, label: "all", count: stats?.total ?? 0 },
+      { key: "pinned" as const, label: "pinned", count: stats?.pinned ?? 0 },
+      { key: "private" as const, label: "private", count: stats?.private ?? 0 },
+      { key: "public" as const, label: "public", count: stats?.published ?? 0 },
       {
         key: "snippets" as const,
         label: "snippets",
-        count: notes.filter((note) => note.note_type === "snippet").length,
+        count: stats?.snippets ?? 0,
       },
-      {
-        key: "drafts" as const,
-        label: "drafts",
-        count: notes.filter((note) => noteMatchesLibraryFilter(note, "drafts"))
-          .length,
-      },
+      { key: "drafts" as const, label: "drafts", count: undefined },
     ],
-    [notes],
+    [stats],
   );
 
   const workspaceStats = useMemo(
     () => [
       {
         label: "total notes",
-        value: notes.length,
+        value: stats?.total ?? 0,
         hint: "captured knowledge",
       },
       {
         label: "published",
-        value: notes.filter((note) => note.is_published).length,
+        value: stats?.published ?? 0,
         hint: "shareable pages",
       },
       {
         label: "snippets",
-        value: notes.filter((note) => note.note_type === "snippet").length,
+        value: stats?.snippets ?? 0,
         hint: "copy-ready knowledge",
       },
       {
         label: "tags",
-        value: availableTags.length,
+        value: stats?.tags.length ?? 0,
         hint: "retrieval paths",
       },
     ],
-    [availableTags.length, notes],
+    [stats],
   );
 
   const workspaceInsights = useMemo(() => {
@@ -753,10 +706,10 @@ export default function DashboardPage() {
       recent: byUpdated.slice(0, 3),
       publishCandidates: publishCandidates.slice(0, 3),
       snippets: snippets.slice(0, 3),
-      privateCount: notes.filter((note) => !note.is_published).length,
-      guideCount: notes.filter((note) => note.note_type === "guide").length,
+      privateCount: stats?.private ?? 0,
+      guideCount: stats?.guides ?? 0,
     };
-  }, [notes]);
+  }, [notes, stats]);
 
   return (
     <>
@@ -771,7 +724,9 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
-              <span className="dev-chip px-2 py-1">{notes.length} files</span>
+              <span className="dev-chip px-2 py-1">
+                {stats?.total ?? 0} files
+              </span>
               <span className="dev-chip px-2 py-1">
                 {availableTags.length} tags
               </span>
@@ -828,7 +783,7 @@ export default function DashboardPage() {
         </section>
       </Reveal>
 
-      {!loading && notes.length > 0 && (
+      {(stats?.total ?? 0) > 0 && (
         <Reveal delay={0.06}>
           <KnowledgeHeatmap />
         </Reveal>
@@ -990,8 +945,8 @@ export default function DashboardPage() {
             </h2>
             {!loading && (
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Showing {sortedNotes.length} of {notes.length}{" "}
-                {notes.length === 1 ? "note" : "notes"}
+                Showing {sortedNotes.length} of {stats?.total ?? 0}{" "}
+                {stats?.total === 1 ? "note" : "notes"}
               </p>
             )}
           </div>
@@ -1049,7 +1004,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {!loading && notes.length > 0 && (
+        {!loading && (stats?.total ?? 0) > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {libraryFilters.map((filter) => (
               <Chip
@@ -1067,7 +1022,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {!loading && availableTags.length > 0 && (
+        {availableTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <Chip
               active={selectedTag === null}
@@ -1130,43 +1085,50 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!loading && notes.length === 0 && !error && (
-        <EmptyState
-          icon={<FileText size={28} />}
-          title="no notes yet"
-          description="start with a blank page, then pin, tag, publish, and retrieve your thinking from one workspace"
-          action={
-            <Link href="/dashboard/create_note">
-              <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
-                <Plus size={14} />
-                new note
-              </Button>
-            </Link>
-          }
-        />
-      )}
+      {!loading &&
+        notes.length === 0 &&
+        libraryFilter === "all" &&
+        !selectedTag &&
+        !error && (
+          <EmptyState
+            icon={<FileText size={28} />}
+            title="no notes yet"
+            description="start with a blank page, then pin, tag, publish, and retrieve your thinking from one workspace"
+            action={
+              <Link href="/dashboard/create_note">
+                <Button className="gap-2 bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]">
+                  <Plus size={14} />
+                  new note
+                </Button>
+              </Link>
+            }
+          />
+        )}
 
-      {!loading && notes.length > 0 && sortedNotes.length === 0 && !error && (
-        <div className="py-16 text-center">
-          <p className="text-base font-medium text-[var(--text-primary)]">
-            no notes match this library view
-          </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
-            Try another status filter or clear the tag filter to widen the
-            library view.
-          </p>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setSelectedTag(null);
-              setLibraryFilter("all");
-            }}
-            className="mt-3 text-[var(--accent)]"
-          >
-            clear filters
-          </Button>
-        </div>
-      )}
+      {!loading &&
+        sortedNotes.length === 0 &&
+        (libraryFilter !== "all" || selectedTag) &&
+        !error && (
+          <div className="py-16 text-center">
+            <p className="text-base font-medium text-[var(--text-primary)]">
+              no notes match this library view
+            </p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
+              Try another status filter or clear the tag filter to widen the
+              library view.
+            </p>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSelectedTag(null);
+                setLibraryFilter("all");
+              }}
+              className="mt-3 text-[var(--accent)]"
+            >
+              clear filters
+            </Button>
+          </div>
+        )}
 
       {!loading && sortedNotes.length > 0 && (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -1179,7 +1141,7 @@ export default function DashboardPage() {
                   : "space-y-1"
             }
           >
-            {sortedNotes.map((note, index) => (
+            {sortedNotes.map((note) => (
               <NoteCard
                 key={note.id}
                 note={note}
@@ -1187,9 +1149,6 @@ export default function DashboardPage() {
                 onDelete={handleDelete}
                 onPin={handlePin}
                 onSelect={setSelectedNoteId}
-                observeRef={
-                  index === sortedNotes.length - 1 ? lastNoteRef : undefined
-                }
               />
             ))}
           </div>
@@ -1197,11 +1156,18 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!loading && notes.length > 0 && (
+      {/* Standalone sentinel, not a ref on the last card: when a view renders
+          no results the last card does not exist, so the observer vanished
+          and no further page ever loaded. */}
+      {!loading && nextCursor !== null && (
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+      )}
+
+      {!loading && (
         <div className="py-8 text-center text-xs text-[var(--text-secondary)]">
           {loadingMore
             ? "loading..."
-            : nextCursor === null
+            : nextCursor === null && notes.length > 0
               ? "you've reached the end"
               : ""}
         </div>

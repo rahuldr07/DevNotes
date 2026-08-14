@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type Ref, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -157,12 +157,10 @@ function ExploreNote({
   note,
   view,
   onLike,
-  observeRef,
 }: {
   note: Note;
   view: ViewMode;
   onLike: (id: number) => void;
-  observeRef?: Ref<HTMLElement>;
 }) {
   const router = useRouter();
   const preview = previewText(note.content);
@@ -199,7 +197,6 @@ function ExploreNote({
   if (view === "list") {
     return (
       <article
-        ref={observeRef}
         role={note.share_uuid ? "link" : undefined}
         tabIndex={note.share_uuid ? 0 : -1}
         onClick={note.share_uuid ? openNote : undefined}
@@ -251,7 +248,6 @@ function ExploreNote({
 
   return (
     <article
-      ref={observeRef}
       role={note.share_uuid ? "link" : undefined}
       tabIndex={note.share_uuid ? 0 : -1}
       onClick={note.share_uuid ? openNote : undefined}
@@ -367,7 +363,7 @@ export default function ExplorePage() {
     loadingMore,
     nextCursor,
     error,
-    lastNoteRef,
+    sentinelRef,
   } = useInfiniteNotes(fetchCommunityPage, {
     errorFallback: "Failed to load explore",
   });
@@ -644,25 +640,29 @@ export default function ExplorePage() {
               : "space-y-1"
           }
         >
-          {visibleNotes.map((note, index) => (
+          {visibleNotes.map((note) => (
             <ExploreNote
               key={note.id}
               note={note}
               view={view}
               onLike={handleLike}
-              observeRef={
-                index === visibleNotes.length - 1 ? lastNoteRef : undefined
-              }
             />
           ))}
         </div>
       )}
 
-      {!loading && notes.length > 0 && (
+      {/* Standalone sentinel, not a ref on the last card: when a view renders
+          no results the last card does not exist, so the observer vanished
+          and no further page ever loaded. */}
+      {!loading && nextCursor !== null && (
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+      )}
+
+      {!loading && (
         <div className="py-8 text-center text-xs text-[var(--text-secondary)]">
           {loadingMore
             ? "loading..."
-            : nextCursor === null
+            : nextCursor === null && notes.length > 0
               ? "you've reached the end"
               : ""}
         </div>
