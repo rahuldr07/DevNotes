@@ -14,6 +14,10 @@ admin/.next/
 # Dependencies
 node_modules/
 admin/node_modules/
+# One lockfile. CI installs with `npm ci` against package-lock.json, so a
+# second resolver's lockfile only drifts.
+bun.lock
+admin/bun.lock
 
 # Build outputs
 out/

@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ApiError, api } from "@/lib/api";
 import { getMe } from "@/lib/auth-api";
-import { getUserNotesPage } from "@/lib/note-api";
+import { getNoteStats, getUserNotesPage, type NoteStats } from "@/lib/note-api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Note } from "@/types/notes";
 
@@ -99,6 +99,8 @@ export default function DashboardLayout({
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [isMacPlatform, setIsMacPlatform] = useState(false);
   const [chordPending, setChordPending] = useState(false);
+  const [stats, setStats] = useState<NoteStats | null>(null);
+  const [apiReachable, setApiReachable] = useState(true);
   const chordTimerRef = useRef<number | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
@@ -128,12 +130,26 @@ export default function DashboardLayout({
     window.addEventListener("devnotes:auth-expired", redirectToLogin);
 
     getMe()
-      .then(setUser)
+      .then((me) => {
+        setUser(me);
+        setApiReachable(true);
+      })
       .catch((error: unknown) => {
         if (error instanceof ApiError && error.status === 401) {
           clearUser();
           router.replace("/auth/login");
+          return;
         }
+        setApiReachable(false);
+      });
+
+    getNoteStats()
+      .then((next) => {
+        setStats(next);
+        setApiReachable(true);
+      })
+      .catch(() => {
+        // Leave the panel showing placeholders rather than invented numbers.
       });
 
     return () => {
@@ -318,28 +334,31 @@ export default function DashboardLayout({
             })}
           </nav>
 
+          {/* Real counts from /notes/stats. The panel that used to sit here
+              displayed the fixed strings "ready", "warm" and "armed" — it
+              looked like instrumentation and measured nothing. */}
           <div className="relative mt-4 overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/42 p-3">
             <div className="mb-3 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
               <span className="inline-flex items-center gap-2 text-[var(--accent)]">
-                <Sparkles size={13} /> Runtime
+                <Sparkles size={13} /> Workspace
               </span>
-              <span>online</span>
+              <span>{stats ? `${stats.total} notes` : "—"}</span>
             </div>
             <div className="space-y-1.5">
               {[
-                ["capture", "ready"],
-                ["search", "warm"],
-                ["publish", "armed"],
+                ["snippets", stats?.snippets],
+                ["published", stats?.published],
+                ["tags", stats?.tags.length],
               ].map(([label, value]) => (
                 <div
-                  key={label}
+                  key={String(label)}
                   className="flex items-center justify-between border-l border-[var(--border)] pl-2 text-[11px]"
                 >
                   <span className="font-mono text-[var(--text-secondary)]">
                     {label}
                   </span>
                   <span className="font-mono text-[var(--accent)]">
-                    {value}
+                    {value ?? "—"}
                   </span>
                 </div>
               ))}
@@ -476,7 +495,16 @@ export default function DashboardLayout({
           </main>
 
           <div className="hidden h-7 shrink-0 items-center justify-between border-t border-[var(--border)] bg-[var(--bg-secondary)]/70 px-3 text-[11px] text-[var(--text-secondary)] lg:flex">
-            <span className="text-[var(--accent)]">● synced</span>
+            {/* Reflects the last API call rather than asserting "synced". */}
+            <span
+              className={
+                apiReachable
+                  ? "text-[var(--accent)]"
+                  : "text-[var(--text-secondary)]"
+              }
+            >
+              {apiReachable ? "● connected" : "○ offline"}
+            </span>
             <span>DevNotes Workbench · Next.js · FastAPI · PostgreSQL</span>
             <span className="flex items-center gap-3">
               {chordPending && (

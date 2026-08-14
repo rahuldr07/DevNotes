@@ -446,14 +446,6 @@ samp,
   border-bottom-color: color-mix(in srgb, var(--main-color) 60%, transparent);
 }
 
-/* Read-only markdown viewer reuses the editor frame + .tiptap typography,
-   but sizes to its content — a one-paragraph public note shouldn't carry
-   the editor's 64vh writing canvas. */
-.markdown-viewer,
-.markdown-viewer .tiptap {
-  min-height: 0;
-}
-
 /* Soft, macOS-style text selection: accent washed into the page background
    (≈ selectedTextBackgroundColor), text color unchanged. */
 .tiptap ::selection,
@@ -484,6 +476,16 @@ samp,
   max-width: 72ch;
   margin-inline: auto;
   padding: 2.75rem 1.5rem 3rem;
+}
+
+/* Read-only markdown viewer reuses the editor frame + .tiptap typography,
+   but sizes to its content — a one-paragraph public note shouldn't carry
+   the editor's 64vh writing canvas. Declared after the base `.tiptap` rule:
+   a more specific selector that appears earlier reads as dead code, and
+   Biome flags it. */
+.markdown-viewer,
+.markdown-viewer .tiptap {
+  min-height: 0;
 }
 
 /* Unframed viewer (version previews inside cards): no editor gutter. */

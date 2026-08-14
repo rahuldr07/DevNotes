@@ -78,15 +78,6 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex h-12 items-end gap-1 rounded-none border border-[var(--border)] bg-[var(--bg)]/55 px-3 py-2">
-              {[10, 16, 22, 14].map((height) => (
-                <span
-                  key={height}
-                  className="w-1.5 bg-[var(--accent)]/60"
-                  style={{ height }}
-                />
-              ))}
-            </div>
             {form.username && (
               <Link href={`/u/${form.username}`} target="_blank">
                 <Button
