@@ -134,12 +134,32 @@ interface RichEditorProps {
   editable?: boolean;
 }
 
+/** Trailing debounce for serialization. Long enough that a fast typist pays
+ *  it once per pause, short enough that the 2s autosave never waits on it. */
+const SERIALIZE_DEBOUNCE_MS = 250;
+
 export default function RichEditor({
   initialContent,
   onChange,
   placeholder = "Start writing…",
   editable = true,
 }: RichEditorProps) {
+  // Serializing the whole document to markdown on every keystroke was the
+  // dominant cost of typing in a large note: it ran once in onUpdate and a
+  // second time in the content-sync effect below, and each emit re-rendered
+  // the parent form. The ref lets the sync effect recognise its own output
+  // and skip the second serialization entirely.
+  const lastEmittedRef = useRef<string | null>(null);
+  const emitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(
+    () => () => {
+      if (emitTimerRef.current) clearTimeout(emitTimerRef.current);
+    },
+    [],
+  );
   // Link popover state — replaces window.prompt()
   const [linkView, setLinkView] = useState<{ open: boolean; draft: string }>({
     open: false,
@@ -216,8 +236,13 @@ export default function RichEditor({
     content: initialContent,
     editorProps: { attributes: { spellcheck: "true" } },
     onUpdate({ editor }) {
-      // biome-ignore lint/suspicious/noExplicitAny: TipTap storage is untyped
-      onChange?.((editor.storage as any).markdown.getMarkdown());
+      if (emitTimerRef.current) clearTimeout(emitTimerRef.current);
+      emitTimerRef.current = setTimeout(() => {
+        // biome-ignore lint/suspicious/noExplicitAny: TipTap storage is untyped
+        const markdown = (editor.storage as any).markdown.getMarkdown();
+        lastEmittedRef.current = markdown;
+        onChangeRef.current?.(markdown);
+      }, SERIALIZE_DEBOUNCE_MS);
     },
     editable,
     immediatelyRender: false,
@@ -231,10 +256,14 @@ export default function RichEditor({
     // (escaping in tiptap-markdown), that cascade loops until React kills it
     // with "Maximum update depth exceeded".
     if (!editor || editor.isFocused) return;
+    // The prop is echoing back what this editor just emitted, so there is
+    // nothing to sync — and no reason to serialize the document to find out.
+    if (initialContent === lastEmittedRef.current) return;
     // biome-ignore lint/suspicious/noExplicitAny: TipTap storage is untyped
     const current = (editor.storage as any).markdown.getMarkdown();
     if (current !== initialContent) {
       editor.commands.setContent(initialContent, { emitUpdate: false });
+      lastEmittedRef.current = initialContent;
     }
   }, [initialContent, editor]);
 

@@ -21,10 +21,12 @@ import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Segmented } from "@/components/ui/segmented";
 import { VersionHistoryDrawer } from "@/components/VersionHistoryDrawer";
 import { useSettings } from "@/hooks/useSettings";
+import type { NoteDraft } from "@/lib/drafts";
+import { clearDraft, readDraft, writeDraft } from "@/lib/drafts";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { createNote, updateNote } from "@/lib/note-api";
 import { normalizeTag, normalizeTags, stripMarkdown } from "@/lib/notes";
-import { countWords, readingTimeMinutes } from "@/lib/reading";
+import { WORDS_PER_MINUTE } from "@/lib/reading";
 import type { NoteVersion } from "@/types/notes";
 
 const RichEditor = dynamic(() => import("@/components/ui/RichEditor"), {
@@ -129,6 +131,7 @@ export default function NoteForm({
   const [isCommunity, setIsCommunity] = useState(initialCommunity);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoringVersion, setRestoringVersion] = useState(false);
+  const [restoredDraft, setRestoredDraft] = useState<NoteDraft | null>(null);
 
   const titleRef = useRef<HTMLTextAreaElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -152,11 +155,21 @@ export default function NoteForm({
     sourceUrl !== savedSnapshot.current.sourceUrl ||
     !sameTags(normalizedTags, savedSnapshot.current.tags);
 
-  const wordCount = content.trim() ? countWords(content) : 0;
-  const readTime = readingTimeMinutes(content);
-  const characterCount = stripMarkdown(content).length;
-  const lineCount = Math.max(1, content.split("\n").length);
-  const codeBlockCount = countCodeBlocks(content);
+  // One strip pass per content change, not three per render: wordCount,
+  // readingTime and characterCount each used to walk the whole document
+  // through the same regex chain on every keystroke.
+  const plainText = useMemo(() => stripMarkdown(content), [content]);
+  const wordCount = useMemo(
+    () => (plainText ? plainText.split(/\s+/).filter(Boolean).length : 0),
+    [plainText],
+  );
+  const readTime = Math.max(1, Math.ceil(wordCount / WORDS_PER_MINUTE));
+  const characterCount = plainText.length;
+  const lineCount = useMemo(
+    () => Math.max(1, content.split("\n").length),
+    [content],
+  );
+  const codeBlockCount = useMemo(() => countCodeBlocks(content), [content]);
   const outline = useMemo(() => extractOutline(content), [content]);
   const readinessScore = Math.min(
     100,
@@ -248,6 +261,8 @@ export default function NoteForm({
         setIsCommunity(Boolean(saved.is_community));
 
         if (mode === "create") {
+          // The note is persisted now; the local copy has done its job.
+          clearDraft();
           router.push("/dashboard");
         }
 
@@ -308,6 +323,73 @@ export default function NoteForm({
     triggerAutoSave();
   }, [triggerAutoSave]);
 
+  // ── Unsaved work ──────────────────────────────────────────────────────
+  // A new note cannot autosave (there is nothing to PATCH yet), so until it
+  // is created the only copy lives here. Mirror it to localStorage as the
+  // user types, and offer it back on the next visit.
+  useEffect(() => {
+    if (mode !== "create") return;
+    const timer = window.setTimeout(() => {
+      writeDraft({
+        title,
+        content,
+        tags: normalizedTags,
+        noteType,
+        language,
+        sourceUrl,
+      });
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [content, language, mode, normalizedTags, noteType, sourceUrl, title]);
+
+  useEffect(() => {
+    if (mode !== "create") return;
+    const draft = readDraft();
+    if (!draft) return;
+    if (title.trim() || content.trim()) return;
+    setRestoredDraft(draft);
+  }, [content, mode, title]);
+
+  // The in-app back button already confirms; this covers tab close, reload
+  // and any navigation that leaves the app entirely.
+  useEffect(() => {
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      const unsaved =
+        mode === "create"
+          ? Boolean(title.trim() || content.trim())
+          : hasDirtyChanges;
+      if (!unsaved) return;
+      if (mode === "create") {
+        // The mirror above is debounced, so the last few seconds of typing
+        // may not have reached storage yet. Flush synchronously — if the
+        // user dismisses the prompt and leaves anyway, the draft survives.
+        writeDraft({
+          title,
+          content,
+          tags: normalizedTags,
+          noteType,
+          language,
+          sourceUrl,
+        });
+      }
+      event.preventDefault();
+      // Browsers show their own copy; a non-empty returnValue is the signal.
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [
+    content,
+    hasDirtyChanges,
+    language,
+    mode,
+    normalizedTags,
+    noteType,
+    sourceUrl,
+    title,
+  ]);
+
   // Long titles wrap instead of clipping: grow the textarea to fit.
   // biome-ignore lint/correctness/useExhaustiveDependencies: rerun on every title change so the resize happens after the DOM reflects the new text.
   useEffect(() => {
@@ -326,14 +408,15 @@ export default function NoteForm({
   );
 
   const attemptBack = useCallback(() => {
-    if (
-      hasDirtyChanges &&
-      !window.confirm("Discard unsaved changes and go back?")
-    ) {
+    const unsaved =
+      mode === "create"
+        ? Boolean(title.trim() || content.trim())
+        : hasDirtyChanges;
+    if (unsaved && !window.confirm("Discard unsaved changes and go back?")) {
       return;
     }
     router.push("/dashboard");
-  }, [hasDirtyChanges, router]);
+  }, [content, hasDirtyChanges, mode, router, title]);
 
   const togglePublish = useCallback(
     async (checked: boolean) => {
@@ -612,6 +695,43 @@ export default function NoteForm({
           <section className="min-w-0 overflow-hidden rounded-none border border-[var(--border)] bg-[var(--bg)]/78 shadow-md shadow-black/5 backdrop-blur-xl">
             <div className="relative border-b border-[var(--border)] bg-[var(--bg-secondary)]/38 px-5 py-6 sm:px-7">
               <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-70" />
+              {restoredDraft && (
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-none border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-2 text-xs text-[var(--text-secondary)]">
+                  <span>
+                    unsaved draft from{" "}
+                    {new Date(restoredDraft.savedAt).toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-none border border-[var(--border)] px-2 py-1 text-[var(--accent)] transition-colors hover:bg-[var(--bg-secondary)]"
+                      onClick={() => {
+                        setTitle(restoredDraft.title);
+                        setContent(restoredDraft.content);
+                        setTags(restoredDraft.tags ?? []);
+                        setNoteType(
+                          (restoredDraft.noteType as NoteType) ?? "note",
+                        );
+                        setLanguage(restoredDraft.language ?? "");
+                        setSourceUrl(restoredDraft.sourceUrl ?? "");
+                        setRestoredDraft(null);
+                      }}
+                    >
+                      restore
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-none px-2 py-1 transition-colors hover:text-[var(--text-primary)]"
+                      onClick={() => {
+                        clearDraft();
+                        setRestoredDraft(null);
+                      }}
+                    >
+                      discard
+                    </button>
+                  </span>
+                </div>
+              )}
               <textarea
                 ref={titleRef}
                 value={title}
