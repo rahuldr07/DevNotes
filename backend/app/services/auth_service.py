@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.repositories import session_repo, user_repo
+from app.services import login_throttle
 from app.services.security import (
     hash_password,
     hash_token,
@@ -17,6 +18,9 @@ from app.models.user import User
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 REMEMBER_ME_REFRESH_EXPIRE_DAYS = 30
 USERNAME_MAX_LENGTH = 30
+
+ACCESS_TOKEN_TYPE = "access"
+REFRESH_TOKEN_TYPE = "refresh"
 
 
 def _refresh_expire_days(remember_me: bool) -> int:
@@ -61,7 +65,9 @@ def create_access_token(data: dict) -> str:
 
     # Token expires in 30 minutes (configurable in .env)
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    # token_type is explicit so verify_access_token can refuse a refresh
+    # token presented as a bearer credential — see verify_access_token.
+    to_encode.update({"exp": expire, "token_type": ACCESS_TOKEN_TYPE})
 
     # jwt.encode() creates the signed token
     # SECRET_KEY = the password used to sign
@@ -74,7 +80,9 @@ def create_refresh_token(data: dict, expires_days: int = REFRESH_TOKEN_EXPIRE_DA
     settings = get_settings()
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=expires_days)
-    to_encode.update({"exp": expire, "token_type": "refresh", "jti": str(uuid.uuid4())})
+    to_encode.update(
+        {"exp": expire, "token_type": REFRESH_TOKEN_TYPE, "jti": str(uuid.uuid4())}
+    )
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -96,25 +104,44 @@ def verify_access_token(token: str) -> dict:
     5. If invalid/expired → raises JWTError
 
     This is called on EVERY protected request to verify the user.
+
+    Refresh tokens are signed with the same key, so without the token_type
+    check below a stolen (or merely rotated-out) refresh token would pass as
+    a bearer credential for its full 7-30 day life — outliving logout and
+    session revocation, which only invalidate the refresh path. Tokens minted
+    before token_type existed carry no claim; those are still accepted so a
+    deploy does not sign every active session out mid-request.
     """
     settings = get_settings()
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("token_type", ACCESS_TOKEN_TYPE) != ACCESS_TOKEN_TYPE:
+            raise JWTError("Invalid access token")
         return payload
     except JWTError as e:
         raise JWTError("Invalid or expired token") from e
+
+
+def access_token_subject(token: str) -> str | None:
+    """Subject of a valid access token, or None. Used for rate-limit keying,
+    which must never raise on a malformed or expired credential."""
+    try:
+        subject = verify_access_token(token).get("sub")
+    except JWTError:
+        return None
+    return str(subject) if subject is not None else None
 
 
 def verify_refresh_token(token: str) -> dict:
     settings = get_settings()
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("token_type") != "refresh":
+        if payload.get("token_type") != REFRESH_TOKEN_TYPE:
             raise JWTError("Invalid refresh token")
         return payload
     except JWTError as e:
         raise JWTError("Invalid or expired refresh token") from e
-    
+
 
 def register_user(db: Session, email: str, name: str, password: str) -> User:
     """
@@ -189,14 +216,22 @@ def authenticate_user(
         HTTPException 401: If email is not found or password doesn't match.
     """
 
+    # Refuse before touching the password hash when this account has already
+    # burned through its recent attempts.
+    login_throttle.assert_not_locked(email)
+
     # Find user by email
     db_user = user_repo.get_by_email(db, email=email)
     if not db_user:
+        login_throttle.record_failure(email)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Verify password against stored hash
     if not verify_password(password, db_user.hashed_password):
+        login_throttle.record_failure(email)
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    login_throttle.record_success(email)
 
     # Create JWT tokens with user ID. Refresh tokens also carry a session id
     # when a real DB session is available, enabling multi-device sessions.

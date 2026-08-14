@@ -45,6 +45,8 @@ async def lifespan(app: FastAPI):
     """
     # ── STARTUP ──
     settings = get_settings()
+    # Refuse to serve traffic with a placeholder secret or plaintext DB link.
+    settings.validate_for_runtime()
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
@@ -62,7 +64,16 @@ async def lifespan(app: FastAPI):
 
 
 # ── Create the app ──
-app = FastAPI(title="DevNotes API", lifespan=lifespan)
+# The interactive docs describe every endpoint and accept credentials, so they
+# are development/staging tooling — off in production.
+_settings = get_settings()
+app = FastAPI(
+    title="DevNotes API",
+    lifespan=lifespan,
+    docs_url=None if _settings.is_production else "/docs",
+    redoc_url=None if _settings.is_production else "/redoc",
+    openapi_url=None if _settings.is_production else "/openapi.json",
+)
 configure_rate_limiting(app)
 
 
@@ -99,18 +110,18 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError):
     )
 
 # ── CORS Middleware ──
-# Allows the Next.js frontend (localhost:3000) to call this API.
-# With the BFF proxy pattern, CORS is technically no longer needed
-# (browser talks to Next.js, not directly to FastAPI).
-# Kept here as a fallback for direct API access during development
-# and for Swagger UI testing at /docs.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Only allow this origin
-    allow_credentials=True,  # Allow cookies/auth headers
-    allow_methods=["*"],     # Allow all HTTP methods
-    allow_headers=["*"],     # Allow all headers (including Authorization)
-)
+# With the BFF proxy pattern the browser talks to Next.js, never to FastAPI,
+# so production usually wants CORS_ORIGINS empty. It stays configurable for
+# direct API access during development and for Swagger UI testing at /docs.
+_cors_origins = _settings.cors_origins
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=True,  # Allow cookies/auth headers
+        allow_methods=["*"],     # Allow all HTTP methods
+        allow_headers=["*"],     # Allow all headers (including Authorization)
+    )
 
 # ── Register routers ──
 app.include_router(auth.router)
@@ -124,16 +135,25 @@ def health():
     return {"status": "healthy"}
 
 
-# TODO: review pending — /756998
 @app.get("/health/db")
 def health_db():
     """
-    Deep health check — actually queries Aurora.
+    Deep health check — actually queries the database.
     Use this for load balancer health checks.
+
+    Returns 503 (not 200) when the query fails, so a load balancer actually
+    takes the instance out of rotation instead of reading a healthy status
+    line with an unhealthy body.
     """
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return {"database": "healthy"}
     except Exception:
-        return {"database": "unhealthy"}
+        return JSONResponse(
+            status_code=503,
+            content={
+                "database": "unhealthy",
+                "hint": "The API cannot reach PostgreSQL.",
+            },
+        )

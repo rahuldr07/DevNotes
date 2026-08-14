@@ -87,8 +87,11 @@ def _refresh_token_from_request(
 # ════════════════════════════════════════════
 #  POST /auth/register — Create a new user
 # ════════════════════════════════════════════
+# The IP budget below is a coarse backstop: behind the BFF proxy all anonymous
+# traffic shares one apparent address, so the real per-account control is the
+# failure throttle in services/login_throttle.py.
 @router.post("/register", response_model=UserResponse, status_code=201)
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 def register(request: Request, response: Response, user: UserCreate, db: Session = Depends(get_db)):
    return auth_service.register_user(db, email = user.email, name = user.name, password = user.password)
  # pass the params only if the fields are less than 5 fields else pass the schema itself
@@ -98,7 +101,7 @@ def register(request: Request, response: Response, user: UserCreate, db: Session
 #  POST /auth/login — Authenticate & get JWT
 # ════════════════════════════════════════════
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("10/minute")
+@limiter.limit("60/minute")
 def login(request: Request, response: Response, credentials: UserLogin, db: Session = Depends(get_db)):
    tokens = auth_service.authenticate_user(
       db,

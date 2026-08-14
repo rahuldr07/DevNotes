@@ -13,6 +13,21 @@ const HOP_BY_HOP_HEADERS = new Set([
   "host",
 ]);
 
+// Anything a browser could set that the backend might read as "who the client
+// is". The backend keys anonymous rate limits on these when TRUST_FORWARDED_FOR
+// is on, so a client-supplied value would let one caller rotate through an
+// unlimited number of buckets. They are only relayed when the Next server is
+// itself behind a load balancer that overwrites them (TRUSTED_PROXY_HEADERS=1).
+const FORWARDING_HEADERS = new Set([
+  "x-forwarded-for",
+  "x-forwarded-host",
+  "x-forwarded-proto",
+  "x-real-ip",
+  "forwarded",
+]);
+
+const TRUST_INBOUND_FORWARDING = process.env.TRUSTED_PROXY_HEADERS === "1";
+
 const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ACCESS_COOKIE = "auth_token";
 const REFRESH_COOKIE = "devnotes_refresh_token";
@@ -54,6 +69,8 @@ function buildForwardHeaders(request: NextRequest) {
     // Never relay the raw Cookie header — only the whitelisted auth cookies
     // below reach FastAPI, so Next.js/analytics cookies stay on this origin.
     if (lowerKey === "cookie") continue;
+
+    if (FORWARDING_HEADERS.has(lowerKey) && !TRUST_INBOUND_FORWARDING) continue;
 
     headers.set(key, value);
   }
