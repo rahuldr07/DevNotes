@@ -88,6 +88,7 @@ class NoteResponse(BaseModel):
     is_pinned: bool = False
     share_uuid: str | None = None
     is_published: bool = False
+    is_listed: bool = False
     is_community: bool = False
     created_at: datetime
     updated_at: datetime | None = None
@@ -109,6 +110,7 @@ class CommunityNoteResponse(BaseModel):
     is_pinned: bool = False
     share_uuid: str | None = None
     is_published: bool = False
+    is_listed: bool = False
     is_community: bool = False
     like_count: int = 0
     view_count: int = 0
@@ -200,6 +202,7 @@ class NoteUpdate(BaseModel):
     language: str | None = Field(default=None, max_length=64)
     source_url: str | None = Field(default=None, max_length=500)
     is_published: bool | None = None
+    is_listed: bool | None = None
     is_community: bool | None = None
 
     @field_validator("tags")

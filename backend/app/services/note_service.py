@@ -80,6 +80,7 @@ def update_note(
     language: str | None = None,
     source_url: str | None = None,
     is_published: bool | None = None,
+    is_listed: bool | None = None,
     is_community: bool | None = None,
 ) -> Note | None:
     """
@@ -151,6 +152,7 @@ def update_note(
                     language=language.strip().lower() if language else language,
                     source_url=source_url.strip() if source_url else source_url,
                     is_published=is_published,
+                    is_listed=is_listed,
                     is_community=is_community,
                     share_uuid=share_uuid,
                 )

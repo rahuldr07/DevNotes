@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, ExternalLink, Globe, Share2, Users } from "lucide-react";
+import { Copy, ExternalLink, Globe, Share2, UserSquare, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { gooeyToast } from "@/components/ui/goey-toaster";
@@ -15,21 +15,27 @@ import { copyToClipboard } from "@/lib/clipboard";
 interface SharePopoverProps {
   noteId: number;
   isPublished: boolean;
+  isListed: boolean;
   isCommunity: boolean;
   shareUuid: string | null;
   onPublishToggle: (checked: boolean) => Promise<void>;
+  onListedToggle: (checked: boolean) => Promise<void>;
   onCommunityToggle: (checked: boolean) => Promise<void>;
 }
 
+type ToggleKind = "publish" | "listed" | "community";
+
 export function SharePopover({
   isPublished,
+  isListed,
   isCommunity,
   shareUuid,
   onPublishToggle,
+  onListedToggle,
   onCommunityToggle,
 }: SharePopoverProps) {
   const [origin, setOrigin] = useState("");
-  const [loading, setLoading] = useState<"publish" | "community" | null>(null);
+  const [loading, setLoading] = useState<ToggleKind | null>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -53,11 +59,13 @@ export function SharePopover({
     window.open(publicUrl, "_blank", "noopener,noreferrer");
   };
 
-  const runToggle = async (type: "publish" | "community", checked: boolean) => {
+  const runToggle = async (type: ToggleKind, checked: boolean) => {
     setLoading(type);
     try {
       if (type === "publish") {
         await onPublishToggle(checked);
+      } else if (type === "listed") {
+        await onListedToggle(checked);
       } else {
         await onCommunityToggle(checked);
       }
@@ -122,8 +130,9 @@ export function SharePopover({
               />
             </div>
             <p className="text-xs leading-5 text-[var(--text-secondary)]">
-              Anyone with the URL can read this note. The link stays stable
-              while published.
+              Anyone with the URL can read this note, and nothing else changes
+              — it stays off your profile and out of discovery until you list
+              it below. The link stays stable while published.
             </p>
 
             {isPublished && (
@@ -152,6 +161,34 @@ export function SharePopover({
                 </button>
               </div>
             )}
+          </div>
+
+          <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <UserSquare
+                  size={15}
+                  className={
+                    isListed
+                      ? "text-[var(--accent)]"
+                      : "text-[var(--text-secondary)]"
+                  }
+                />
+                <span className="text-xs font-medium text-[var(--text-primary)]">
+                  list on profile
+                </span>
+              </div>
+              <Switch
+                checked={isListed}
+                onCheckedChange={(checked) => runToggle("listed", checked)}
+                disabled={loading !== null || (!isPublished && !isListed)}
+              />
+            </div>
+            <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+              {isPublished
+                ? "Show this note on your public profile and as related reading on other public pages."
+                : "Publish the note first before listing it publicly."}
+            </p>
           </div>
 
           <div className="rounded-none border border-[var(--border)] bg-[var(--bg)]/55 p-4">

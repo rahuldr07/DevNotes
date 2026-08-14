@@ -66,6 +66,7 @@ export interface UpdateNoteInput {
   language?: string | null;
   source_url?: string | null;
   is_published?: boolean;
+  is_listed?: boolean;
   is_community?: boolean;
 }
 

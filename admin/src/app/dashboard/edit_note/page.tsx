@@ -144,6 +144,7 @@ function EditNoteContent() {
       initialSourceUrl={note.source_url}
       initialShareUuid={note.share_uuid}
       initialPublished={note.is_published}
+      initialListed={note.is_listed}
       initialCommunity={note.is_community}
       onView={async () => {
         // Re-fetch so the reading view reflects what autosave just wrote.

@@ -80,6 +80,7 @@ def update_note(id: int, note: NoteUpdate,user= Depends(get_current_user),db :Se
         language=note.language,
         source_url=note.source_url,
         is_published=note.is_published,
+        is_listed=note.is_listed,
         is_community=note.is_community,
         user_id=user.id,
     )

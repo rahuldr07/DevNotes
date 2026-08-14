@@ -10,7 +10,10 @@ export interface Note {
   created_at: string;
   updated_at: string | null;
   share_uuid?: string | null;
+  /** A share link exists and resolves. */
   is_published?: boolean;
+  /** Additionally discoverable: author profile + related-reading rails. */
+  is_listed?: boolean;
   is_community?: boolean;
   author_name?: string | null;
   author_username?: string | null;

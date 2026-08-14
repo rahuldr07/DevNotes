@@ -42,6 +42,7 @@ interface NoteFormProps {
   initialSourceUrl?: string | null;
   initialShareUuid?: string | null;
   initialPublished?: boolean;
+  initialListed?: boolean;
   initialCommunity?: boolean;
   /** Switch back to the reading view (edit mode only). Ctrl+E also fires it. */
   onView?: () => void;
@@ -105,6 +106,7 @@ export default function NoteForm({
   noteId,
   initialShareUuid = null,
   initialPublished = false,
+  initialListed = false,
   initialCommunity = false,
   onView,
 }: NoteFormProps) {
@@ -123,6 +125,7 @@ export default function NoteForm({
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [shareUuid, setShareUuid] = useState(initialShareUuid);
   const [isPublished, setIsPublished] = useState(initialPublished);
+  const [isListed, setIsListed] = useState(initialListed);
   const [isCommunity, setIsCommunity] = useState(initialCommunity);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [restoringVersion, setRestoringVersion] = useState(false);
@@ -241,6 +244,7 @@ export default function NoteForm({
         );
         if (saved.share_uuid) setShareUuid(saved.share_uuid);
         setIsPublished(Boolean(saved.is_published));
+        setIsListed(Boolean(saved.is_listed));
         setIsCommunity(Boolean(saved.is_community));
 
         if (mode === "create") {
@@ -335,20 +339,51 @@ export default function NoteForm({
     async (checked: boolean) => {
       if (mode !== "edit" || !noteId) return;
       const previousPublished = isPublished;
+      const previousListed = isListed;
+      const previousCommunity = isCommunity;
       const previousUuid = shareUuid;
       setIsPublished(checked);
+      // Unpublishing withdraws the downstream surfaces too — mirror the
+      // server rule locally so the switches never show a stale combination.
+      if (!checked) {
+        setIsListed(false);
+        setIsCommunity(false);
+      }
       try {
         const updated = await updateNote(noteId, { is_published: checked });
         setIsPublished(Boolean(updated.is_published));
+        setIsListed(Boolean(updated.is_listed));
+        setIsCommunity(Boolean(updated.is_community));
         setShareUuid(updated.share_uuid ?? previousUuid);
         gooeyToast.success(checked ? "Published" : "Unpublished");
       } catch {
         setIsPublished(previousPublished);
+        setIsListed(previousListed);
+        setIsCommunity(previousCommunity);
         setShareUuid(previousUuid);
         gooeyToast.error("Failed to update publish settings");
       }
     },
-    [isPublished, mode, noteId, shareUuid],
+    [isCommunity, isListed, isPublished, mode, noteId, shareUuid],
+  );
+
+  const toggleListed = useCallback(
+    async (checked: boolean) => {
+      if (mode !== "edit" || !noteId) return;
+      const previous = isListed;
+      setIsListed(checked);
+      try {
+        const updated = await updateNote(noteId, { is_listed: checked });
+        setIsListed(Boolean(updated.is_listed));
+        gooeyToast.success(
+          checked ? "Listed on your profile" : "Unlisted — link still works",
+        );
+      } catch {
+        setIsListed(previous);
+        gooeyToast.error("Failed to update listing settings");
+      }
+    },
+    [isListed, mode, noteId],
   );
 
   const toggleCommunity = useCallback(
@@ -536,9 +571,11 @@ export default function NoteForm({
                   <SharePopover
                     noteId={noteId}
                     isPublished={isPublished}
+                    isListed={isListed}
                     isCommunity={isCommunity}
                     shareUuid={shareUuid}
                     onPublishToggle={togglePublish}
+                    onListedToggle={toggleListed}
                     onCommunityToggle={toggleCommunity}
                   />
                 </>

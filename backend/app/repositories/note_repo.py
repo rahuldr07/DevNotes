@@ -125,6 +125,7 @@ def update(
     language: str | None = None,
     source_url: str | None = None,
     is_published: bool | None = None,
+    is_listed: bool | None = None,
     is_community: bool | None = None,
     share_uuid: str | None = None,
 ) -> Note | None:
@@ -163,7 +164,11 @@ def update(
         if is_published is not None:
             oNote.is_published = is_published
             if is_published is False:
+                # Unpublishing withdraws every downstream surface at once.
+                oNote.is_listed = False
                 oNote.is_community = False
+        if is_listed is not None:
+            oNote.is_listed = is_listed and oNote.is_published
         if is_community is not None:
             oNote.is_community = is_community and oNote.is_published
         if share_uuid is not None:
@@ -365,6 +370,7 @@ def _community_response(
         "is_pinned": note.is_pinned,
         "share_uuid": note.share_uuid,
         "is_published": note.is_published,
+        "is_listed": getattr(note, "is_listed", False),
         "is_community": note.is_community,
         "like_count": getattr(note, "like_count", 0),
         "view_count": note.view_count or 0,
@@ -468,6 +474,7 @@ def get_related_public_notes(
         .filter(
             Note.id != note.id,
             Note.is_published == True,
+            Note.is_listed == True,
             Note.share_uuid.isnot(None),
         )
         .order_by(Note.id.desc())
@@ -508,7 +515,11 @@ def get_public_notes_for_user(db: Session, user_id: int) -> list[dict]:
     rows = (
         db.query(Note, like_count)
         .outerjoin(NoteLike, NoteLike.note_id == Note.id)
-        .filter(Note.user_id == user_id, Note.is_published == True)
+        .filter(
+            Note.user_id == user_id,
+            Note.is_published == True,
+            Note.is_listed == True,
+        )
         .group_by(Note.id)
         .order_by(Note.id.desc())
         .all()

@@ -34,6 +34,11 @@ class Note(Base):
     # Sharing features
     share_uuid = Column(String(36), unique=True, nullable=True, index=True)
     is_published = Column(Boolean, default=False, nullable=False)
+    # Publishing mints a share link. Listing is the separate, stronger choice
+    # to surface the note on the author's public profile and as "related
+    # reading" on other public pages. Publishing alone must stay unlisted, or
+    # a link shared with three people is discoverable by strangers.
+    is_listed = Column(Boolean, default=False, nullable=False, server_default="false")
     is_community = Column(Boolean, default=False, nullable=False)
     view_count = Column(Integer, nullable=False, server_default="0", default=0)
     search_vector = Column(
