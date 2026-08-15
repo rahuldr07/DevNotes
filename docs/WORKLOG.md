@@ -158,6 +158,79 @@ problems; this is what was done about them. Each bullet is one pushed commit.
 
 ---
 
+## 1c. Shipped (August 2026 editor + UI pass)
+
+Researched against the Tiptap v3 docs, the WAI-ARIA authoring practices, and
+current scroll-spy guidance; verified by driving the real app in Chromium
+(40 assertions: `_handoff`-free Playwright script, screenshots reviewed).
+
+### Editor
+- **chore-align-tiptap-packages-and-add-editor-extensions** — the tree had
+  drifted (core hoisted to 3.30 while everything else sat at 3.20). All
+  `@tiptap/*` now pin `^3.30.1`.
+- **feat-slash-menu-tables-drag-handles-and-markdown-export**
+  - **Slash menu** on `/`, built on `@tiptap/suggestion` (Tiptap's documented
+    route — their slash extension is unpublished). Filters as you type,
+    arrow/Home/End/Enter/Tab/Escape, grouped, and it will not fire inside code
+    or mid-word (`src/lib` stays a path). Blocks come from one registry that
+    the empty-line insert popover also reads, so the two menus cannot drift.
+  - **Tables** via `TableKit`, with add-row/add-column/delete in the selection
+    toolbar. `tiptap-markdown` already ships a GFM table serializer, so they
+    round-trip.
+  - **Drag handles** via `@tiptap/extension-drag-handle-react` — MIT since
+    Tiptap opened up the Pro extensions in June.
+  - **Ctrl+Shift+E** for the reading view (backlog §3.1). Ctrl+E belongs to
+    TipTap's inline-code binding, so the old shortcut only worked from outside
+    the writing surface.
+  - **Markdown export** — copy or download `.md` with YAML front matter
+    (title, type, tags, source, timestamps) from the reading view.
+  - The shortcuts overlay never documented the editor at all; it does now.
+
+### Public reading
+- **feat-heading-anchors-and-sticky-table-of-contents** (backlog §3.3) —
+  slugged heading ids via `rehype-slug`, hover deep-links that copy the
+  absolute URL, and a sticky TOC with IntersectionObserver scroll-spy. The
+  band is the top 30% of the viewport, so the highlight tracks what is being
+  read rather than what has just appeared at the bottom edge. `github-slugger`
+  is shared by the renderer and the TOC builder, so duplicate headings get
+  matching `-1`/`-2` suffixes on both sides instead of dead links.
+
+### Retrieval and accessibility
+- **feat-accessible-palette-frecency-ranking-and-reduced-motion**
+  - The command palette now implements the ARIA combobox/listbox pattern:
+    focus stays on the input, `aria-activedescendant` announces the active
+    row, options carry `role="option"`, and the active row is scrolled into
+    view (browsers do not do that for activedescendant targets).
+  - **Frecency ranking** (backlog §3.5) — `{count, lastUsedAt}` per opened
+    note, 7-day half-life, saturating and capped so a stale favourite can
+    never outrank a strong text match. Empty query lists what you actually
+    return to.
+  - Focus trap + focus restore for the version drawer (it had neither), and
+    `MotionConfig reducedMotion="user"` plus a CSS reset so
+    `prefers-reduced-motion` is honoured app-wide rather than component by
+    component.
+
+### Found by driving the browser
+- **fix-sticky-sidebar-toc-tail-section-and-onboarding-scope**
+  - The theme onboarding dialog rendered on **every** route: it covered the
+    signup form, and a stranger opening a shared link got "choose your theme"
+    over the article. Now workspace-only.
+  - `overflow-hidden` on the public page root silently disabled
+    `position: sticky` for everything inside it. The clipping moved to the
+    decorative layer that actually needs it.
+  - Scroll-spy could never reach the **last** section: near the document end
+    the final heading sits below the reading band with no scroll left to give.
+    Added an at-bottom rule.
+
+### Known gaps after this pass
+- Still no frontend test infrastructure (backlog §3.8). The Playwright script
+  used here lives outside the repo; turning it into a committed suite is the
+  obvious next step and would have caught all three bugs above automatically.
+- Tables render but have no keyboard-only insert path beyond the slash menu.
+- The editor typing measurement (§2) is still unrun.
+
+---
+
 ## 2. Editor typing performance — done (August 2026)
 
 **Symptom:** typing in the editor lags, worse on large notes.
@@ -192,15 +265,15 @@ a large note before calling the number.
 
 ## 3. Backlog (prioritized, from audits + research)
 
-1. **Ctrl+E conflict** — inside the text, TipTap's inline-code binding owns Ctrl+E; optionally rebind view toggle to Ctrl+Shift+E so it works everywhere (user not yet asked/confirmed).
-2. **Slash-command menu** — Tiptap's official suggestion/slash-dropdown utilities (research top pick; requires re-adding `@tiptap/suggestion`).
-3. **Public note page: sticky TOC + heading anchors** — slugified ids, hover `#` copy-link, IntersectionObserver scroll-spy, `scroll-margin-top`.
+1. ~~**Ctrl+E conflict**~~ — done: the view toggle is Ctrl+Shift+E.
+2. ~~**Slash-command menu**~~ — done, on `@tiptap/suggestion`.
+3. ~~**Public note page: sticky TOC + heading anchors**~~ — done.
 4. **Server-side `ts_headline` highlights** — replace client-side approximation in deep search results so highlighting honors Postgres stemming.
-5. **Frecency ranking in palette** — `{count, lastUsedAt}` per opened note in localStorage, 7-day half-life boost on Fuse scores; empty-query shows recently opened notes.
+5. ~~**Frecency ranking in palette**~~ — done.
 6. **Route shape** — `/dashboard/edit_note?id=N` → `/dashboard/notes/[id]` dynamic segment; REST-style backend routes (`POST /notes`, `PATCH /notes/{id}`) while the API surface is still one client file.
 7. ~~**Read-based view counts**~~ — done: the Explore listing no longer increments, and `/s/` reads are counted by a browser-issued POST once per session.
-8. **Frontend test infrastructure** — none exists; contract tests would have caught the version-history and community-feed drift.
-9. **Drag handles / block context menu** — Tiptap's now-MIT drag-handle extension (after slash menu).
+8. **Frontend test infrastructure** — none exists; contract tests would have caught the version-history and community-feed drift, and a committed Playwright suite would have caught the sticky/onboarding/scroll-spy bugs in §1c.
+9. **Block context menu** — drag handles shipped; a right-click/handle menu (duplicate, delete, turn into) is still open.
 10. **Dead-weight leftovers** — `_handoff/` stays untracked; `backend/scripts` cleanup. (Root `main.py` fixed; `admin/bun.lock` removed.)
 11. **Redis for rate limits and login throttling** — both stores are in-process, so budgets are per uvicorn worker.
 12. **Heatmap timezone** — activity is bucketed in the database's timezone and drawn in the viewer's; edges can be off by a day for non-UTC users.
