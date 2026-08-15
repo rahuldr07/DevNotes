@@ -1,12 +1,23 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Globe2, PenLine } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  Clipboard,
+  Download,
+  Globe2,
+  PenLine,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Kbd } from "@/components/ui/kbd";
+import { copyToClipboard } from "@/lib/clipboard";
+import { downloadMarkdown, noteToMarkdown } from "@/lib/export";
 import { formatNoteDate } from "@/lib/format";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
 import type { Note } from "@/types/notes";
@@ -15,7 +26,7 @@ import type { Note } from "@/types/notes";
  * Reading view for your own notes — the calm default when opening a note.
  * Rendered markdown (same viewer as the public pages) with the metadata
  * that matters while reading; editing is one explicit action away
- * (edit button, Ctrl+E, or E).
+ * (edit button, `e`, or Ctrl/Cmd+Shift+E).
  */
 export function NoteReadView({
   note,
@@ -25,6 +36,26 @@ export function NoteReadView({
   onEdit: () => void;
 }) {
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
+
+  const copyMarkdown = async () => {
+    if (await copyToClipboard(noteToMarkdown(note))) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } else {
+      gooeyToast.error("Copy failed", {
+        description: "Clipboard access was blocked by the browser.",
+      });
+    }
+  };
+
+  const saveMarkdown = () => {
+    if (!downloadMarkdown(note)) {
+      gooeyToast.error("Download failed", {
+        description: "The browser blocked the file download.",
+      });
+    }
+  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -36,9 +67,16 @@ export function NoteReadView({
           target.isContentEditable);
       if (inInput) return;
 
+      // Ctrl/Cmd+E is TipTap's inline-code binding once the caret is in the
+      // text, so the view toggle uses Shift as well and works everywhere.
       if (
-        ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "e") ||
-        (event.key.toLowerCase() === "e" && !event.metaKey && !event.ctrlKey)
+        ((event.metaKey || event.ctrlKey) &&
+          event.shiftKey &&
+          event.key.toLowerCase() === "e") ||
+        (event.key.toLowerCase() === "e" &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.shiftKey)
       ) {
         event.preventDefault();
         onEdit();
@@ -68,6 +106,27 @@ export function NoteReadView({
           reading view
         </span>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={copyMarkdown}
+            title="Copy as markdown"
+            aria-label="Copy as markdown"
+            className="flex h-8 items-center gap-1.5 rounded-none px-2 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+          >
+            {copied ? <Check size={13} /> : <Clipboard size={13} />}
+            <span className="hidden sm:inline">
+              {copied ? "copied" : "markdown"}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={saveMarkdown}
+            title="Download as .md"
+            aria-label="Download as .md"
+            className="flex h-8 w-8 items-center justify-center rounded-none text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+          >
+            <Download size={13} />
+          </button>
           <span className="hidden items-center gap-1.5 font-mono text-[10px] text-[var(--text-secondary)] sm:inline-flex">
             <Kbd>e</Kbd> to edit
           </span>

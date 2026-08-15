@@ -41,6 +41,17 @@ const SHORTCUT_GROUPS: { title: string; shortcuts: Shortcut[] }[] = [
     ],
   },
   {
+    title: "editor",
+    shortcuts: [
+      { keys: ["/"], label: "insert block menu" },
+      { keys: ["ctrl", "s"], label: "save note" },
+      { keys: ["ctrl", "shift", "e"], label: "reading view" },
+      { keys: ["e"], label: "edit (from reading view)" },
+      { keys: ["ctrl", "1-4"], label: "note type" },
+      { keys: ["ctrl", "shift", "p"], label: "publish toggle" },
+    ],
+  },
+  {
     title: "quick capture",
     shortcuts: [
       { keys: ["enter"], label: "save (note mode)" },

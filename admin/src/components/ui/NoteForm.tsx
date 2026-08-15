@@ -560,8 +560,12 @@ export default function NoteForm({
         return;
       }
 
+      // Shift is required: without it TipTap's inline-code binding owns
+      // Ctrl/Cmd+E whenever the caret is in the text, so the toggle only
+      // worked from outside the writing surface.
       if (
         (event.metaKey || event.ctrlKey) &&
+        event.shiftKey &&
         event.key.toLowerCase() === "e" &&
         onView
       ) {
@@ -634,7 +638,7 @@ export default function NoteForm({
                   type="button"
                   onClick={onView}
                   className="flex h-8 items-center gap-1.5 rounded-none px-2 text-xs text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
-                  title="Reading view (Ctrl+E)"
+                  title="Reading view (Ctrl+Shift+E)"
                 >
                   <BookOpen size={15} />
                   view

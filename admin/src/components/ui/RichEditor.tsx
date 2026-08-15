@@ -15,8 +15,10 @@
 "use client";
 
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { DragHandle } from "@tiptap/extension-drag-handle-react";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { TableKit } from "@tiptap/extension-table";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
@@ -37,7 +39,7 @@ import {
   CheckSquare,
   Clipboard,
   Code,
-  FileCode,
+  GripVertical,
   Heading1,
   Heading2,
   Heading3,
@@ -46,13 +48,15 @@ import {
   Link2Off,
   List,
   ListOrdered,
-  Minus,
   Quote,
   Strikethrough,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Markdown } from "tiptap-markdown";
+import { EDITOR_BLOCKS } from "@/components/ui/editor/blocks";
+import { SlashCommands } from "@/components/ui/editor/slash-commands";
 import { copyToClipboard } from "@/lib/clipboard";
 
 const lowlight = createLowlight(common);
@@ -212,6 +216,14 @@ export default function RichEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
 
+      // TableKit bundles table/row/header/cell so the whole node family stays
+      // on one version.
+      TableKit.configure({
+        table: { resizable: true, allowTableNodeSelection: true },
+      }),
+
+      SlashCommands,
+
       Link.configure({
         autolink: true,
         openOnClick: true,
@@ -271,7 +283,12 @@ export default function RichEditor({
     <div className="rich-editor-root">
       {/* ── Bubble menu ─────────────────────────────────────────── */}
       {editor && editable && (
-        <BubbleMenu editor={editor} className="bubble-menu">
+        <BubbleMenu
+          editor={editor}
+          className="bubble-menu"
+          role="toolbar"
+          aria-label="Text formatting"
+        >
           {linkView.open ? (
             /* ── Link editing mode ── */
             <>
@@ -411,97 +428,74 @@ export default function RichEditor({
               >
                 <Link2 size={13} />
               </BBtn>
+              {editor.isActive("table") && (
+                <>
+                  <div className="bubble-sep" />
+                  <BBtn
+                    active={false}
+                    onClick={() => editor.chain().focus().addRowAfter().run()}
+                    title="Add row below"
+                  >
+                    <span className="bubble-text">+row</span>
+                  </BBtn>
+                  <BBtn
+                    active={false}
+                    onClick={() =>
+                      editor.chain().focus().addColumnAfter().run()
+                    }
+                    title="Add column right"
+                  >
+                    <span className="bubble-text">+col</span>
+                  </BBtn>
+                  <BBtn
+                    active={false}
+                    onClick={() => editor.chain().focus().deleteTable().run()}
+                    title="Delete table"
+                  >
+                    <Trash2 size={13} />
+                  </BBtn>
+                </>
+              )}
             </>
           )}
         </BubbleMenu>
       )}
 
-      {/* ── Floating block menu — vertical macOS-style popover that also
-             teaches the markdown shortcut for each block ─────────────── */}
+      {/* ── Floating block menu — same registry the slash menu reads, so
+             the two can never offer different blocks. Also teaches the
+             markdown shortcut and the "/" entry point. ─────────────── */}
       {editor && editable && (
         <FloatingMenu editor={editor} className="floating-menu">
-          <p className="floating-header">insert block</p>
-          <FBtn
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 1 }).run()
-            }
-            title="Heading 1"
-            hint="#"
-          >
-            <Heading1 size={14} />
-            <span>heading 1</span>
-          </FBtn>
-          <FBtn
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 2 }).run()
-            }
-            title="Heading 2"
-            hint="##"
-          >
-            <Heading2 size={14} />
-            <span>heading 2</span>
-          </FBtn>
-          <FBtn
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 3 }).run()
-            }
-            title="Heading 3"
-            hint="###"
-          >
-            <Heading3 size={14} />
-            <span>heading 3</span>
-          </FBtn>
-          <div className="floating-sep" />
-          <FBtn
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            title="Bullet list"
-            hint="-"
-          >
-            <List size={14} />
-            <span>bullet list</span>
-          </FBtn>
-          <FBtn
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            title="Numbered list"
-            hint="1."
-          >
-            <ListOrdered size={14} />
-            <span>numbered list</span>
-          </FBtn>
-          <FBtn
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-            title="Task list"
-            hint="[ ]"
-          >
-            <CheckSquare size={14} />
-            <span>task list</span>
-          </FBtn>
-          <div className="floating-sep" />
-          <FBtn
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            title="Code block"
-            hint="```"
-          >
-            <FileCode size={14} />
-            <span>code block</span>
-          </FBtn>
-          <FBtn
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            title="Blockquote"
-            hint=">"
-          >
-            <Quote size={14} />
-            <span>quote</span>
-          </FBtn>
-          <FBtn
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            title="Divider"
-            hint="---"
-          >
-            <Minus size={14} />
-            <span>divider</span>
-          </FBtn>
+          <p className="floating-header">
+            insert block <span className="floating-hint">/</span>
+          </p>
+          {EDITOR_BLOCKS.filter((block) => block.id !== "paragraph").map(
+            (block) => {
+              const Icon = block.icon;
+              return (
+                <FBtn
+                  key={block.id}
+                  onClick={() => block.run(editor)}
+                  title={block.label}
+                  hint={block.hint}
+                >
+                  <Icon size={14} />
+                  <span>{block.label}</span>
+                </FBtn>
+              );
+            },
+          )}
         </FloatingMenu>
+      )}
+
+      {/* ── Drag handle — appears in the gutter of the hovered block and
+             reorders it. MIT since Tiptap opened up the Pro extensions. */}
+      {editor && editable && (
+        <DragHandle editor={editor} className="drag-handle">
+          <span className="drag-handle-grip" aria-hidden>
+            <GripVertical size={14} />
+          </span>
+        </DragHandle>
       )}
 
       <EditorContent editor={editor} />
@@ -529,6 +523,8 @@ function BBtn({
       }}
       className={`bubble-btn${active ? " is-active" : ""}`}
       title={title}
+      aria-label={title}
+      aria-pressed={active}
     >
       {children}
     </button>
@@ -555,6 +551,7 @@ function FBtn({
       }}
       className="floating-btn"
       title={title}
+      aria-label={title}
     >
       {children}
       {hint && <span className="floating-hint">{hint}</span>}
