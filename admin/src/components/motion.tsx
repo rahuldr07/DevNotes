@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  MotionConfig,
   motion,
   useReducedMotion,
   useSpring,
@@ -57,4 +58,18 @@ export function AnimatedNumber({ value }: { value: number }) {
   }
 
   return <motion.span>{display}</motion.span>;
+}
+
+/**
+ * Honours `prefers-reduced-motion` for every Framer component at once.
+ *
+ * `reducedMotion="user"` makes Framer skip transform and layout animations
+ * while still allowing opacity, so overlays keep their fade but stop flying
+ * in. Individual components (Reveal, AnimatedNumber) already checked the
+ * preference; the ones that animate directly — the command palette, the
+ * version drawer — did not, which is exactly the kind of thing that gets
+ * missed one component at a time.
+ */
+export function MotionPreferences({ children }: { children: React.ReactNode }) {
+  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
 }

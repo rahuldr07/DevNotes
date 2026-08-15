@@ -30,9 +30,17 @@ import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { gooeyToast } from "@/components/ui/goey-toaster";
 import { Kbd } from "@/components/ui/kbd";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { copyToClipboard } from "@/lib/clipboard";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
+import {
+  applyFrecency,
+  type FrecencyMap,
+  readFrecency,
+  recentlyOpenedIds,
+  recordNoteOpened,
+} from "@/lib/frecency";
 import { searchNotes as searchNotesApi } from "@/lib/note-api";
 import { previewText } from "@/lib/notes";
 import type { Note } from "@/types/notes";
@@ -107,6 +115,14 @@ const SECTION_LABELS: Record<PaletteItem["type"], string> = {
 };
 
 const RECENT_SEARCHES_KEY = "devnotes-recent-searches";
+
+/**
+ * The palette follows the ARIA combobox pattern: the input keeps DOM focus so
+ * typing never breaks, and the highlighted row is announced through
+ * `aria-activedescendant` pointing at one of these ids.
+ */
+const PALETTE_LISTBOX_ID = "devnotes-palette-listbox";
+const paletteOptionId = (index: number) => `devnotes-palette-option-${index}`;
 
 const COMMANDS: PaletteCommand[] = [
   {
@@ -235,7 +251,11 @@ export function NoteSearchPalette({
   const [fullResults, setFullResults] = useState<Note[]>([]);
   const [fullLoading, setFullLoading] = useState(false);
   const [fullError, setFullError] = useState("");
+  const [frecency, setFrecency] = useState<FrecencyMap>({});
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLElement | null>>([]);
 
   const fuse = useMemo(
     () =>
@@ -260,14 +280,36 @@ export function NoteSearchPalette({
     const corpus = hasFilters
       ? notes.filter((note) => matchesFilters(note, parsed))
       : notes;
+
+    // Empty query: the notes you actually keep coming back to, most-used
+    // first, rather than whichever twenty happen to be loaded.
     if (!parsed.text) {
-      return corpus.slice(0, 20).map((item) => ({ item }));
+      const ranked = recentlyOpenedIds(frecency);
+      const position = new Map(ranked.map((id, index) => [id, index]));
+      return [...corpus]
+        .sort((left, right) => {
+          const leftRank = position.get(left.id) ?? Number.POSITIVE_INFINITY;
+          const rightRank = position.get(right.id) ?? Number.POSITIVE_INFINITY;
+          return leftRank - rightRank;
+        })
+        .slice(0, 20)
+        .map((item) => ({ item }));
     }
+
     const hits = fuse.search(parsed.text, { limit: 30 });
-    return hasFilters
+    const filtered = hasFilters
       ? hits.filter((hit) => matchesFilters(hit.item, parsed))
       : hits;
-  }, [fuse, notes, parsed, hasFilters]);
+
+    // Fuse scores are "lower is better"; frecency pulls familiar notes up
+    // without ever letting a stale favourite outrank a strong text match.
+    return [...filtered]
+      .map((hit) => ({
+        ...hit,
+        score: applyFrecency(hit.score ?? 1, frecency[String(hit.item.id)]),
+      }))
+      .sort((left, right) => (left.score ?? 1) - (right.score ?? 1));
+  }, [fuse, notes, parsed, hasFilters, frecency]);
 
   // Deep (server FTS) search runs in "deep" mode, and also auto-escalates in
   // local mode when the loaded index looks thin — users shouldn't have to
@@ -401,6 +443,8 @@ export function NoteSearchPalette({
         router.push("/dashboard/create_note");
       } else {
         rememberSearch(query);
+        // Opening from search is the signal frecency ranks on.
+        setFrecency(recordNoteOpened(item.result.item.id));
         router.push(`/dashboard/edit_note?id=${item.result.item.id}`);
       }
       onClose();
@@ -421,6 +465,8 @@ export function NoteSearchPalette({
       setFullError("");
       return;
     }
+
+    setFrecency(readFrecency());
 
     try {
       const parsed = JSON.parse(
@@ -463,9 +509,19 @@ export function NoteSearchPalette({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [executeItem, open, onClose, paletteItems, selectedIndex]);
 
+  useFocusTrap(dialogRef, open);
+
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 10);
   }, [open]);
+
+  // Browsers scroll the *focused* element into view; they do nothing for the
+  // element named by aria-activedescendant. Keyboard users would otherwise
+  // arrow down into rows they cannot see.
+  useEffect(() => {
+    if (!open) return;
+    optionRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
+  }, [open, selectedIndex]);
 
   const copySnippet = async (
     note: Note,
@@ -500,6 +556,10 @@ export function NoteSearchPalette({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.18 }}
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search notes and commands"
             className="w-full max-w-3xl overflow-hidden rounded-none bg-[var(--bg-secondary)] shadow-md shadow-black/30"
             style={{ border: "1px solid var(--border)" }}
             onClick={(event) => event.stopPropagation()}
@@ -514,6 +574,19 @@ export function NoteSearchPalette({
               <input
                 ref={inputRef}
                 value={query}
+                type="text"
+                role="combobox"
+                aria-expanded={paletteItems.length > 0}
+                aria-controls={PALETTE_LISTBOX_ID}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  paletteItems[selectedIndex]
+                    ? paletteOptionId(selectedIndex)
+                    : undefined
+                }
+                aria-label="Search notes, snippets and commands"
+                autoComplete="off"
+                spellCheck={false}
                 onChange={(event) => {
                   setQuery(event.target.value);
                   setSelectedIndex(0);
@@ -581,7 +654,13 @@ export function NoteSearchPalette({
               )}
             </div>
 
-            <div className="max-h-[62vh] overflow-y-auto p-3">
+            <div
+              ref={listRef}
+              id={PALETTE_LISTBOX_ID}
+              role="listbox"
+              aria-label="Search results"
+              className="max-h-[62vh] overflow-y-auto p-3"
+            >
               {showIndexLoading ? (
                 <div className="rounded-none border border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
                   loading retrieval index...
@@ -610,6 +689,7 @@ export function NoteSearchPalette({
                   const sectionHeader =
                     item.type !== prevType && item.type !== "create" ? (
                       <p
+                        role="presentation"
                         className={`mb-1.5 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--text-secondary)] ${index === 0 ? "" : "mt-3"}`}
                       >
                         {SECTION_LABELS[item.type]}
@@ -619,10 +699,17 @@ export function NoteSearchPalette({
                   if (item.type === "recent") {
                     const isSelected = selectedIndex === index;
                     return (
-                      <div key={`recent-${item.query}`}>
+                      <div role="presentation" key={`recent-${item.query}`}>
                         {sectionHeader}
                         <button
                           type="button"
+                          id={paletteOptionId(index)}
+                          role="option"
+                          aria-selected={selectedIndex === index}
+                          tabIndex={-1}
+                          ref={(node) => {
+                            optionRefs.current[index] = node;
+                          }}
                           onMouseEnter={() => setSelectedIndex(index)}
                           onClick={() => executeItem(item)}
                           className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
@@ -660,10 +747,17 @@ export function NoteSearchPalette({
                     const Icon = item.command.icon;
                     const isSelected = selectedIndex === index;
                     return (
-                      <div key={item.command.id}>
+                      <div role="presentation" key={item.command.id}>
                         {sectionHeader}
                         <button
                           type="button"
+                          id={paletteOptionId(index)}
+                          role="option"
+                          aria-selected={selectedIndex === index}
+                          tabIndex={-1}
+                          ref={(node) => {
+                            optionRefs.current[index] = node;
+                          }}
                           onMouseEnter={() => setSelectedIndex(index)}
                           onClick={() => executeItem(item)}
                           className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
@@ -703,6 +797,13 @@ export function NoteSearchPalette({
                       <button
                         key="create-note"
                         type="button"
+                        id={paletteOptionId(index)}
+                        role="option"
+                        aria-selected={selectedIndex === index}
+                        tabIndex={-1}
+                        ref={(node) => {
+                          optionRefs.current[index] = node;
+                        }}
                         onMouseEnter={() => setSelectedIndex(index)}
                         onClick={() => executeItem(item)}
                         className="group mb-2 w-full rounded-none border border-dashed px-4 py-3 text-left transition-colors"
@@ -750,24 +851,23 @@ export function NoteSearchPalette({
                     : [];
 
                   return (
-                    <div key={`${item.type}-${note.id}`}>
+                    <div role="presentation" key={`${item.type}-${note.id}`}>
                       {sectionHeader}
-                      {/* biome-ignore lint/a11y/useSemanticElements: Result row contains a nested copy button, so it cannot be a native button. */}
+                      {/* A result row owns a nested copy button, so it cannot
+                          be a native <button>. tabIndex is -1 because focus
+                          stays on the combobox input — Enter is handled by
+                          the palette's own key handler. */}
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard activation lives on the combobox input, per the ARIA pattern */}
                       <div
-                        role="button"
-                        tabIndex={0}
+                        id={paletteOptionId(index)}
+                        role="option"
+                        aria-selected={isSelected}
+                        tabIndex={-1}
+                        ref={(node) => {
+                          optionRefs.current[index] = node;
+                        }}
                         onMouseEnter={() => setSelectedIndex(index)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            router.push(`/dashboard/edit_note?id=${note.id}`);
-                            onClose();
-                          }
-                        }}
-                        onClick={() => {
-                          router.push(`/dashboard/edit_note?id=${note.id}`);
-                          onClose();
-                        }}
+                        onClick={() => executeItem(item)}
                         className="group mb-2 w-full rounded-none border px-4 py-3 text-left transition-colors hover:shadow-lg hover:shadow-black/10"
                         style={{
                           backgroundColor: isSelected

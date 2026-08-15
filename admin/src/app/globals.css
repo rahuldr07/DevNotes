@@ -1140,3 +1140,29 @@ samp,
   color: var(--main-color);
   background: color-mix(in srgb, var(--main-color) 10%, transparent);
 }
+
+/* ── Reduced motion ──
+      Framer components are covered by <MotionPreferences> (MotionConfig
+      reducedMotion="user"); this is the CSS half — transitions, the marquee
+      of hover lifts, and the smooth-scroll that heading anchors trigger. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: a reduced-motion reset must beat utility and inline styles */
+    animation-duration: 0.001ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: as above */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: as above */
+    transition-duration: 0.001ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: as above */
+    scroll-behavior: auto !important;
+  }
+
+  /* Hover lifts read as motion sickness triggers; keep the colour change. */
+  .hover\:-translate-y-0\.5:hover,
+  .hover\:-translate-y-1:hover {
+    /* biome-ignore lint/complexity/noImportantStyles: overrides a Tailwind utility */
+    transform: none !important;
+  }
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Lora, Roboto_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { MotionPreferences } from "@/components/motion";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeStudio } from "@/components/ThemeStudio";
@@ -102,12 +103,14 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: buildThemeInitScript() }}
         />
         <ThemeProvider>
-          <TooltipProvider>
-            <OnboardingDialog />
-            {children}
-            <ThemeStudio />
-            <GoeyToaster />
-          </TooltipProvider>
+          <MotionPreferences>
+            <TooltipProvider>
+              <OnboardingDialog />
+              {children}
+              <ThemeStudio />
+              <GoeyToaster />
+            </TooltipProvider>
+          </MotionPreferences>
         </ThemeProvider>
       </body>
     </html>

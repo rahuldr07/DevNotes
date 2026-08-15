@@ -5,6 +5,7 @@ import { Clock3, Loader2, RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { Button } from "@/components/ui/button";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { normalizeErrorMessage } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
 import { getNoteVersion, getNoteVersions } from "@/lib/note-api";
@@ -54,6 +55,7 @@ export function VersionHistoryDrawer({
   const [selected, setSelected] = useState<NoteVersion | null>(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const panelRef = useRef<HTMLElement>(null);
   const [error, setError] = useState("");
   // The list endpoint returns summaries only; full snapshots are fetched per
   // selection and cached here so flipping between versions stays instant.
@@ -121,6 +123,9 @@ export function VersionHistoryDrawer({
     };
   }, [noteId, open, selectedId]);
 
+  // Tab used to walk straight out of the drawer into the page behind it.
+  useFocusTrap(panelRef, open);
+
   useEffect(() => {
     if (!open) return;
 
@@ -143,10 +148,14 @@ export function VersionHistoryDrawer({
           onClick={onClose}
         >
           <motion.aside
+            ref={panelRef}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 260 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="version-history-title"
             className="ml-auto flex h-full w-full max-w-5xl flex-col bg-[var(--bg)] text-[var(--text-primary)]"
             style={{ borderLeft: "1px solid var(--border)" }}
             onClick={(event) => event.stopPropagation()}
@@ -157,7 +166,9 @@ export function VersionHistoryDrawer({
             >
               <div className="flex items-center gap-2">
                 <Clock3 size={16} className="text-[var(--accent)]" />
-                <h2 className="text-sm font-medium">version history</h2>
+                <h2 id="version-history-title" className="text-sm font-medium">
+                  version history
+                </h2>
               </div>
               <button
                 type="button"
