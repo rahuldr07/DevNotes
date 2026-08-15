@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   type ThemeId,
@@ -92,9 +93,16 @@ function ThemeChoice({
 
 export function OnboardingDialog() {
   const { theme, setTheme, themes, isOnboarded, setOnboarded } = useTheme();
+  const pathname = usePathname();
   const [selected, setSelected] = useState(theme);
 
   if (isOnboarded) return null;
+
+  // Only inside the workspace. This dialog lives in the root layout, so it
+  // used to open on every route: it covered the signup form, and a stranger
+  // following a shared link got "choose your theme" over the article they
+  // came to read, before they had any reason to care.
+  if (!pathname?.startsWith("/dashboard")) return null;
 
   // First launch shows a curated set — the full roster lives in the studio.
   const featured = themes.filter((item) => item.featured);

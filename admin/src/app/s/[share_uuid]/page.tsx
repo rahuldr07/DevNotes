@@ -100,9 +100,12 @@ export default async function PublicNotePage({
   const kind = noteKindLabel(note.note_type);
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
       <RecordPublicView shareUuid={share_uuid} />
-      <div className="pointer-events-none fixed inset-0">
+      {/* Clips its own blur blobs. This must not move to the page root:
+          overflow-hidden there disables position: sticky for everything
+          inside, including the table of contents. */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-[-10rem] top-[-14rem] h-96 w-96 rounded-none bg-[var(--accent)]/12 blur-3xl" />
         <div className="absolute bottom-[-12rem] right-[-10rem] h-[28rem] w-[28rem] rounded-none bg-[var(--main-color)]/10 blur-3xl" />
         <div
@@ -248,7 +251,10 @@ export default async function PublicNotePage({
           )}
         </article>
 
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        {/* The whole rail pins, with the contents first, and scrolls inside
+            itself when it outgrows the viewport. Sticking only the nav made
+            it overlap the cards below as they scrolled past. */}
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
           <TableOfContents headings={headings} />
 
           <div className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">

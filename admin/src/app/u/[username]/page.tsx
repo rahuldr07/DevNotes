@@ -95,8 +95,11 @@ export default async function AuthorProfilePage({
   const featuredNote = publicNotes[0];
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text-primary)]">
-      <div className="pointer-events-none fixed inset-0">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+      {/* Clips its own blur blobs. This must not move to the page root:
+          overflow-hidden there disables position: sticky for everything
+          inside, including the table of contents. */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-none bg-[var(--accent)]/12 blur-3xl" />
         <div className="absolute bottom-[-14rem] right-[-10rem] h-[30rem] w-[30rem] rounded-none bg-[var(--main-color)]/10 blur-3xl" />
         <div
