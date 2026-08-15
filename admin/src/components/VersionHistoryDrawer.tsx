@@ -252,7 +252,11 @@ export function VersionHistoryDrawer({
                       className="my-4"
                       style={{ borderTop: "1px solid var(--border)" }}
                     />
-                    <MarkdownViewer content={current.content} framed={false} />
+                    <MarkdownViewer
+                      content={current.content}
+                      framed={false}
+                      anchors={false}
+                    />
                   </article>
 
                   <article className="min-w-0 rounded-none bg-[var(--bg-secondary)] p-4">
@@ -270,6 +274,7 @@ export function VersionHistoryDrawer({
                           style={{ borderTop: "1px solid var(--border)" }}
                         />
                         <MarkdownViewer
+                          anchors={false}
                           content={selected.content}
                           framed={false}
                         />

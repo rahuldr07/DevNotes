@@ -914,6 +914,36 @@ samp,
   overflow-x: auto;
 }
 
+/* ── Heading anchors ──
+      `scroll-margin-top` keeps a jumped-to heading clear of the sticky
+      header instead of hiding it underneath. The link itself only appears on
+      hover or keyboard focus, so it never eats into the heading's measure. */
+.tiptap .md-heading {
+  position: relative;
+  scroll-margin-top: 6rem;
+}
+.md-heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  color: var(--main-color);
+  opacity: 0;
+  vertical-align: middle;
+  text-decoration: none;
+  transition: opacity 140ms ease;
+}
+.md-heading:hover .md-heading-anchor,
+.md-heading-anchor:focus-visible {
+  opacity: 0.75;
+}
+.md-heading-anchor:hover {
+  opacity: 1;
+}
+/* Never let the anchor icon inherit the heading's underline/border styles. */
+.tiptap .md-heading-anchor svg {
+  display: block;
+}
+
 /* ── Rendered code block header (viewer): language label + copy ── */
 .md-code-block {
   margin: 1.2rem 0;

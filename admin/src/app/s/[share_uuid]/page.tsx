@@ -15,10 +15,12 @@ import { notFound } from "next/navigation";
 import { CopyContentButton } from "@/components/CopyContentButton";
 import { MarkdownViewer } from "@/components/MarkdownViewer";
 import { RecordPublicView } from "@/components/RecordPublicView";
+import { TableOfContents } from "@/components/TableOfContents";
 import { backendFetch } from "@/lib/backend";
 import { formatNoteDate } from "@/lib/format";
 import { previewText } from "@/lib/notes";
 import { noteKindLabel, readingTimeMinutes } from "@/lib/reading";
+import { extractHeadings } from "@/lib/toc";
 import type { Note, PublicNoteSummary } from "@/types/notes";
 
 async function getPublicNote(shareUuid: string): Promise<Note | null> {
@@ -92,6 +94,7 @@ export default async function PublicNotePage({
   if (!note) notFound();
 
   const author = authorName(note);
+  const headings = extractHeadings(note.content);
   const publishedAt = formatNoteDate(note, "long");
   const minutes = readingTimeMinutes(note.content);
   const kind = noteKindLabel(note.note_type);
@@ -246,6 +249,8 @@ export default async function PublicNotePage({
         </article>
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <TableOfContents headings={headings} />
+
           <div className="rounded-none border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-5 backdrop-blur-xl">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--text-secondary)]">
               article signal
