@@ -42,8 +42,10 @@ class Settings(BaseSettings):
         Result looks like:
         postgresql://user:pass@host:5432/dbname?sslmode=require
         """
+        # Name the driver explicitly: SQLAlchemy 2.1 switched the default for
+        # plain postgresql:// to psycopg 3, but requirements.txt ships psycopg2.
         return (
-            f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
             f"?sslmode={self.DB_SSL_MODE}"
         )
