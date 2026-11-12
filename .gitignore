@@ -35,4 +35,12 @@ Thumbs.db
 .copilot/
 _handoff/
 .claude/*
-!.claude/CLAUDE.md
+
+# Local editor and assistant config
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.agents/
+.cursor/
+.github/copilot-instructions.md
