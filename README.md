@@ -13,7 +13,7 @@ Save the commands, configs, fixes and guides you'd otherwise lose to scratch fil
 ![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 
-[**Live app**](https://dev-notes-gilt.vercel.app) · [**Launch video**](docs/media/devnotes-launch.mp4) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Architecture](#architecture)
+[**Live app**](https://notes.dileeshrahul.dev) · [**Launch video**](docs/media/devnotes-launch.mp4) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Architecture](#architecture)
 
 <a href="docs/media/devnotes-launch.mp4"><img src="docs/media/theme-studio.gif" width="820" alt="The theme studio walking through Catppuccin Mocha, Paper CLI, Tokyo Night, Synthwave '84, Matrix and Sakura while a public note re-themes behind it"></a>
 
